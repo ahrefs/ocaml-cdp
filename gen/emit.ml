@@ -253,11 +253,9 @@ let emit_item_module ~selected ~alias_tbl ~domain ~mname ~wire_name ~attrs ~para
   Buffer.add_string buf (spf "end%s\n\n" attrs);
   Buffer.contents buf
 
-let emit_domain_file ~selected ~alias_tbl (domain : domain) =
-  let buf = Buffer.create 4096 in
-  Buffer.add_string buf (header ());
-  Buffer.add_string buf (spf "include %s\n" (types_module_of_domain domain.name));
-  Buffer.add_string buf "open Melange_json.Primitives\n\n";
+(* command/event submodules of a domain with their collision-resolved module
+   names; shared by the domain-file emitter and the roundtrip-test emitter *)
+let item_modules ~alias_tbl (domain : domain) =
   let used =
     ref (List.map (fun type_def -> submodule_of_name (jstr "id" type_def)) (domain_aliases ~alias_tbl domain))
   in
@@ -267,25 +265,38 @@ let emit_domain_file ~selected ~alias_tbl (domain : domain) =
     used := name :: !used;
     name
   in
+  let commands =
+    List.map
+      (fun command -> claim ~fallback_suffix:"_command" (submodule_of_name (jstr "name" command)), `Command command)
+      domain.commands
+  in
+  let events =
+    List.map
+      (fun event -> claim ~fallback_suffix:"_event" (submodule_of_name (jstr "name" event)), `Event event)
+      domain.events
+  in
+  commands @ events
+
+let emit_domain_file ~selected ~alias_tbl (domain : domain) =
+  let buf = Buffer.create 4096 in
+  Buffer.add_string buf (header ());
+  Buffer.add_string buf (spf "include %s\n" (types_module_of_domain domain.name));
+  Buffer.add_string buf "open Melange_json.Primitives\n\n";
   List.iter
-    (fun command ->
-      let cname = jstr "name" command in
-      let mname = claim ~fallback_suffix:"_command" (submodule_of_name cname) in
-      Buffer.add_string buf
-        (emit_item_module ~selected ~alias_tbl ~domain:domain.name ~mname
-           ~wire_name:(domain.name ^ "." ^ cname)
-           ~attrs:(item_attrs command) ~params:(jlist "parameters" command)
-           ~returns:(`Returns (jlist "returns" command))))
-    domain.commands;
-  List.iter
-    (fun event ->
-      let ename = jstr "name" event in
-      let mname = claim ~fallback_suffix:"_event" (submodule_of_name ename) in
-      Buffer.add_string buf
-        (emit_item_module ~selected ~alias_tbl ~domain:domain.name ~mname
-           ~wire_name:(domain.name ^ "." ^ ename)
-           ~attrs:(item_attrs event) ~params:(jlist "parameters" event) ~returns:`Event))
-    domain.events;
+    (fun (mname, item) ->
+      match item with
+      | `Command command ->
+        Buffer.add_string buf
+          (emit_item_module ~selected ~alias_tbl ~domain:domain.name ~mname
+             ~wire_name:(domain.name ^ "." ^ jstr "name" command)
+             ~attrs:(item_attrs command) ~params:(jlist "parameters" command)
+             ~returns:(`Returns (jlist "returns" command)))
+      | `Event event ->
+        Buffer.add_string buf
+          (emit_item_module ~selected ~alias_tbl ~domain:domain.name ~mname
+             ~wire_name:(domain.name ^ "." ^ jstr "name" event)
+             ~attrs:(item_attrs event) ~params:(jlist "parameters" event) ~returns:`Event))
+    (item_modules ~alias_tbl domain);
   Buffer.contents buf
 
 (* cdp.ml: the module users open. Cdp.Network -> Cdp_network etc. *)

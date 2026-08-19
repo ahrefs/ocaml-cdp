@@ -1,4 +1,4 @@
-; golden tests: small protocol JSON in -> generated OCaml out.
+; cram tests: small protocol JSON in -> generated OCaml out.
 ; Workflow: change gen.ml -> `dune test` shows diffs -> review -> `dune promote`.
 
 (cram

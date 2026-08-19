@@ -27,11 +27,18 @@ open Naming
 open Protocol
 open Emit
 
-let generate ~browser ~js ~outdir ~selected =
+(* shared front half of generate and roundtrip: read REVISION, load and
+   select domains, build the alias table, verify the type graph *)
+let load_protocol ~browser ~js ~domains_arg =
   (revision :=
      let revision_file = Filename.concat (Filename.dirname browser) "REVISION" in
      try read_file revision_file with Sys_error _ -> "unknown");
   let all = load_domains browser @ load_domains js in
+  let selected =
+    match domains_arg with
+    | "all" -> List.map (fun (domain : domain) -> domain.name) all
+    | names -> String.split_on_char ',' names
+  in
   let domains = List.filter (fun (domain : domain) -> List.mem domain.name selected) all in
   (match
      List.filter (fun requested -> not (List.exists (fun (domain : domain) -> domain.name = requested) all)) selected
@@ -40,6 +47,10 @@ let generate ~browser ~js ~outdir ~selected =
   | missing -> failwith ("cdp-gen: unknown domains: " ^ String.concat "," missing));
   let alias_tbl = build_alias_table domains in
   check_types_dag domains ~alias_tbl;
+  selected, domains, alias_tbl
+
+let generate ~browser ~js ~outdir ~domains_arg =
+  let selected, domains, alias_tbl = load_protocol ~browser ~js ~domains_arg in
   write_file (Filename.concat outdir "cdp_base.ml") (emit_base_file ~alias_tbl domains);
   Printf.printf "generated cdp_base.ml: %d sealed alias modules\n" (Hashtbl.length alias_tbl);
   List.iter
@@ -53,17 +64,25 @@ let generate ~browser ~js ~outdir ~selected =
   write_file (Filename.concat outdir "cdp.ml") (emit_index domains);
   Printf.printf "generated cdp.ml index (%d domains, protocol %s)\n" (List.length domains) !revision
 
+let roundtrip ~browser ~js ~outfile ~domains_arg =
+  let _selected, domains, alias_tbl = load_protocol ~browser ~js ~domains_arg in
+  let contents, emitted, skipped = Roundtrip.emit ~domains ~alias_tbl in
+  write_file outfile contents;
+  List.iter (fun (label, reason) -> Printf.eprintf "skipped %s: %s\n" label reason) skipped;
+  Printf.printf "generated %s: %d roundtrip checks, %d skipped\n" outfile emitted (List.length skipped)
+
 let usage =
   "usage:\n\
-  \  cdp-gen generate <browser_protocol.json> <js_protocol.json> <outdir> <Domain1,Domain2,...>\n\
+  \  cdp-gen generate <browser_protocol.json> <js_protocol.json> <outdir> <Domain1,Domain2,...|all>\n\
+  \  cdp-gen roundtrip <browser_protocol.json> <js_protocol.json> <outfile.ml> <Domain1,Domain2,...|all>\n\
   \  cdp-gen fetch <outdir> [<revision>]\n\
    generate stamps headers from the REVISION file next to the protocol JSON."
 
 let () =
   try
     match Array.to_list Sys.argv with
-    | _ :: "generate" :: [ browser; js; outdir; domains ] ->
-      generate ~browser ~js ~outdir ~selected:(String.split_on_char ',' domains)
+    | _ :: "generate" :: [ browser; js; outdir; domains ] -> generate ~browser ~js ~outdir ~domains_arg:domains
+    | _ :: "roundtrip" :: [ browser; js; outfile; domains ] -> roundtrip ~browser ~js ~outfile ~domains_arg:domains
     | _ :: "fetch" :: [ outdir ] -> Fetch.fetch ~outdir ~rev:None
     | _ :: "fetch" :: [ outdir; rev ] -> Fetch.fetch ~outdir ~rev:(Some rev)
     | _invalid_arguments ->

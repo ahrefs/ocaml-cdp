@@ -57,7 +57,7 @@ cdp-gen generate mydir/browser_protocol.json mydir/js_protocol.json out Network,
 
 ## Development
 
-`make help` lists all targets. Tests are golden cram tests
-(`test/golden/*.t`: small protocol JSON in, generated OCaml out — review
+`make help` lists all targets. Tests are cram tests
+(`test/cram/*.t`: small protocol JSON in, generated OCaml out — review
 diffs with `dune runtest`, accept with `dune promote`) plus runtime
 decode/encode tests (`test/test_decode.ml`).

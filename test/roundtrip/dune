@@ -1,0 +1,12 @@
+(executable
+ (name test_roundtrip)
+ (modules test_roundtrip)
+ (libraries cdp yojson)
+ ; the generated test intentionally exercises deprecated/experimental items
+ (flags
+  (:standard -w -a -alert -all)))
+
+(rule
+ (alias runtest)
+ (action
+  (run ./test_roundtrip.exe)))
