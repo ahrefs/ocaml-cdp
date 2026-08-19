@@ -1,0 +1,8 @@
+(executable
+ (name test_decode)
+ (libraries cdp yojson))
+
+(rule
+ (alias runtest)
+ (action
+  (run ./test_decode.exe)))

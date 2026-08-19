@@ -1,0 +1,6 @@
+; golden tests: small protocol JSON in -> generated OCaml out.
+; Workflow: change gen.ml -> `dune test` shows diffs -> review -> `dune promote`.
+
+(cram
+ (applies_to :whole_subtree)
+ (deps %{bin:cdp-gen}))
