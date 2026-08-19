@@ -15,12 +15,12 @@ module Browser = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = string
-    let of_string x = x
-    let to_string x = x
+    let of_string value = value
+    let to_string value = value
     let equal = String.equal
     let compare = String.compare
-    let show (x : t) = Printf.sprintf "%S" x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = Printf.sprintf "%S" value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.string_of_json
     let to_json = Melange_json.Primitives.string_to_json
   end
@@ -38,12 +38,12 @@ module Browser = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = int
-    let of_int x = x
-    let to_int x = x
+    let of_int value = value
+    let to_int value = value
     let equal = Int.equal
     let compare = Int.compare
-    let show (x : t) = string_of_int x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = string_of_int value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.int_of_json
     let to_json = Melange_json.Primitives.int_to_json
   end
@@ -63,12 +63,12 @@ module Dom = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = int
-    let of_int x = x
-    let to_int x = x
+    let of_int value = value
+    let to_int value = value
     let equal = Int.equal
     let compare = Int.compare
-    let show (x : t) = string_of_int x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = string_of_int value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.int_of_json
     let to_json = Melange_json.Primitives.int_to_json
   end
@@ -85,12 +85,12 @@ module Dom = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = int
-    let of_int x = x
-    let to_int x = x
+    let of_int value = value
+    let to_int value = value
     let equal = Int.equal
     let compare = Int.compare
-    let show (x : t) = string_of_int x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = string_of_int value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.int_of_json
     let to_json = Melange_json.Primitives.int_to_json
   end
@@ -107,12 +107,12 @@ module Dom = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = string
-    let of_string x = x
-    let to_string x = x
+    let of_string value = value
+    let to_string value = value
     let equal = String.equal
     let compare = String.compare
-    let show (x : t) = Printf.sprintf "%S" x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = Printf.sprintf "%S" value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.string_of_json
     let to_json = Melange_json.Primitives.string_to_json
   end
@@ -131,12 +131,12 @@ module Emulation = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = string
-    let of_string x = x
-    let to_string x = x
+    let of_string value = value
+    let to_string value = value
     let equal = String.equal
     let compare = String.compare
-    let show (x : t) = Printf.sprintf "%S" x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = Printf.sprintf "%S" value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.string_of_json
     let to_json = Melange_json.Primitives.string_to_json
   end
@@ -156,12 +156,12 @@ module Io = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = string
-    let of_string x = x
-    let to_string x = x
+    let of_string value = value
+    let to_string value = value
     let equal = String.equal
     let compare = String.compare
-    let show (x : t) = Printf.sprintf "%S" x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = Printf.sprintf "%S" value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.string_of_json
     let to_json = Melange_json.Primitives.string_to_json
   end
@@ -180,12 +180,12 @@ module Network = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = string
-    let of_string x = x
-    let to_string x = x
+    let of_string value = value
+    let to_string value = value
     let equal = String.equal
     let compare = String.compare
-    let show (x : t) = Printf.sprintf "%S" x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = Printf.sprintf "%S" value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.string_of_json
     let to_json = Melange_json.Primitives.string_to_json
   end
@@ -202,12 +202,12 @@ module Network = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = string
-    let of_string x = x
-    let to_string x = x
+    let of_string value = value
+    let to_string value = value
     let equal = String.equal
     let compare = String.compare
-    let show (x : t) = Printf.sprintf "%S" x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = Printf.sprintf "%S" value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.string_of_json
     let to_json = Melange_json.Primitives.string_to_json
   end
@@ -224,12 +224,12 @@ module Network = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = float
-    let of_float x = x
-    let to_float x = x
+    let of_float value = value
+    let to_float value = value
     let equal = Float.equal
     let compare = Float.compare
-    let show (x : t) = string_of_float x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = string_of_float value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.float_of_json
     let to_json = Melange_json.Primitives.float_to_json
   end
@@ -246,12 +246,12 @@ module Network = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = float
-    let of_float x = x
-    let to_float x = x
+    let of_float value = value
+    let to_float value = value
     let equal = Float.equal
     let compare = Float.compare
-    let show (x : t) = string_of_float x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = string_of_float value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.float_of_json
     let to_json = Melange_json.Primitives.float_to_json
   end
@@ -268,12 +268,12 @@ module Network = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = string
-    let of_string x = x
-    let to_string x = x
+    let of_string value = value
+    let to_string value = value
     let equal = String.equal
     let compare = String.compare
-    let show (x : t) = Printf.sprintf "%S" x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = Printf.sprintf "%S" value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.string_of_json
     let to_json = Melange_json.Primitives.string_to_json
   end
@@ -291,12 +291,12 @@ module Network = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = string
-    let of_string x = x
-    let to_string x = x
+    let of_string value = value
+    let to_string value = value
     let equal = String.equal
     let compare = String.compare
-    let show (x : t) = Printf.sprintf "%S" x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = Printf.sprintf "%S" value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.string_of_json
     let to_json = Melange_json.Primitives.string_to_json
   end
@@ -316,12 +316,12 @@ module Page = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = string
-    let of_string x = x
-    let to_string x = x
+    let of_string value = value
+    let to_string value = value
     let equal = String.equal
     let compare = String.compare
-    let show (x : t) = Printf.sprintf "%S" x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = Printf.sprintf "%S" value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.string_of_json
     let to_json = Melange_json.Primitives.string_to_json
   end
@@ -338,12 +338,12 @@ module Page = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = string
-    let of_string x = x
-    let to_string x = x
+    let of_string value = value
+    let to_string value = value
     let equal = String.equal
     let compare = String.compare
-    let show (x : t) = Printf.sprintf "%S" x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = Printf.sprintf "%S" value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.string_of_json
     let to_json = Melange_json.Primitives.string_to_json
   end
@@ -362,12 +362,12 @@ module Security = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = int
-    let of_int x = x
-    let to_int x = x
+    let of_int value = value
+    let to_int value = value
     let equal = Int.equal
     let compare = Int.compare
-    let show (x : t) = string_of_int x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = string_of_int value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.int_of_json
     let to_json = Melange_json.Primitives.int_to_json
   end
@@ -386,12 +386,12 @@ module Target = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = string
-    let of_string x = x
-    let to_string x = x
+    let of_string value = value
+    let to_string value = value
     let equal = String.equal
     let compare = String.compare
-    let show (x : t) = Printf.sprintf "%S" x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = Printf.sprintf "%S" value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.string_of_json
     let to_json = Melange_json.Primitives.string_to_json
   end
@@ -408,12 +408,12 @@ module Target = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = string
-    let of_string x = x
-    let to_string x = x
+    let of_string value = value
+    let to_string value = value
     let equal = String.equal
     let compare = String.compare
-    let show (x : t) = Printf.sprintf "%S" x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = Printf.sprintf "%S" value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.string_of_json
     let to_json = Melange_json.Primitives.string_to_json
   end
@@ -432,12 +432,12 @@ module Debugger = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = string
-    let of_string x = x
-    let to_string x = x
+    let of_string value = value
+    let to_string value = value
     let equal = String.equal
     let compare = String.compare
-    let show (x : t) = Printf.sprintf "%S" x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = Printf.sprintf "%S" value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.string_of_json
     let to_json = Melange_json.Primitives.string_to_json
   end
@@ -454,12 +454,12 @@ module Debugger = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = string
-    let of_string x = x
-    let to_string x = x
+    let of_string value = value
+    let to_string value = value
     let equal = String.equal
     let compare = String.compare
-    let show (x : t) = Printf.sprintf "%S" x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = Printf.sprintf "%S" value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.string_of_json
     let to_json = Melange_json.Primitives.string_to_json
   end
@@ -478,12 +478,12 @@ module Runtime = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = string
-    let of_string x = x
-    let to_string x = x
+    let of_string value = value
+    let to_string value = value
     let equal = String.equal
     let compare = String.compare
-    let show (x : t) = Printf.sprintf "%S" x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = Printf.sprintf "%S" value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.string_of_json
     let to_json = Melange_json.Primitives.string_to_json
   end
@@ -500,12 +500,12 @@ module Runtime = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = string
-    let of_string x = x
-    let to_string x = x
+    let of_string value = value
+    let to_string value = value
     let equal = String.equal
     let compare = String.compare
-    let show (x : t) = Printf.sprintf "%S" x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = Printf.sprintf "%S" value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.string_of_json
     let to_json = Melange_json.Primitives.string_to_json
   end
@@ -522,12 +522,12 @@ module Runtime = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = string
-    let of_string x = x
-    let to_string x = x
+    let of_string value = value
+    let to_string value = value
     let equal = String.equal
     let compare = String.compare
-    let show (x : t) = Printf.sprintf "%S" x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = Printf.sprintf "%S" value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.string_of_json
     let to_json = Melange_json.Primitives.string_to_json
   end
@@ -544,12 +544,12 @@ module Runtime = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = int
-    let of_int x = x
-    let to_int x = x
+    let of_int value = value
+    let to_int value = value
     let equal = Int.equal
     let compare = Int.compare
-    let show (x : t) = string_of_int x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = string_of_int value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.int_of_json
     let to_json = Melange_json.Primitives.int_to_json
   end
@@ -566,12 +566,12 @@ module Runtime = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = float
-    let of_float x = x
-    let to_float x = x
+    let of_float value = value
+    let to_float value = value
     let equal = Float.equal
     let compare = Float.compare
-    let show (x : t) = string_of_float x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = string_of_float value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.float_of_json
     let to_json = Melange_json.Primitives.float_to_json
   end
@@ -588,12 +588,12 @@ module Runtime = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = float
-    let of_float x = x
-    let to_float x = x
+    let of_float value = value
+    let to_float value = value
     let equal = Float.equal
     let compare = Float.compare
-    let show (x : t) = string_of_float x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = string_of_float value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.float_of_json
     let to_json = Melange_json.Primitives.float_to_json
   end
@@ -610,12 +610,12 @@ module Runtime = struct
     val to_json : t -> Melange_json.t
   end = struct
     type t = string
-    let of_string x = x
-    let to_string x = x
+    let of_string value = value
+    let to_string value = value
     let equal = String.equal
     let compare = String.compare
-    let show (x : t) = Printf.sprintf "%S" x
-    let pp fmt x = Format.pp_print_string fmt (show x)
+    let show (value : t) = Printf.sprintf "%S" value
+    let pp fmt value = Format.pp_print_string fmt (show value)
     let of_json = Melange_json.Primitives.string_of_json
     let to_json = Melange_json.Primitives.string_to_json
   end

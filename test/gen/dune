@@ -1,0 +1,19 @@
+(executable
+ (name test_naming)
+ (modules test_naming)
+ (libraries cdp_gen))
+
+(executable
+ (name test_emit)
+ (modules test_emit)
+ (libraries cdp_gen yojson))
+
+(rule
+ (alias runtest)
+ (action
+  (run ./test_naming.exe)))
+
+(rule
+ (alias runtest)
+ (action
+  (run ./test_emit.exe)))

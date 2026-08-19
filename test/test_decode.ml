@@ -2,12 +2,12 @@ let pass name = Printf.printf "PASS %s\n" name
 
 (* 1. record decode incl. keyword field rename (type -> type_) and sealed id *)
 let () =
-  let j =
+  let json =
     Yojson.Basic.from_string
       {|{"targetId":"T1","type":"page","title":"Example","url":"https://example.com",
          "attached":true,"canAccessOpener":false}|}
   in
-  let ti = Cdp.Target.target_info_of_json j in
+  let ti = Cdp.Target.target_info_of_json json in
   assert (Cdp.Target.Target_id.to_string ti.target_id = "T1");
   assert (Cdp.Target.Target_id.equal ti.target_id (Cdp.Target.Target_id.of_string "T1"));
   assert (ti.type_ = "page");
@@ -29,13 +29,13 @@ let () =
 
 (* 3. recursive type: Runtime.StackTrace with a parent chain *)
 let () =
-  let j =
+  let json =
     Yojson.Basic.from_string
       {|{"callFrames":[{"functionName":"f","scriptId":"3","url":"https://example.com/a.js",
                         "lineNumber":10,"columnNumber":4}],
          "parent":{"callFrames":[],"description":"outer"}}|}
   in
-  let st = Cdp.Runtime.stack_trace_of_json j in
+  let st = Cdp.Runtime.stack_trace_of_json json in
   let frame = List.hd st.call_frames in
   assert (frame.function_name = "f");
   assert (Cdp.Runtime.Script_id.to_string frame.script_id = "3");
@@ -64,32 +64,32 @@ let () =
       embedder_data = None;
     }
   in
-  let j = Cdp.Target.target_info_to_json ti in
+  let json = Cdp.Target.target_info_to_json ti in
   let keys =
-    match j with
+    match json with
     | `Assoc kvs -> List.map fst kvs
     | _not_an_object -> []
   in
   assert (List.mem "targetId" keys);
   assert (List.mem "type" keys);
   assert (not (List.mem "browserContextId" keys));
-  let ti2 = Cdp.Target.target_info_of_json j in
+  let ti2 = Cdp.Target.target_info_of_json json in
   assert (Cdp.Target.equal_target_info ti ti2);
   assert (String.length (Cdp.Target.show_target_info ti) > 0);
   pass "Target.TargetInfo encode roundtrip + derived equal/show"
 
 (* 5. cross-domain ref: Network.Response carries Security.SecurityState *)
 let () =
-  let j =
+  let json =
     Yojson.Basic.from_string
       {|{"url":"https://example.com","status":200,"statusText":"OK",
          "headers":{"Content-Type":"text/html"},"mimeType":"text/html","charset":"utf-8",
          "connectionReused":false,"connectionId":12,"encodedDataLength":1234,
          "securityState":"secure"}|}
   in
-  let r = Cdp.Network.response_of_json j in
-  assert (r.status = 200);
-  (match r.security_state with
+  let response = Cdp.Network.response_of_json json in
+  assert (response.status = 200);
+  (match response.security_state with
   | Cdp.Security_types.Secure -> ()
   | _unexpected -> assert false);
   pass "Network.Response decode with cross-domain enum (int for float ok)"
@@ -97,8 +97,8 @@ let () =
 (* 6. command submodule: derived make builder + params encode + wire name *)
 let () =
   assert (Cdp.Network.Get_response_body.name = "Network.getResponseBody");
-  let p = Cdp.Network.Get_response_body.make_params ~request_id:(Cdp.Network.Request_id.of_string "R1") in
-  assert (Cdp.Network.Get_response_body.params_to_json p = `Assoc [ "requestId", `String "R1" ]);
+  let params = Cdp.Network.Get_response_body.make_params ~request_id:(Cdp.Network.Request_id.of_string "R1") in
+  assert (Cdp.Network.Get_response_body.params_to_json params = `Assoc [ "requestId", `String "R1" ]);
   pass "Network.Get_response_body command submodule + make_params"
 
 (* 7. zero-return command decodes {} to unit *)
@@ -109,9 +109,9 @@ let () =
 
 (* 8. hoisted inline enum: RemoteObject.type is a variant now *)
 let () =
-  let j = Yojson.Basic.from_string {|{"type":"object","subtype":"null"}|} in
-  let r = Cdp.Runtime.remote_object_of_json j in
-  (match r.type_ with
+  let json = Yojson.Basic.from_string {|{"type":"object","subtype":"null"}|} in
+  let remote = Cdp.Runtime.remote_object_of_json json in
+  (match remote.type_ with
   | Cdp.Runtime.Object -> ()
   | _unexpected -> assert false);
   pass "Runtime.RemoteObject hoisted inline enum"
@@ -119,8 +119,8 @@ let () =
 (* 9. event submodule *)
 let () =
   assert (Cdp.Page.Load_event_fired.name = "Page.loadEventFired");
-  let j = Yojson.Basic.from_string {|{"timestamp":123.5}|} in
-  let (ev : Cdp.Page.Load_event_fired.params) = Cdp.Page.Load_event_fired.params_of_json j in
+  let json = Yojson.Basic.from_string {|{"timestamp":123.5}|} in
+  let (ev : Cdp.Page.Load_event_fired.params) = Cdp.Page.Load_event_fired.params_of_json json in
   assert (Cdp.Network.Monotonic_time.to_float ev.timestamp = 123.5);
   pass "Page.Load_event_fired event submodule"
 

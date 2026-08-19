@@ -1,5 +1,13 @@
+; the generator's logic lives in a (private) library so tests can call it
+
+(library
+ (name cdp_gen)
+ (modules naming protocol emit fetch)
+ (libraries yojson))
+
 (executable
  (name gen)
  (public_name cdp-gen)
  (package cdp-gen)
- (libraries yojson))
+ (modules gen)
+ (libraries cdp_gen yojson))

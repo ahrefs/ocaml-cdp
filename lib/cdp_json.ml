@@ -6,13 +6,13 @@
 type t = Melange_json.t
 
 (* identity codecs: lets [@@deriving json] work on fields typed [Cdp_json.t] *)
-let of_json (j : Melange_json.t) : t = j
-let to_json (x : t) : Melange_json.t = x
+let of_json (json : Melange_json.t) : t = json
+let to_json (value : t) : Melange_json.t = value
 
 (* derive layer for [Cdp_json.t] fields: [@@deriving show, eq] looks these up *)
 let equal : t -> t -> bool = Yojson.Basic.equal
-let show (x : t) : string = Yojson.Basic.to_string x
-let pp fmt (x : t) = Format.pp_print_string fmt (show x)
+let show (value : t) : string = Yojson.Basic.to_string value
+let pp fmt (value : t) = Format.pp_print_string fmt (show value)
 
 (** Payload of catch-all [Other] constructors: an enum value this protocol revision does not know. [tag] is the raw wire
     string. Same type as [Melange_json.unknown_variant_case], re-exported under a name the derive layer can find helpers
@@ -22,13 +22,14 @@ type unknown = Melange_json.unknown_variant_case = {
   payload : t list option;
 }
 
-let equal_unknown (a : unknown) (b : unknown) : bool =
-  String.equal a.tag b.tag
+let equal_unknown (left : unknown) (right : unknown) : bool =
+  String.equal left.tag right.tag
   &&
-  match a.payload, b.payload with
+  match left.payload, right.payload with
   | None, None -> true
-  | Some xs, Some ys -> (try List.for_all2 equal xs ys with Invalid_argument _uneven_lengths -> false)
+  | Some left_items, Some right_items ->
+    (try List.for_all2 equal left_items right_items with Invalid_argument _uneven_lengths -> false)
   | None, Some _ | Some _, None -> false
 
-let show_unknown (u : unknown) : string = Printf.sprintf "Unknown %S" u.tag
-let pp_unknown fmt (u : unknown) = Format.pp_print_string fmt (show_unknown u)
+let show_unknown (case : unknown) : string = Printf.sprintf "Unknown %S" case.tag
+let pp_unknown fmt (case : unknown) = Format.pp_print_string fmt (show_unknown case)
