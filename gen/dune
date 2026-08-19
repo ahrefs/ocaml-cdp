@@ -1,0 +1,5 @@
+(executable
+ (name gen)
+ (public_name cdp-gen)
+ (package cdp-gen)
+ (libraries yojson))
