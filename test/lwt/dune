@@ -1,0 +1,11 @@
+(executable
+ (name test_connection)
+ (modules test_connection)
+ (libraries cdp cdp_lwt lwt lwt.unix yojson)
+ (preprocess
+  (pps lwt_ppx)))
+
+(rule
+ (alias runtest)
+ (action
+  (run ./test_connection.exe)))

@@ -90,7 +90,7 @@ doc: ## Build documentation
 
 .PHONY: opam-lint
 opam-lint: ## Lint the opam files
-	opam lint cdp.opam cdp-gen.opam
+	opam lint cdp.opam cdp-gen.opam cdp-lwt.opam
 
 .PHONY: all
 all: build test fmt-check opam-lint ## Build, test, check formatting, and lint

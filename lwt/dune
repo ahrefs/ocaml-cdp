@@ -1,0 +1,6 @@
+(library
+ (name cdp_lwt)
+ (public_name cdp-lwt)
+ (libraries cdp curl curl_lwt lwt lwt.unix)
+ (preprocess
+  (pps lwt_ppx)))

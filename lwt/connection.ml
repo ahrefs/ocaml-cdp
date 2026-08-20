@@ -1,0 +1,181 @@
+(* The connection: owns a transport, numbers outgoing commands, remembers
+   which parser belongs to which id, and routes incoming messages — answers
+   to their waiting callers, events to their subscribers. *)
+
+(** Chrome answered the command with an error. *)
+exception Protocol_error of Cdp.Envelope.error
+
+(** The transport died; every in-flight call and event wait fails with this. *)
+exception Connection_closed
+
+(** [call ~timeout] gave up waiting; carries the command name. *)
+exception Call_timeout of string
+
+(* what can happen to a command that was sent *)
+type outcome =
+  | Result of Cdp_json.t
+  | Protocol_failure of Cdp.Envelope.error
+  | Closed
+
+type event_waiter = {
+  wanted_session : string option;
+  deliver : Cdp_json.t -> unit;
+  abandon : exn -> unit;
+}
+
+type t = {
+  transport : Transport.t;
+  next_id : int ref;
+  (* id -> what to do with the outcome of that command *)
+  pending : (int, outcome -> unit) Hashtbl.t;
+  (* event name -> everyone waiting for its next occurrence *)
+  event_waiters : (string, event_waiter) Hashtbl.t;
+  closed : unit Lwt.t;
+  set_closed : unit Lwt.u;
+}
+
+let session_string session = Option.map Cdp.Target.Session_id.to_string session
+
+let fail_everything connection =
+  let calls = Hashtbl.fold (fun _id resolve accumulated -> resolve :: accumulated) connection.pending [] in
+  let waiters = Hashtbl.fold (fun _name waiter accumulated -> waiter :: accumulated) connection.event_waiters [] in
+  Hashtbl.reset connection.pending;
+  Hashtbl.reset connection.event_waiters;
+  List.iter (fun resolve -> resolve Closed) calls;
+  List.iter (fun waiter -> waiter.abandon Connection_closed) waiters
+
+let handle_response connection ~id ~outcome =
+  match Hashtbl.find_opt connection.pending id with
+  | None -> () (* a response nobody waits for anymore, e.g. after a timeout *)
+  | Some resolve ->
+    Hashtbl.remove connection.pending id;
+    resolve outcome
+
+let remove_waiter connection ~name waiter =
+  let remaining =
+    Hashtbl.find_all connection.event_waiters name |> List.filter (fun candidate -> not (candidate == waiter))
+  in
+  while Hashtbl.mem connection.event_waiters name do
+    Hashtbl.remove connection.event_waiters name
+  done;
+  List.iter (fun kept -> Hashtbl.add connection.event_waiters name kept) (List.rev remaining)
+
+let handle_event connection ~name ~params ~session =
+  let matches waiter =
+    match waiter.wanted_session with
+    | None -> true
+    | Some wanted -> Some wanted = session
+  in
+  let all_waiters = Hashtbl.find_all connection.event_waiters name in
+  match List.exists matches all_waiters with
+  | false -> ()
+  | true ->
+    (* one-shot semantics: delivered waiters are removed, others stay.
+       find_all returns newest first; re-adding the reverse preserves order. *)
+    let delivered, remaining = List.partition matches all_waiters in
+    while Hashtbl.mem connection.event_waiters name do
+      Hashtbl.remove connection.event_waiters name
+    done;
+    List.iter (fun waiter -> Hashtbl.add connection.event_waiters name waiter) (List.rev remaining);
+    List.iter (fun waiter -> waiter.deliver params) delivered
+
+let rec read_loop connection =
+  let%lwt incoming = connection.transport.Transport.receive () in
+  match incoming with
+  | None ->
+    fail_everything connection;
+    Lwt.wakeup_later connection.set_closed ();
+    Lwt.return_unit
+  | Some raw ->
+    (match Yojson.Basic.from_string raw with
+    | exception Yojson.Json_error _parse_error -> () (* not JSON: ignore, keep the connection alive *)
+    | json ->
+    match Cdp.Envelope.parse json with
+    | Error _classification_error -> () (* unknown shape: ignore *)
+    | Ok (Response { id; outcome = Ok result_json; session = _ignored }) ->
+      handle_response connection ~id ~outcome:(Result result_json)
+    | Ok (Response { id; outcome = Error protocol_error; session = _ignored }) ->
+      handle_response connection ~id ~outcome:(Protocol_failure protocol_error)
+    | Ok (Event { name; params; session }) -> handle_event connection ~name ~params ~session);
+    read_loop connection
+
+let create transport =
+  let closed, set_closed = Lwt.wait () in
+  let connection =
+    { transport; next_id = ref 0; pending = Hashtbl.create 32; event_waiters = Hashtbl.create 16; closed; set_closed }
+  in
+  Lwt.async (fun () -> read_loop connection);
+  connection
+
+let closed connection = connection.closed
+
+let close connection =
+  (* the transport signals the read loop with a final None, which fails the
+     in-flight calls and event waits and resolves [closed] *)
+  connection.transport.Transport.close ()
+
+let with_timeout ~timeout ~command_name waiting =
+  match timeout with
+  | None -> waiting
+  | Some seconds ->
+    let expired =
+      let%lwt () = Lwt_unix.sleep seconds in
+      Lwt.fail (Call_timeout command_name)
+    in
+    Lwt.pick [ waiting; expired ]
+
+let is_closed connection =
+  match Lwt.state connection.closed with
+  | Lwt.Return () -> true
+  | Lwt.Sleep -> false
+  | Lwt.Fail _never_fails -> false
+
+let call connection ?session ?timeout (command : 'result Cdp.Command.t) : 'result Lwt.t =
+  if is_closed connection then Lwt.fail Connection_closed
+  else begin
+    incr connection.next_id;
+    let id = !(connection.next_id) in
+    (* Lwt.task, not Lwt.wait: callers may Lwt.cancel the returned promise *)
+    let result_promise, resolve_result = Lwt.task () in
+    Lwt.on_cancel result_promise (fun () -> Hashtbl.remove connection.pending id);
+    Hashtbl.replace connection.pending id (fun outcome ->
+      match outcome with
+      | Closed -> Lwt.wakeup_later_exn resolve_result Connection_closed
+      | Protocol_failure protocol_error -> Lwt.wakeup_later_exn resolve_result (Protocol_error protocol_error)
+      | Result result_json ->
+      match command.Cdp.Command.parse result_json with
+      | parsed -> Lwt.wakeup_later resolve_result parsed
+      | exception parse_failure -> Lwt.wakeup_later_exn resolve_result parse_failure);
+    let request =
+      Cdp.Envelope.request ~id ?session:(session_string session) ~name:command.Cdp.Command.name
+        ~params:command.Cdp.Command.params ()
+    in
+    let%lwt () = connection.transport.Transport.send (Yojson.Basic.to_string request) in
+    (* on timeout (or any failure), forget the pending entry so a very late
+     response is dropped instead of waking a dead promise *)
+    Lwt.catch
+      (fun () -> with_timeout ~timeout ~command_name:command.Cdp.Command.name result_promise)
+      (fun failure ->
+        Hashtbl.remove connection.pending id;
+        Lwt.fail failure)
+  end
+
+let next_event connection ?session (event : 'params Cdp.Event.t) : 'params Lwt.t =
+  if is_closed connection then Lwt.fail Connection_closed
+  else begin
+    let params_promise, resolve_params = Lwt.task () in
+    let waiter =
+      {
+        wanted_session = session_string session;
+        deliver =
+          (fun params ->
+            match event.Cdp.Event.parse params with
+            | parsed -> Lwt.wakeup_later resolve_params parsed
+            | exception parse_failure -> Lwt.wakeup_later_exn resolve_params parse_failure);
+        abandon = (fun failure -> Lwt.wakeup_later_exn resolve_params failure);
+      }
+    in
+    Hashtbl.add connection.event_waiters event.Cdp.Event.name waiter;
+    Lwt.on_cancel params_promise (fun () -> remove_waiter connection ~name:event.Cdp.Event.name waiter);
+    params_promise
+  end

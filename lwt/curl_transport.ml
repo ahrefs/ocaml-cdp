@@ -1,0 +1,75 @@
+(* The production transport: a libcurl WebSocket driven through Curl_lwt,
+   receive frames in the write callback, reassemble fragmented messages.
+   Use Curl.ws_send for the outgoing direction. *)
+
+let configure ~url =
+  let handle = Curl.init () in
+  Curl.set_url handle url;
+  Curl.set_connecttimeout handle 30;
+  (* a CDP connection is long-lived: no overall transfer timeout *)
+  Curl.set_timeout handle 0;
+  handle
+
+(* sending can start only after the WebSocket handshake; retry briefly
+   instead of tracking handshake state through curl callbacks *)
+let rec send_with_retry handle payload ~attempts_left =
+  match Curl.ws_send handle payload [ Curl.CURLWS_TEXT ] with
+  | _bytes_sent -> Lwt.return_unit
+  | exception failure ->
+  match attempts_left > 0 with
+  | false -> Lwt.fail failure
+  | true ->
+    let%lwt () = Lwt_unix.sleep 0.1 in
+    send_with_retry handle payload ~attempts_left:(attempts_left - 1)
+
+let connect ~url () : Transport.t Lwt.t =
+  let handle = configure ~url in
+  let incoming, push_incoming = Lwt_stream.create () in
+  let message_buffer = Buffer.create 8192 in
+  let closing = ref false in
+  Curl.set_writefunction handle (fun chunk ->
+    match !closing with
+    | true -> 0 (* wrong length aborts the transfer, ending Curl_lwt.perform *)
+    | false ->
+      (match Curl.ws_meta handle with
+      | None -> () (* not a websocket frame; nothing we can use *)
+      | Some frame ->
+        let is_payload =
+          List.mem Curl.CURLWS_TEXT frame.Curl.flags
+          || List.mem Curl.CURLWS_BINARY frame.Curl.flags
+          || List.mem Curl.CURLWS_CONT frame.Curl.flags
+        in
+        if is_payload then begin
+          Buffer.add_string message_buffer chunk;
+          let is_final = (not (List.mem Curl.CURLWS_CONT frame.Curl.flags)) && frame.Curl.bytesleft = 0 in
+          if is_final then begin
+            push_incoming (Some (Buffer.contents message_buffer));
+            Buffer.clear message_buffer
+          end
+        end);
+      String.length chunk);
+  (* run the transfer in the background; when it ends — server closed, network
+     died, or we aborted — the incoming stream ends with None *)
+  Lwt.async (fun () ->
+    let%lwt (_finished : Curl.curlCode) =
+      try%lwt Curl_lwt.perform handle with
+      | Curl.CurlException (code, _errno, _message) -> Lwt.return code
+      | _unexpected -> Lwt.return Curl.CURLE_RECV_ERROR
+    in
+    push_incoming None;
+    Curl.cleanup handle;
+    Lwt.return_unit);
+  let transport =
+    {
+      Transport.send = (fun payload -> send_with_retry handle payload ~attempts_left:50);
+      receive = (fun () -> Lwt_stream.get incoming);
+      close =
+        (fun () ->
+          closing := true;
+          (* tell the server we are leaving; if the connection is already
+             dead this fails, which is fine — perform is ending anyway *)
+          (try ignore (Curl.ws_send handle "" [ Curl.CURLWS_CLOSE ] : int) with _already_dead -> ());
+          Lwt.return_unit);
+    }
+  in
+  Lwt.return transport

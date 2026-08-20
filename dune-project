@@ -41,3 +41,13 @@
  (depends
   (ocaml (>= "4.14"))
   yojson))
+
+(package
+ (name cdp-lwt)
+ (synopsis "Lwt transport for the cdp library over libcurl WebSockets")
+ (depends
+  (ocaml (>= "4.14"))
+  (cdp (= :version))
+  curl
+  curl_lwt
+  lwt))
