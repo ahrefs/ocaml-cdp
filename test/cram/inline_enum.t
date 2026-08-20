@@ -58,7 +58,10 @@ In a named type: parent_field naming. In a command submodule: field name only.
   
   type result = unit [@@deriving show, eq]
   
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+  
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
   
   end
   

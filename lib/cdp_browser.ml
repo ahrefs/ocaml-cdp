@@ -18,7 +18,10 @@ module Set_permission = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -35,7 +38,10 @@ module Grant_permissions = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -50,7 +56,10 @@ module Reset_permissions = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_download_behavior = struct
@@ -75,7 +84,10 @@ module Set_download_behavior = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -91,7 +103,10 @@ module Cancel_download = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -100,7 +115,9 @@ module Close = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Crash = struct
@@ -108,7 +125,9 @@ module Crash = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -117,7 +136,9 @@ module Crash_gpu_process = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -132,12 +153,16 @@ module Get_version = struct
     js_version : string; [@key "jsVersion"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Get_browser_command_line = struct
   let name = "Browser.getBrowserCommandLine"
 
   type result = { arguments : string list [@key "arguments"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -151,6 +176,9 @@ module Get_histograms = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { histograms : histogram list [@key "histograms"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -164,6 +192,9 @@ module Get_histogram = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { histogram : histogram [@key "histogram"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -174,6 +205,9 @@ module Get_window_bounds = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { bounds : bounds [@key "bounds"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -188,6 +222,9 @@ module Get_window_for_target = struct
     bounds : bounds; [@key "bounds"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -202,7 +239,10 @@ module Set_window_bounds = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -218,7 +258,10 @@ module Set_contents_size = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -233,7 +276,10 @@ module Set_dock_tile = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -245,7 +291,10 @@ module Execute_browser_command = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -256,7 +305,10 @@ module Add_privacy_sandbox_enrollment_override = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Download_will_begin = struct
@@ -269,6 +321,8 @@ module Download_will_begin = struct
     suggested_filename : string; [@key "suggestedFilename"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -290,5 +344,7 @@ module Download_progress = struct
     file_path : string option; [@key "filePath"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]

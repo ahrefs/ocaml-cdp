@@ -10,6 +10,9 @@ module Collect_class_names_from_subtree = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { class_names : string list [@key "classNames"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -24,6 +27,9 @@ module Copy_to = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { node_id : Cdp_base.Dom.Node_id.t [@key "nodeId"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -40,6 +46,9 @@ module Describe_node = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { node : node [@key "node"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Scroll_into_view_if_needed = struct
@@ -55,7 +64,10 @@ module Scroll_into_view_if_needed = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Disable = struct
@@ -63,7 +75,9 @@ module Disable = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Discard_search_results = struct
@@ -73,7 +87,10 @@ module Discard_search_results = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -93,7 +110,10 @@ module Enable = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Focus = struct
@@ -108,7 +128,10 @@ module Focus = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Get_attributes = struct
@@ -118,6 +141,9 @@ module Get_attributes = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { attributes : string list [@key "attributes"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Get_box_model = struct
@@ -131,6 +157,9 @@ module Get_box_model = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { model : box_model [@key "model"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Get_content_quads = struct
@@ -144,6 +173,9 @@ module Get_content_quads = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { quads : quad list [@key "quads"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -157,6 +189,9 @@ module Get_document = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { root : node [@key "root"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Get_flattened_document = struct
@@ -169,6 +204,9 @@ module Get_flattened_document = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { nodes : node list [@key "nodes"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"]
 
@@ -184,6 +222,9 @@ module Get_nodes_for_subtree_by_style = struct
 
   type result = { node_ids : Cdp_base.Dom.Node_id.t list [@key "nodeIds"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -204,6 +245,9 @@ module Get_node_for_location = struct
     node_id : Cdp_base.Dom.Node_id.t option; [@key "nodeId"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Get_outer_html = struct
@@ -218,6 +262,9 @@ module Get_outer_html = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { outer_html : string [@key "outerHTML"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Get_relayout_boundary = struct
@@ -227,6 +274,9 @@ module Get_relayout_boundary = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { node_id : Cdp_base.Dom.Node_id.t [@key "nodeId"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -242,6 +292,9 @@ module Get_search_results = struct
 
   type result = { node_ids : Cdp_base.Dom.Node_id.t list [@key "nodeIds"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -250,7 +303,9 @@ module Hide_highlight = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Highlight_node = struct
@@ -258,7 +313,9 @@ module Highlight_node = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Highlight_rect = struct
@@ -266,7 +323,9 @@ module Highlight_rect = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Mark_undoable_state = struct
@@ -274,7 +333,9 @@ module Mark_undoable_state = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -289,6 +350,9 @@ module Move_to = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { node_id : Cdp_base.Dom.Node_id.t [@key "nodeId"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Perform_search = struct
@@ -305,6 +369,9 @@ module Perform_search = struct
     result_count : int; [@key "resultCount"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -314,6 +381,9 @@ module Push_node_by_path_to_frontend = struct
   type params = { path : string [@key "path"] } [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { node_id : Cdp_base.Dom.Node_id.t [@key "nodeId"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -325,6 +395,9 @@ module Push_nodes_by_backend_ids_to_frontend = struct
 
   type result = { node_ids : Cdp_base.Dom.Node_id.t list [@key "nodeIds"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -338,6 +411,9 @@ module Query_selector = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { node_id : Cdp_base.Dom.Node_id.t [@key "nodeId"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Query_selector_all = struct
@@ -351,6 +427,9 @@ module Query_selector_all = struct
 
   type result = { node_ids : Cdp_base.Dom.Node_id.t list [@key "nodeIds"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Get_top_layer_elements = struct
@@ -358,6 +437,8 @@ module Get_top_layer_elements = struct
 
   type result = { node_ids : Cdp_base.Dom.Node_id.t list [@key "nodeIds"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -378,6 +459,9 @@ module Get_element_by_relation = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { node_id : Cdp_base.Dom.Node_id.t [@key "nodeId"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -386,7 +470,9 @@ module Redo = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -401,7 +487,10 @@ module Remove_attribute = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Remove_node = struct
@@ -412,7 +501,10 @@ module Remove_node = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Request_child_nodes = struct
@@ -427,7 +519,10 @@ module Request_child_nodes = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Request_node = struct
@@ -437,6 +532,9 @@ module Request_node = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { node_id : Cdp_base.Dom.Node_id.t [@key "nodeId"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Resolve_node = struct
@@ -453,6 +551,9 @@ module Resolve_node = struct
 
   type result = { object_ : Cdp_runtime_types.remote_object [@key "object"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_attribute_value = struct
@@ -467,7 +568,10 @@ module Set_attribute_value = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_attributes_as_text = struct
@@ -482,7 +586,10 @@ module Set_attributes_as_text = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_file_input_files = struct
@@ -498,7 +605,10 @@ module Set_file_input_files = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_node_stack_traces_enabled = struct
@@ -508,7 +618,10 @@ module Set_node_stack_traces_enabled = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -520,6 +633,9 @@ module Get_node_stack_traces = struct
 
   type result = { creation : Cdp_runtime_types.stack_trace option [@key "creation"] [@option] [@json.drop_default] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -530,6 +646,9 @@ module Get_file_info = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { path : string [@key "path"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -538,6 +657,8 @@ module Get_detached_dom_nodes = struct
 
   type result = { detached_nodes : detached_element_info list [@key "detachedNodes"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -549,7 +670,10 @@ module Set_inspected_node = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -563,6 +687,9 @@ module Set_node_name = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { node_id : Cdp_base.Dom.Node_id.t [@key "nodeId"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_node_value = struct
@@ -576,7 +703,10 @@ module Set_node_value = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_outer_html = struct
@@ -590,7 +720,10 @@ module Set_outer_html = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Undo = struct
@@ -598,7 +731,9 @@ module Undo = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -613,6 +748,9 @@ module Get_frame_owner = struct
     node_id : Cdp_base.Dom.Node_id.t option; [@key "nodeId"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -631,6 +769,9 @@ module Get_container_for_node = struct
 
   type result = { node_id : Cdp_base.Dom.Node_id.t option [@key "nodeId"] [@option] [@json.drop_default] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -642,6 +783,9 @@ module Get_querying_descendants_for_container = struct
 
   type result = { node_ids : Cdp_base.Dom.Node_id.t list [@key "nodeIds"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -655,6 +799,9 @@ module Get_anchor_element = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { node_id : Cdp_base.Dom.Node_id.t [@key "nodeId"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -670,6 +817,9 @@ module Force_show_popover = struct
 
   type result = { node_ids : Cdp_base.Dom.Node_id.t list [@key "nodeIds"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -684,7 +834,10 @@ module Force_show_interest = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -697,6 +850,8 @@ module Attribute_modified = struct
     value : string; [@key "value"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Adopted_style_sheets_modified = struct
@@ -707,6 +862,8 @@ module Adopted_style_sheets_modified = struct
     adopted_style_sheets : Cdp_base.Dom.Style_sheet_id.t list; [@key "adoptedStyleSheets"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -718,6 +875,8 @@ module Attribute_removed = struct
     name : string; [@key "name"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Character_data_modified = struct
@@ -728,6 +887,8 @@ module Character_data_modified = struct
     character_data : string; [@key "characterData"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Child_node_count_updated = struct
@@ -738,6 +899,8 @@ module Child_node_count_updated = struct
     child_node_count : int; [@key "childNodeCount"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Child_node_inserted = struct
@@ -749,6 +912,8 @@ module Child_node_inserted = struct
     node : node; [@key "node"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Child_node_removed = struct
@@ -759,6 +924,8 @@ module Child_node_removed = struct
     node_id : Cdp_base.Dom.Node_id.t; [@key "nodeId"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Distributed_nodes_updated = struct
@@ -769,11 +936,19 @@ module Distributed_nodes_updated = struct
     distributed_nodes : backend_node list; [@key "distributedNodes"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
 module Document_updated = struct
   let name = "DOM.documentUpdated"
+
+  type params = unit [@@deriving show, eq]
+
+  let params_of_json (_ignored_payload : Cdp_json.t) : params = ()
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Inline_style_invalidated = struct
@@ -781,6 +956,8 @@ module Inline_style_invalidated = struct
 
   type params = { node_ids : Cdp_base.Dom.Node_id.t list [@key "nodeIds"] }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -792,11 +969,19 @@ module Pseudo_element_added = struct
     pseudo_element : node; [@key "pseudoElement"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
 module Top_layer_elements_updated = struct
   let name = "DOM.topLayerElementsUpdated"
+
+  type params = unit [@@deriving show, eq]
+
+  let params_of_json (_ignored_payload : Cdp_json.t) : params = ()
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -808,6 +993,8 @@ module Scrollable_flag_updated = struct
     is_scrollable : bool; [@key "isScrollable"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -819,6 +1006,8 @@ module Ad_related_state_updated = struct
     ad_provenance : Cdp_network_types.ad_provenance option; [@key "adProvenance"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -830,6 +1019,8 @@ module Affected_by_starting_styles_flag_updated = struct
     affected_by_starting_styles : bool; [@key "affectedByStartingStyles"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -841,6 +1032,8 @@ module Pseudo_element_removed = struct
     pseudo_element_id : Cdp_base.Dom.Node_id.t; [@key "pseudoElementId"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -852,6 +1045,8 @@ module Set_child_nodes = struct
     nodes : node list; [@key "nodes"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Shadow_root_popped = struct
@@ -862,6 +1057,8 @@ module Shadow_root_popped = struct
     root_id : Cdp_base.Dom.Node_id.t; [@key "rootId"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -873,5 +1070,7 @@ module Shadow_root_pushed = struct
     root : node; [@key "root"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]

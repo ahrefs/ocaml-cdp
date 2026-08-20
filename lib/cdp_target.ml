@@ -11,7 +11,10 @@ module Activate_target = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Attach_to_target = struct
@@ -25,6 +28,9 @@ module Attach_to_target = struct
 
   type result = { session_id : Cdp_base.Target.Session_id.t [@key "sessionId"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Attach_to_browser_target = struct
@@ -32,6 +38,8 @@ module Attach_to_browser_target = struct
 
   type result = { session_id : Cdp_base.Target.Session_id.t [@key "sessionId"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -42,6 +50,9 @@ module Close_target = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { success : bool [@key "success"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Expose_dev_tools_protocol = struct
@@ -56,7 +67,10 @@ module Expose_dev_tools_protocol = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -74,6 +88,9 @@ module Create_browser_context = struct
 
   type result = { browser_context_id : Cdp_base.Browser.Browser_context_id.t [@key "browserContextId"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Get_browser_contexts = struct
@@ -85,6 +102,8 @@ module Get_browser_contexts = struct
        [@key "defaultBrowserContextId"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Create_target = struct
@@ -110,6 +129,9 @@ module Create_target = struct
 
   type result = { target_id : Cdp_base.Target.Target_id.t [@key "targetId"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Detach_from_target = struct
@@ -123,7 +145,10 @@ module Detach_from_target = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Dispose_browser_context = struct
@@ -134,7 +159,10 @@ module Dispose_browser_context = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Get_target_info = struct
@@ -144,6 +172,9 @@ module Get_target_info = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { target_info : target_info [@key "targetInfo"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -155,6 +186,9 @@ module Get_targets = struct
 
   type result = { target_infos : target_info list [@key "targetInfos"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Send_message_to_target = struct
@@ -169,7 +203,10 @@ module Send_message_to_target = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"]
 
@@ -186,7 +223,10 @@ module Set_auto_attach = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Auto_attach_related = struct
@@ -201,7 +241,10 @@ module Auto_attach_related = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -216,7 +259,10 @@ module Set_discover_targets = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_remote_locations = struct
@@ -227,7 +273,10 @@ module Set_remote_locations = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -239,6 +288,9 @@ module Get_dev_tools_target = struct
 
   type result = { target_id : Cdp_base.Target.Target_id.t option [@key "targetId"] [@option] [@json.drop_default] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -253,6 +305,9 @@ module Open_dev_tools = struct
 
   type result = { target_id : Cdp_base.Target.Target_id.t [@key "targetId"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -265,6 +320,8 @@ module Attached_to_target = struct
     waiting_for_debugger : bool; [@key "waitingForDebugger"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -276,6 +333,8 @@ module Detached_from_target = struct
     target_id : Cdp_base.Target.Target_id.t option; [@key "targetId"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -288,6 +347,8 @@ module Received_message_from_target = struct
     target_id : Cdp_base.Target.Target_id.t option; [@key "targetId"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Target_created = struct
@@ -295,6 +356,8 @@ module Target_created = struct
 
   type params = { target_info : target_info [@key "targetInfo"] }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Target_destroyed = struct
@@ -302,6 +365,8 @@ module Target_destroyed = struct
 
   type params = { target_id : Cdp_base.Target.Target_id.t [@key "targetId"] }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Target_crashed = struct
@@ -313,6 +378,8 @@ module Target_crashed = struct
     error_code : int; [@key "errorCode"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Target_info_changed = struct
@@ -320,4 +387,6 @@ module Target_info_changed = struct
 
   type params = { target_info : target_info [@key "targetInfo"] }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end

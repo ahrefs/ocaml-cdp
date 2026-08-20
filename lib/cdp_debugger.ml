@@ -20,7 +20,10 @@ module Continue_to_location = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Disable = struct
@@ -28,7 +31,9 @@ module Disable = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Enable = struct
@@ -39,6 +44,9 @@ module Enable = struct
 
   type result = { debugger_id : Cdp_base.Runtime.Unique_debugger_id.t [@key "debuggerId"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Evaluate_on_call_frame = struct
@@ -64,6 +72,9 @@ module Evaluate_on_call_frame = struct
        [@key "exceptionDetails"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Get_possible_breakpoints = struct
@@ -78,6 +89,9 @@ module Get_possible_breakpoints = struct
 
   type result = { locations : break_location list [@key "locations"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Get_script_source = struct
@@ -91,6 +105,9 @@ module Get_script_source = struct
     bytecode : string option; [@key "bytecode"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Disassemble_wasm_module = struct
@@ -106,6 +123,9 @@ module Disassemble_wasm_module = struct
     chunk : wasm_disassembly_chunk; [@key "chunk"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -115,6 +135,9 @@ module Next_wasm_disassembly_chunk = struct
   type params = { stream_id : string [@key "streamId"] } [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { chunk : wasm_disassembly_chunk [@key "chunk"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -125,6 +148,9 @@ module Get_wasm_bytecode = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { bytecode : string [@key "bytecode"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"]
 
@@ -136,6 +162,9 @@ module Get_stack_trace = struct
 
   type result = { stack_trace : Cdp_runtime_types.stack_trace [@key "stackTrace"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -144,7 +173,9 @@ module Pause = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Pause_on_async_call = struct
@@ -155,7 +186,10 @@ module Pause_on_async_call = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -167,7 +201,10 @@ module Remove_breakpoint = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Restart_frame = struct
@@ -191,6 +228,9 @@ module Restart_frame = struct
        [@key "asyncStackTraceId"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Resume = struct
@@ -201,7 +241,10 @@ module Resume = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Search_in_content = struct
@@ -216,6 +259,9 @@ module Search_in_content = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { result : search_match list [@key "result"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_async_call_stack_depth = struct
@@ -225,7 +271,10 @@ module Set_async_call_stack_depth = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_blackbox_execution_contexts = struct
@@ -235,7 +284,10 @@ module Set_blackbox_execution_contexts = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -250,7 +302,10 @@ module Set_blackbox_patterns = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -265,7 +320,10 @@ module Set_blackboxed_ranges = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -283,6 +341,9 @@ module Set_breakpoint = struct
     actual_location : location; [@key "actualLocation"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_instrumentation_breakpoint = struct
@@ -299,6 +360,9 @@ module Set_instrumentation_breakpoint = struct
 
   type result = { breakpoint_id : Cdp_base.Debugger.Breakpoint_id.t [@key "breakpointId"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_breakpoint_by_url = struct
@@ -319,6 +383,9 @@ module Set_breakpoint_by_url = struct
     locations : location list; [@key "locations"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_breakpoint_on_function_call = struct
@@ -332,6 +399,9 @@ module Set_breakpoint_on_function_call = struct
 
   type result = { breakpoint_id : Cdp_base.Debugger.Breakpoint_id.t [@key "breakpointId"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -342,7 +412,10 @@ module Set_breakpoints_active = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_pause_on_exceptions = struct
@@ -360,7 +433,10 @@ module Set_pause_on_exceptions = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_return_value = struct
@@ -371,7 +447,10 @@ module Set_return_value = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -406,6 +485,9 @@ module Set_script_source = struct
        [@key "exceptionDetails"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"]
 
@@ -416,7 +498,10 @@ module Set_skip_all_pauses = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_variable_value = struct
@@ -432,7 +517,10 @@ module Set_variable_value = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Step_into = struct
@@ -446,7 +534,10 @@ module Step_into = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Step_out = struct
@@ -454,7 +545,9 @@ module Step_out = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Step_over = struct
@@ -465,7 +558,10 @@ module Step_over = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Breakpoint_resolved = struct
@@ -476,6 +572,8 @@ module Breakpoint_resolved = struct
     location : location; [@key "location"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"]
 
@@ -511,10 +609,18 @@ module Paused = struct
        [@key "asyncCallStackTraceId"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Resumed = struct
   let name = "Debugger.resumed"
+
+  type params = unit [@@deriving show, eq]
+
+  let params_of_json (_ignored_payload : Cdp_json.t) : params = ()
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Script_failed_to_parse = struct
@@ -541,6 +647,8 @@ module Script_failed_to_parse = struct
     embedder_name : string option; [@key "embedderName"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Script_parsed = struct
@@ -570,4 +678,6 @@ module Script_parsed = struct
     resolved_breakpoints : resolved_breakpoint list option; [@key "resolvedBreakpoints"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end

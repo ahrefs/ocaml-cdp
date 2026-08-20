@@ -3,7 +3,17 @@
  (modules test_decode)
  (libraries cdp yojson))
 
+(executable
+ (name test_envelope)
+ (modules test_envelope)
+ (libraries cdp yojson))
+
 (rule
  (alias runtest)
  (action
   (run ./test_decode.exe)))
+
+(rule
+ (alias runtest)
+ (action
+  (run ./test_envelope.exe)))

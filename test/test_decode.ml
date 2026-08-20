@@ -124,4 +124,23 @@ let () =
   assert (Cdp.Network.Monotonic_time.to_float ev.timestamp = 123.5);
   pass "Page.Load_event_fired event submodule"
 
+(* 10. typed command seam: generated modules build ready-to-send commands *)
+let () =
+  let params = Cdp.Network.Get_response_body.make_params ~request_id:(Cdp.Network.Request_id.of_string "R1") in
+  let command = Cdp.Network.Get_response_body.command params in
+  assert (command.Cdp.Command.name = "Network.getResponseBody");
+  assert (command.Cdp.Command.params = Some (`Assoc [ "requestId", `String "R1" ]));
+  let result = command.Cdp.Command.parse (Yojson.Basic.from_string {|{"body":"<html>","base64Encoded":false}|}) in
+  assert (result.body = "<html>");
+  pass "typed command seam (params, name, result parsing)"
+
+(* 11. typed event seam, including a params-less event parsing to unit *)
+let () =
+  let event = Cdp.Page.Load_event_fired.event in
+  assert (event.Cdp.Event.name = "Page.loadEventFired");
+  let params = event.Cdp.Event.parse (Yojson.Basic.from_string {|{"timestamp":123.5}|}) in
+  assert (Cdp.Network.Monotonic_time.to_float params.timestamp = 123.5);
+  assert (Cdp.Page.Interstitial_shown.event.Cdp.Event.parse (`Assoc []) = ());
+  pass "typed event seam (name, payload parsing, unit events)"
+
 let () = print_endline "all tests passed"

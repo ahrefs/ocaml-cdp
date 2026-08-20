@@ -3,6 +3,9 @@
 (* Index: users write Cdp.Network, Cdp.Page, ... *)
 
 module Json = Cdp_json
+module Command = Cdp_command
+module Event = Cdp_event
+module Envelope = Cdp_envelope
 module Base = Cdp_base
 module Browser = Cdp_browser
 module Browser_types = Cdp_browser_types

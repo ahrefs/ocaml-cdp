@@ -18,6 +18,9 @@ module Await_promise = struct
     exception_details : exception_details option; [@key "exceptionDetails"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Call_function_on = struct
@@ -46,6 +49,9 @@ module Call_function_on = struct
     exception_details : exception_details option; [@key "exceptionDetails"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Compile_script = struct
@@ -65,6 +71,9 @@ module Compile_script = struct
     exception_details : exception_details option; [@key "exceptionDetails"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Disable = struct
@@ -72,7 +81,9 @@ module Disable = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Discard_console_entries = struct
@@ -80,7 +91,9 @@ module Discard_console_entries = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Enable = struct
@@ -88,7 +101,9 @@ module Enable = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Evaluate = struct
@@ -119,12 +134,17 @@ module Evaluate = struct
     exception_details : exception_details option; [@key "exceptionDetails"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Get_isolate_id = struct
   let name = "Runtime.getIsolateId"
 
   type result = { id : string [@key "id"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -138,6 +158,8 @@ module Get_heap_usage = struct
     backing_storage_size : float; [@key "backingStorageSize"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -162,6 +184,9 @@ module Get_properties = struct
     exception_details : exception_details option; [@key "exceptionDetails"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Global_lexical_scope_names = struct
@@ -174,6 +199,9 @@ module Global_lexical_scope_names = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { names : string list [@key "names"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Query_objects = struct
@@ -186,6 +214,9 @@ module Query_objects = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { objects : remote_object [@key "objects"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Release_object = struct
@@ -196,7 +227,10 @@ module Release_object = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Release_object_group = struct
@@ -206,7 +240,10 @@ module Release_object_group = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Run_if_waiting_for_debugger = struct
@@ -214,7 +251,9 @@ module Run_if_waiting_for_debugger = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Run_script = struct
@@ -238,6 +277,9 @@ module Run_script = struct
     exception_details : exception_details option; [@key "exceptionDetails"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_async_call_stack_depth = struct
@@ -247,7 +289,10 @@ module Set_async_call_stack_depth = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_custom_object_formatter_enabled = struct
@@ -257,7 +302,10 @@ module Set_custom_object_formatter_enabled = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -268,7 +316,10 @@ module Set_max_call_stack_size_to_capture = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -277,7 +328,9 @@ module Terminate_execution = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -294,7 +347,10 @@ module Add_binding = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Remove_binding = struct
@@ -304,7 +360,10 @@ module Remove_binding = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Get_exception_details = struct
@@ -317,6 +376,9 @@ module Get_exception_details = struct
     exception_details : exception_details option; [@key "exceptionDetails"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -329,6 +391,8 @@ module Binding_called = struct
     execution_context_id : Cdp_base.Runtime.Execution_context_id.t; [@key "executionContextId"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -366,6 +430,8 @@ module Console_api_called = struct
     context : string option; [@key "context"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Exception_revoked = struct
@@ -376,6 +442,8 @@ module Exception_revoked = struct
     exception_id : int; [@key "exceptionId"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Exception_thrown = struct
@@ -386,6 +454,8 @@ module Exception_thrown = struct
     exception_details : exception_details; [@key "exceptionDetails"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Execution_context_created = struct
@@ -393,6 +463,8 @@ module Execution_context_created = struct
 
   type params = { context : execution_context_description [@key "context"] }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Execution_context_destroyed = struct
@@ -403,10 +475,18 @@ module Execution_context_destroyed = struct
     execution_context_unique_id : string; [@key "executionContextUniqueId"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Execution_contexts_cleared = struct
   let name = "Runtime.executionContextsCleared"
+
+  type params = unit [@@deriving show, eq]
+
+  let params_of_json (_ignored_payload : Cdp_json.t) : params = ()
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Inspect_requested = struct
@@ -419,4 +499,6 @@ module Inspect_requested = struct
        [@key "executionContextId"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end

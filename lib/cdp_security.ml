@@ -8,7 +8,9 @@ module Disable = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Enable = struct
@@ -16,7 +18,9 @@ module Enable = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Set_ignore_certificate_errors = struct
@@ -26,7 +30,10 @@ module Set_ignore_certificate_errors = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Handle_certificate_error = struct
@@ -40,7 +47,10 @@ module Handle_certificate_error = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"]
 
@@ -51,7 +61,10 @@ module Set_override_certificate_errors = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"]
 
@@ -64,6 +77,8 @@ module Certificate_error = struct
     request_url : string; [@key "requestURL"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"]
 
@@ -72,6 +87,8 @@ module Visible_security_state_changed = struct
 
   type params = { visible_security_state : visible_security_state [@key "visibleSecurityState"] }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -86,5 +103,7 @@ module Security_state_changed = struct
     summary : string option; [@key "summary"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"]

@@ -72,7 +72,7 @@ check-full: ## Generate ALL protocol domains into a throwaway project and compil
 	@rm -rf $(FULL_CHECK_DIR) && mkdir -p $(FULL_CHECK_DIR)/lib
 	@cp protocol/browser_protocol.json protocol/js_protocol.json protocol/REVISION $(FULL_CHECK_DIR)/
 	@printf '(lang dune 3.16)\n' > $(FULL_CHECK_DIR)/dune-project
-	@cp lib/cdp_json.ml $(FULL_CHECK_DIR)/lib/
+	@cp lib/cdp_json.ml lib/cdp_command.ml lib/cdp_event.ml lib/cdp_envelope.ml $(FULL_CHECK_DIR)/lib/
 	@printf '(library\n (name cdp)\n (wrapped false)\n (libraries melange-json-native yojson)\n (preprocess\n  (pps melange-json-native.ppx ppx_deriving.show ppx_deriving.eq ppx_deriving.make))\n (flags (:standard -w -a -alert -all)))\n' > $(FULL_CHECK_DIR)/lib/dune
 	$(DUNE) exec gen/gen.exe -- generate \
 	  $(FULL_CHECK_DIR)/browser_protocol.json $(FULL_CHECK_DIR)/js_protocol.json $(FULL_CHECK_DIR)/lib all

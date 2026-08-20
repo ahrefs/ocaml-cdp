@@ -11,7 +11,10 @@ module Close = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Read = struct
@@ -30,6 +33,9 @@ module Read = struct
     eof : bool; [@key "eof"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Resolve_blob = struct
@@ -39,4 +45,7 @@ module Resolve_blob = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { uuid : string [@key "uuid"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end

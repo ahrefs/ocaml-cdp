@@ -11,6 +11,9 @@ module Add_script_to_evaluate_on_load = struct
 
   type result = { identifier : Cdp_base.Page.Script_identifier.t [@key "identifier"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -27,6 +30,9 @@ module Add_script_to_evaluate_on_new_document = struct
 
   type result = { identifier : Cdp_base.Page.Script_identifier.t [@key "identifier"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Bring_to_front = struct
@@ -34,7 +40,9 @@ module Bring_to_front = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Capture_screenshot = struct
@@ -58,6 +66,9 @@ module Capture_screenshot = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { data : string [@key "data"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Capture_snapshot = struct
@@ -72,6 +83,9 @@ module Capture_snapshot = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { data : string [@key "data"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -80,7 +94,9 @@ module Clear_device_metrics_override = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -89,7 +105,9 @@ module Clear_device_orientation_override = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -98,7 +116,9 @@ module Clear_geolocation_override = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"]
 
@@ -115,6 +135,9 @@ module Create_isolated_world = struct
 
   type result = { execution_context_id : Cdp_base.Runtime.Execution_context_id.t [@key "executionContextId"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Delete_cookie = struct
@@ -128,7 +151,10 @@ module Delete_cookie = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -137,7 +163,9 @@ module Disable = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Enable = struct
@@ -150,7 +178,10 @@ module Enable = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Get_app_manifest = struct
@@ -167,6 +198,9 @@ module Get_app_manifest = struct
     manifest : web_app_manifest; [@key "manifest"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Get_installability_errors = struct
@@ -174,6 +208,8 @@ module Get_installability_errors = struct
 
   type result = { installability_errors : installability_error list [@key "installabilityErrors"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -182,6 +218,8 @@ module Get_manifest_icons = struct
 
   type result = { primary_icon : string option [@key "primaryIcon"] [@option] [@json.drop_default] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -193,6 +231,8 @@ module Get_app_id = struct
     recommended_id : string option; [@key "recommendedId"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -206,6 +246,9 @@ module Get_ad_script_ancestry = struct
     ad_script_ancestry : Cdp_network_types.ad_ancestry option; [@key "adScriptAncestry"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -213,6 +256,8 @@ module Get_frame_tree = struct
   let name = "Page.getFrameTree"
 
   type result = { frame_tree : frame_tree [@key "frameTree"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Get_layout_metrics = struct
@@ -227,6 +272,8 @@ module Get_layout_metrics = struct
     css_content_size : Cdp_dom_types.rect; [@key "cssContentSize"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Get_navigation_history = struct
@@ -237,6 +284,8 @@ module Get_navigation_history = struct
     entries : navigation_entry list; [@key "entries"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Reset_navigation_history = struct
@@ -244,7 +293,9 @@ module Reset_navigation_history = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Get_resource_content = struct
@@ -261,6 +312,9 @@ module Get_resource_content = struct
     base64_encoded : bool; [@key "base64Encoded"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -269,6 +323,8 @@ module Get_resource_tree = struct
 
   type result = { frame_tree : frame_resource_tree [@key "frameTree"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -283,7 +339,10 @@ module Handle_java_script_dialog = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Navigate = struct
@@ -305,6 +364,9 @@ module Navigate = struct
     is_download : bool option; [@key "isDownload"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Navigate_to_history_entry = struct
@@ -314,7 +376,10 @@ module Navigate_to_history_entry = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Print_to_pdf = struct
@@ -352,6 +417,9 @@ module Print_to_pdf = struct
     stream : Cdp_base.Io.Stream_handle.t option; [@key "stream"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Reload = struct
@@ -366,7 +434,10 @@ module Reload = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Remove_script_to_evaluate_on_load = struct
@@ -377,7 +448,10 @@ module Remove_script_to_evaluate_on_load = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -389,7 +463,10 @@ module Remove_script_to_evaluate_on_new_document = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Screencast_frame_ack = struct
@@ -399,7 +476,10 @@ module Screencast_frame_ack = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -417,6 +497,9 @@ module Search_in_resource = struct
 
   type result = { result : Cdp_debugger_types.search_match list [@key "result"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -427,7 +510,10 @@ module Set_ad_blocking_enabled = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -438,7 +524,10 @@ module Set_bypass_csp = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Get_permissions_policy_state = struct
@@ -449,6 +538,9 @@ module Get_permissions_policy_state = struct
 
   type result = { states : permissions_policy_feature_state list [@key "states"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -460,6 +552,9 @@ module Get_origin_trials = struct
 
   type result = { origin_trials : origin_trial list [@key "originTrials"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -485,7 +580,10 @@ module Set_device_metrics_override = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -501,7 +599,10 @@ module Set_device_orientation_override = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -516,7 +617,10 @@ module Set_font_families = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -527,7 +631,10 @@ module Set_font_sizes = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -542,7 +649,10 @@ module Set_document_content = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_download_behavior = struct
@@ -563,7 +673,10 @@ module Set_download_behavior = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -579,7 +692,10 @@ module Set_geolocation_override = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"]
 
@@ -590,7 +706,10 @@ module Set_lifecycle_events_enabled = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_touch_emulation_enabled = struct
@@ -610,7 +729,10 @@ module Set_touch_emulation_enabled = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -634,7 +756,10 @@ module Start_screencast = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -651,6 +776,9 @@ module Start_screen_recording = struct
 
   type result = { stream : Cdp_base.Io.Stream_handle.t [@key "stream"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -659,6 +787,8 @@ module Stop_screen_recording = struct
 
   type result = { stream : Cdp_base.Io.Stream_handle.t [@key "stream"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -667,7 +797,9 @@ module Stop_loading = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Crash = struct
@@ -675,7 +807,9 @@ module Crash = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -684,7 +818,9 @@ module Close = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Set_web_lifecycle_state = struct
@@ -700,7 +836,10 @@ module Set_web_lifecycle_state = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -709,7 +848,9 @@ module Stop_screencast = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -721,7 +862,10 @@ module Produce_compilation_cache = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -736,7 +880,10 @@ module Add_compilation_cache = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -745,7 +892,9 @@ module Clear_compilation_cache = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -765,7 +914,10 @@ module Set_spc_transaction_mode = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -783,7 +935,10 @@ module Set_rph_registration_mode = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -798,7 +953,10 @@ module Generate_test_report = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -807,7 +965,9 @@ module Wait_for_debugger = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -822,7 +982,10 @@ module Set_intercept_file_chooser_dialog = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_prerendering_allowed = struct
@@ -832,7 +995,10 @@ module Set_prerendering_allowed = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -845,6 +1011,9 @@ module Get_annotated_page_content = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { content : string [@key "content"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -853,6 +1022,8 @@ module Dom_content_event_fired = struct
 
   type params = { timestamp : Cdp_base.Network.Monotonic_time.t [@key "timestamp"] }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module File_chooser_opened = struct
@@ -870,6 +1041,8 @@ module File_chooser_opened = struct
     backend_node_id : Cdp_base.Dom.Backend_node_id.t option; [@key "backendNodeId"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Frame_attached = struct
@@ -881,6 +1054,8 @@ module Frame_attached = struct
     stack : Cdp_runtime_types.stack_trace option; [@key "stack"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Frame_cleared_scheduled_navigation = struct
@@ -888,6 +1063,8 @@ module Frame_cleared_scheduled_navigation = struct
 
   type params = { frame_id : Cdp_base.Page.Frame_id.t [@key "frameId"] }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"]
 
@@ -905,6 +1082,8 @@ module Frame_detached = struct
     reason : reason; [@key "reason"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Frame_subtree_will_be_detached = struct
@@ -912,6 +1091,8 @@ module Frame_subtree_will_be_detached = struct
 
   type params = { frame_id : Cdp_base.Page.Frame_id.t [@key "frameId"] }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -923,17 +1104,27 @@ module Frame_navigated = struct
     type_ : navigation_type; [@key "type"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Document_opened = struct
   let name = "Page.documentOpened"
 
   type params = { frame : frame [@key "frame"] } [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
 module Frame_resized = struct
   let name = "Page.frameResized"
+
+  type params = unit [@@deriving show, eq]
+
+  let params_of_json (_ignored_payload : Cdp_json.t) : params = ()
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -959,6 +1150,8 @@ module Frame_started_navigating = struct
     navigation_type : navigation_type; [@key "navigationType"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -972,6 +1165,8 @@ module Frame_requested_navigation = struct
     disposition : client_navigation_disposition; [@key "disposition"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -985,6 +1180,8 @@ module Frame_scheduled_navigation = struct
     url : string; [@key "url"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"]
 
@@ -993,6 +1190,8 @@ module Frame_started_loading = struct
 
   type params = { frame_id : Cdp_base.Page.Frame_id.t [@key "frameId"] }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -1001,6 +1200,8 @@ module Frame_stopped_loading = struct
 
   type params = { frame_id : Cdp_base.Page.Frame_id.t [@key "frameId"] }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -1014,6 +1215,8 @@ module Download_will_begin = struct
     suggested_filename : string; [@key "suggestedFilename"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -1034,15 +1237,29 @@ module Download_progress = struct
     state : state; [@key "state"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
 module Interstitial_hidden = struct
   let name = "Page.interstitialHidden"
+
+  type params = unit [@@deriving show, eq]
+
+  let params_of_json (_ignored_payload : Cdp_json.t) : params = ()
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Interstitial_shown = struct
   let name = "Page.interstitialShown"
+
+  type params = unit [@@deriving show, eq]
+
+  let params_of_json (_ignored_payload : Cdp_json.t) : params = ()
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Javascript_dialog_closed = struct
@@ -1054,6 +1271,8 @@ module Javascript_dialog_closed = struct
     user_input : string; [@key "userInput"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Javascript_dialog_opening = struct
@@ -1068,6 +1287,8 @@ module Javascript_dialog_opening = struct
     default_prompt : string option; [@key "defaultPrompt"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Lifecycle_event = struct
@@ -1080,6 +1301,8 @@ module Lifecycle_event = struct
     timestamp : Cdp_base.Network.Monotonic_time.t; [@key "timestamp"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Back_forward_cache_not_used = struct
@@ -1093,6 +1316,8 @@ module Back_forward_cache_not_used = struct
        [@key "notRestoredExplanationsTree"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -1101,6 +1326,8 @@ module Load_event_fired = struct
 
   type params = { timestamp : Cdp_base.Network.Monotonic_time.t [@key "timestamp"] }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Navigated_within_document = struct
@@ -1119,6 +1346,8 @@ module Navigated_within_document = struct
     navigation_type : navigation_type; [@key "navigationType"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -1131,6 +1360,8 @@ module Screencast_frame = struct
     session_id : int; [@key "sessionId"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -1138,6 +1369,8 @@ module Screencast_visibility_changed = struct
   let name = "Page.screencastVisibilityChanged"
 
   type params = { visible : bool [@key "visible"] } [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -1151,6 +1384,8 @@ module Window_open = struct
     user_gesture : bool; [@key "userGesture"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Compilation_cache_produced = struct
@@ -1161,5 +1396,7 @@ module Compilation_cache_produced = struct
     data : string; [@key "data"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]

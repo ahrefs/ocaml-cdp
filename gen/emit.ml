@@ -238,17 +238,38 @@ let emit_item_module ~selected ~alias_tbl ~domain ~mname ~wire_name ~attrs ~para
       (render_chain ~deriving:(if make then "json, show, eq, make" else "json, show, eq") [ record ]);
     Buffer.add_string buf "\n"
   in
-  (match params with
-  | [] -> ()
-  | props -> block ~tname:"params" ~make:true props);
-  (match returns with
-  | `Event -> ()
-  | `Returns [] ->
-    (* zero-return command. CDP answers {} while derived unit codecs expect
-       null, so the json decoder stays hand-written. *)
+  (match params, returns with
+  | [], `Event ->
+    (* params-less event: unit payload, mirroring zero-return commands *)
+    local_names := !local_names @ [ "params" ];
     Buffer.add_string buf
-      "type result = unit [@@deriving show, eq]\n\nlet result_of_json (_ : Cdp_json.t) : result = ()\n\n"
-  | `Returns props -> block ~tname:"result" ~make:false props);
+      "type params = unit [@@deriving show, eq]\n\nlet params_of_json (_ignored_payload : Cdp_json.t) : params = ()\n\n"
+  | [], `Returns _ -> ()
+  | props, _command_or_event -> block ~tname:"params" ~make:true props);
+  (match returns with
+  | `Event ->
+    (* the typed seam a transport subscribes with *)
+    Buffer.add_string buf "let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }\n\n"
+  | `Returns props ->
+    (match props with
+    | [] ->
+      (* zero-return command. CDP answers {} while derived unit codecs expect
+         null, so the json decoder stays hand-written. *)
+      local_names := !local_names @ [ "result" ];
+      Buffer.add_string buf
+        "type result = unit [@@deriving show, eq]\n\n\
+         let result_of_json (_ignored_payload : Cdp_json.t) : result = ()\n\n"
+    | _returned_fields -> block ~tname:"result" ~make:false props);
+    (* the typed seam a transport sends: a value when there are no params,
+       a function of the params record otherwise *)
+    (match params with
+    | [] ->
+      Buffer.add_string buf
+        "let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }\n\n"
+    | _params_fields ->
+      Buffer.add_string buf
+        "let command params : result Cdp_command.t =\n\
+        \  { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }\n\n"));
   check_no_dup ~what:(spf "type name in %s.%s" domain mname) !local_names;
   Buffer.add_string buf (spf "end%s\n\n" attrs);
   Buffer.contents buf
@@ -304,7 +325,12 @@ let emit_index domains =
   let buf = Buffer.create 512 in
   Buffer.add_string buf (header ());
   Buffer.add_string buf "(* Index: users write Cdp.Network, Cdp.Page, ... *)\n\n";
-  Buffer.add_string buf "module Json = Cdp_json\nmodule Base = Cdp_base\n";
+  Buffer.add_string buf
+    "module Json = Cdp_json\n\
+     module Command = Cdp_command\n\
+     module Event = Cdp_event\n\
+     module Envelope = Cdp_envelope\n\
+     module Base = Cdp_base\n";
   List.iter
     (fun (domain : domain) ->
       Buffer.add_string buf

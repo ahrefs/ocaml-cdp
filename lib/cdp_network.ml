@@ -7,6 +7,8 @@ module Can_clear_browser_cache = struct
   let name = "Network.canClearBrowserCache"
 
   type result = { result : bool [@key "result"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"]
 
@@ -14,6 +16,8 @@ module Can_clear_browser_cookies = struct
   let name = "Network.canClearBrowserCookies"
 
   type result = { result : bool [@key "result"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"]
 
@@ -21,6 +25,8 @@ module Can_emulate_network_conditions = struct
   let name = "Network.canEmulateNetworkConditions"
 
   type result = { result : bool [@key "result"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"]
 
@@ -29,7 +35,9 @@ module Clear_browser_cache = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Clear_browser_cookies = struct
@@ -37,7 +45,9 @@ module Clear_browser_cookies = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Delete_cookies = struct
@@ -54,7 +64,10 @@ module Delete_cookies = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Disable = struct
@@ -62,7 +75,9 @@ module Disable = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 
 module Emulate_network_conditions = struct
@@ -82,7 +97,10 @@ module Emulate_network_conditions = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"]
 
@@ -97,6 +115,9 @@ module Emulate_network_conditions_by_rule = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { rule_ids : string list [@key "ruleIds"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -114,7 +135,10 @@ module Override_network_state = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -132,7 +156,10 @@ module Enable = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Configure_durable_messages = struct
@@ -146,7 +173,10 @@ module Configure_durable_messages = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -154,6 +184,8 @@ module Get_all_cookies = struct
   let name = "Network.getAllCookies"
 
   type result = { cookies : cookie list [@key "cookies"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
 [@@ocaml.deprecated "deprecated in CDP"]
 
@@ -163,6 +195,9 @@ module Get_certificate = struct
   type params = { origin : string [@key "origin"] } [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { table_names : string list [@key "tableNames"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -173,6 +208,9 @@ module Get_cookies = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { cookies : cookie list [@key "cookies"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Get_response_body = struct
@@ -186,6 +224,9 @@ module Get_response_body = struct
     base64_encoded : bool; [@key "base64Encoded"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Get_request_post_data = struct
@@ -199,6 +240,9 @@ module Get_request_post_data = struct
     base64_encoded : bool; [@key "base64Encoded"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Replay_xhr = struct
@@ -209,7 +253,10 @@ module Replay_xhr = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -226,6 +273,9 @@ module Search_in_response_body = struct
 
   type result = { result : Cdp_debugger_types.search_match list [@key "result"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -240,7 +290,10 @@ module Set_blocked_ur_ls = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -251,7 +304,10 @@ module Set_bypass_service_worker = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_cache_disabled = struct
@@ -262,7 +318,10 @@ module Set_cache_disabled = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_cookie = struct
@@ -286,6 +345,9 @@ module Set_cookie = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { success : bool [@key "success"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_cookies = struct
@@ -296,7 +358,10 @@ module Set_cookies = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_extra_http_headers = struct
@@ -306,7 +371,10 @@ module Set_extra_http_headers = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Set_attach_debug_stack = struct
@@ -316,7 +384,10 @@ module Set_attach_debug_stack = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -334,7 +405,10 @@ module Set_user_agent_override = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 
 module Stream_resource_content = struct
@@ -344,6 +418,9 @@ module Stream_resource_content = struct
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { buffered_data : string [@key "bufferedData"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -355,6 +432,9 @@ module Get_security_isolation_status = struct
 
   type result = { status : security_isolation_status [@key "status"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -365,7 +445,10 @@ module Enable_reporting_api = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -376,7 +459,10 @@ module Enable_device_bound_sessions = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -387,7 +473,10 @@ module Delete_device_bound_session = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -397,6 +486,9 @@ module Fetch_schemeful_site = struct
   type params = { origin : string [@key "origin"] } [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { schemeful_site : string [@key "schemefulSite"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -412,6 +504,9 @@ module Load_network_resource = struct
 
   type result = { resource : load_network_resource_page_result [@key "resource"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -423,7 +518,10 @@ module Set_cookie_controls = struct
 
   type result = unit [@@deriving show, eq]
 
-  let result_of_json (_ : Cdp_json.t) : result = ()
+  let result_of_json (_ignored_payload : Cdp_json.t) : result = ()
+
+  let command params : result Cdp_command.t =
+    { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -438,6 +536,8 @@ module Data_received = struct
     data : string option; [@key "data"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Event_source_message_received = struct
@@ -451,6 +551,8 @@ module Event_source_message_received = struct
     data : string; [@key "data"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Loading_failed = struct
@@ -466,6 +568,8 @@ module Loading_failed = struct
     cors_error_status : cors_error_status option; [@key "corsErrorStatus"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Loading_finished = struct
@@ -477,6 +581,8 @@ module Loading_finished = struct
     encoded_data_length : float; [@key "encodedDataLength"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Request_served_from_cache = struct
@@ -484,6 +590,8 @@ module Request_served_from_cache = struct
 
   type params = { request_id : Cdp_base.Network.Request_id.t [@key "requestId"] }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Request_will_be_sent = struct
@@ -506,6 +614,8 @@ module Request_will_be_sent = struct
        [@key "renderBlockingBehavior"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Resource_changed_priority = struct
@@ -517,6 +627,8 @@ module Resource_changed_priority = struct
     timestamp : Cdp_base.Network.Monotonic_time.t; [@key "timestamp"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -528,6 +640,8 @@ module Signed_exchange_received = struct
     info : signed_exchange_info; [@key "info"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -544,6 +658,8 @@ module Response_received = struct
     frame_id : Cdp_base.Page.Frame_id.t option; [@key "frameId"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Web_socket_closed = struct
@@ -554,6 +670,8 @@ module Web_socket_closed = struct
     timestamp : Cdp_base.Network.Monotonic_time.t; [@key "timestamp"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Web_socket_created = struct
@@ -565,6 +683,8 @@ module Web_socket_created = struct
     initiator : initiator option; [@key "initiator"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Web_socket_frame_error = struct
@@ -576,6 +696,8 @@ module Web_socket_frame_error = struct
     error_message : string; [@key "errorMessage"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Web_socket_frame_received = struct
@@ -587,6 +709,8 @@ module Web_socket_frame_received = struct
     response : web_socket_frame; [@key "response"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Web_socket_frame_sent = struct
@@ -598,6 +722,8 @@ module Web_socket_frame_sent = struct
     response : web_socket_frame; [@key "response"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Web_socket_handshake_response_received = struct
@@ -609,6 +735,8 @@ module Web_socket_handshake_response_received = struct
     response : web_socket_response; [@key "response"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Web_socket_will_send_handshake_request = struct
@@ -621,6 +749,8 @@ module Web_socket_will_send_handshake_request = struct
     request : web_socket_request; [@key "request"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Web_transport_created = struct
@@ -633,6 +763,8 @@ module Web_transport_created = struct
     initiator : initiator option; [@key "initiator"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Web_transport_connection_established = struct
@@ -643,6 +775,8 @@ module Web_transport_connection_established = struct
     timestamp : Cdp_base.Network.Monotonic_time.t; [@key "timestamp"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Web_transport_closed = struct
@@ -653,6 +787,8 @@ module Web_transport_closed = struct
     timestamp : Cdp_base.Network.Monotonic_time.t; [@key "timestamp"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 
 module Direct_tcp_socket_created = struct
@@ -667,6 +803,8 @@ module Direct_tcp_socket_created = struct
     initiator : initiator option; [@key "initiator"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -682,6 +820,8 @@ module Direct_tcp_socket_opened = struct
     local_port : int option; [@key "localPort"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -694,6 +834,8 @@ module Direct_tcp_socket_aborted = struct
     timestamp : Cdp_base.Network.Monotonic_time.t; [@key "timestamp"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -705,6 +847,8 @@ module Direct_tcp_socket_closed = struct
     timestamp : Cdp_base.Network.Monotonic_time.t; [@key "timestamp"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -717,6 +861,8 @@ module Direct_tcp_socket_chunk_sent = struct
     timestamp : Cdp_base.Network.Monotonic_time.t; [@key "timestamp"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -729,6 +875,8 @@ module Direct_tcp_socket_chunk_received = struct
     timestamp : Cdp_base.Network.Monotonic_time.t; [@key "timestamp"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -740,6 +888,8 @@ module Direct_udp_socket_joined_multicast_group = struct
     ip_address : string; [@key "IPAddress"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -751,6 +901,8 @@ module Direct_udp_socket_left_multicast_group = struct
     ip_address : string; [@key "IPAddress"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -764,6 +916,8 @@ module Direct_udp_socket_created = struct
     initiator : initiator option; [@key "initiator"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -779,6 +933,8 @@ module Direct_udp_socket_opened = struct
     remote_port : int option; [@key "remotePort"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -791,6 +947,8 @@ module Direct_udp_socket_aborted = struct
     timestamp : Cdp_base.Network.Monotonic_time.t; [@key "timestamp"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -802,6 +960,8 @@ module Direct_udp_socket_closed = struct
     timestamp : Cdp_base.Network.Monotonic_time.t; [@key "timestamp"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -814,6 +974,8 @@ module Direct_udp_socket_chunk_sent = struct
     timestamp : Cdp_base.Network.Monotonic_time.t; [@key "timestamp"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -826,6 +988,8 @@ module Direct_udp_socket_chunk_received = struct
     timestamp : Cdp_base.Network.Monotonic_time.t; [@key "timestamp"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -845,6 +1009,8 @@ module Request_will_be_sent_extra_info = struct
     applied_network_conditions_id : string option; [@key "appliedNetworkConditionsId"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -864,6 +1030,8 @@ module Response_received_extra_info = struct
        [@key "exemptedCookies"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -875,6 +1043,8 @@ module Response_received_early_hints = struct
     headers : headers; [@key "headers"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -907,11 +1077,19 @@ module Trust_token_operation_done = struct
     issued_token_count : int option; [@key "issuedTokenCount"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
 module Policy_updated = struct
   let name = "Network.policyUpdated"
+
+  type params = unit [@@deriving show, eq]
+
+  let params_of_json (_ignored_payload : Cdp_json.t) : params = ()
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -920,6 +1098,8 @@ module Reporting_api_report_added = struct
 
   type params = { report : reporting_api_report [@key "report"] }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -928,6 +1108,8 @@ module Reporting_api_report_updated = struct
 
   type params = { report : reporting_api_report [@key "report"] }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -939,6 +1121,8 @@ module Reporting_api_endpoints_changed_for_origin = struct
     endpoints : reporting_api_endpoint list; [@key "endpoints"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -947,6 +1131,8 @@ module Device_bound_sessions_added = struct
 
   type params = { sessions : device_bound_session list [@key "sessions"] }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -966,5 +1152,7 @@ module Device_bound_session_event_occurred = struct
        [@key "challengeEventDetails"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
+
+  let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
 [@@alert experimental "experimental in CDP, may change with Chrome"]
