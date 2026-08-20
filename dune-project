@@ -14,6 +14,13 @@
 
 (license MIT)
 
+(homepage "https://github.com/ahrefs/ocaml-cdp")
+
+(bug_reports "https://github.com/ahrefs/ocaml-cdp/issues")
+
+(source
+ (github ahrefs/ocaml-cdp))
+
 (package
  (name cdp)
  (synopsis "Chrome DevTools Protocol types for OCaml")
