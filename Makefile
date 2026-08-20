@@ -34,6 +34,13 @@ test-browser: ## Run smoke tests against a local headless Chrome (needs Chrome)
 demo: ## Launch a headless Chrome and fetch a page title through the client
 	$(DUNE) exec examples/navigate.exe
 
+# usage: make render URL=https://example.com
+URL ?= https://example.com
+
+.PHONY: render
+render: ## Render a URL: status, headers, and HTML through the client
+	$(DUNE) exec examples/render.exe -- $(URL)
+
 .PHONY: fmt
 fmt: ## Format code with ocamlformat
 	$(DUNE) build @fmt --auto-promote

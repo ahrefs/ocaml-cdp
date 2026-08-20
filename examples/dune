@@ -4,3 +4,10 @@
  (libraries cdp cdp_lwt lwt lwt.unix)
  (preprocess
   (pps lwt_ppx)))
+
+(executable
+ (name render)
+ (modules render)
+ (libraries cdp cdp_lwt lwt lwt.unix)
+ (preprocess
+  (pps lwt_ppx)))

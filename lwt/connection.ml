@@ -21,6 +21,8 @@ type event_waiter = {
   wanted_session : string option;
   deliver : Cdp_json.t -> unit;
   abandon : exn -> unit;
+  (* persistent waiters (on_event) survive delivery; one-shot (next_event) do not *)
+  persistent : bool;
 }
 
 type t = {
@@ -70,9 +72,11 @@ let handle_event connection ~name ~params ~session =
   match List.exists matches all_waiters with
   | false -> ()
   | true ->
-    (* one-shot semantics: delivered waiters are removed, others stay.
-       find_all returns newest first; re-adding the reverse preserves order. *)
-    let delivered, remaining = List.partition matches all_waiters in
+    (* deliver to every match; one-shot waiters are then removed, persistent
+       ones stay. find_all returns newest first; re-adding the reverse
+       preserves order. *)
+    let delivered = List.filter matches all_waiters in
+    let remaining = List.filter (fun waiter -> (not (matches waiter)) || waiter.persistent) all_waiters in
     while Hashtbl.mem connection.event_waiters name do
       Hashtbl.remove connection.event_waiters name
     done;
@@ -173,9 +177,29 @@ let next_event connection ?session (event : 'params Cdp.Event.t) : 'params Lwt.t
             | parsed -> Lwt.wakeup_later resolve_params parsed
             | exception parse_failure -> Lwt.wakeup_later_exn resolve_params parse_failure);
         abandon = (fun failure -> Lwt.wakeup_later_exn resolve_params failure);
+        persistent = false;
       }
     in
     Hashtbl.add connection.event_waiters event.Cdp.Event.name waiter;
     Lwt.on_cancel params_promise (fun () -> remove_waiter connection ~name:event.Cdp.Event.name waiter);
     params_promise
   end
+
+(* a persistent subscription: [handler] runs on every matching event until
+   the returned unsubscribe function is called or the connection closes.
+   Payloads that fail to parse are skipped. *)
+let on_event connection ?session (event : 'params Cdp.Event.t) (handler : 'params -> unit) : unit -> unit =
+  let waiter =
+    {
+      wanted_session = session_string session;
+      deliver =
+        (fun params ->
+          match event.Cdp.Event.parse params with
+          | parsed -> handler parsed
+          | exception _unparseable_payload -> ());
+      abandon = (fun _connection_closed -> ());
+      persistent = true;
+    }
+  in
+  Hashtbl.add connection.event_waiters event.Cdp.Event.name waiter;
+  fun () -> remove_waiter connection ~name:event.Cdp.Event.name waiter

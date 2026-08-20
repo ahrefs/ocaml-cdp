@@ -244,6 +244,28 @@ let () =
     let%lwt () = survivor in
     assert (Lwt.state (Lwt.map ignore cancelled) = Lwt.Fail Lwt.Canceled);
     pass "a cancelled call cleans up and the connection keeps working";
+
+    (* 15. persistent on_event sees every occurrence until unsubscribed;
+           one-shot waiters alongside it are unaffected *)
+    let fake = make_fake () in
+    let connection = Cdp_lwt.Connection.create fake.transport in
+    let seen = ref [] in
+    let unsubscribe =
+      Cdp_lwt.Connection.on_event connection Cdp.Page.Load_event_fired.event (fun fired ->
+        seen := Cdp.Network.Monotonic_time.to_float fired.timestamp :: !seen)
+    in
+    let one_shot = Cdp_lwt.Connection.next_event connection Cdp.Page.Load_event_fired.event in
+    fake.inject {|{"method":"Page.loadEventFired","params":{"timestamp":1.0}}|};
+    fake.inject {|{"method":"Page.loadEventFired","params":{"timestamp":2.0}}|};
+    let%lwt first_shot = one_shot in
+    assert (Cdp.Network.Monotonic_time.to_float first_shot.timestamp = 1.0);
+    let%lwt () = settle () in
+    assert (!seen = [ 2.0; 1.0 ]);
+    unsubscribe ();
+    fake.inject {|{"method":"Page.loadEventFired","params":{"timestamp":3.0}}|};
+    let%lwt () = settle () in
+    assert (!seen = [ 2.0; 1.0 ]);
+    pass "on_event sees every occurrence until unsubscribed";
     Lwt.return_unit
     end
 
