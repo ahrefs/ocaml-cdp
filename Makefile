@@ -1,7 +1,9 @@
 .DEFAULT_GOAL := help
 
-# No local switch yet; override on machines where deps live elsewhere, e.g.:
-#   make build DUNE="opam exec --switch <path-to-your-opam-switch> -- dune"
+# Machine-specific overrides (e.g. DUNE/FMT_BIN pointing at a specific opam
+# switch) go in a git-ignored Makefile.local next to this file.
+-include Makefile.local
+
 DUNE ?= opam exec -- dune
 FMT_BIN ?= opam exec -- ocamlformat
 
@@ -23,6 +25,14 @@ test: ## Run all tests (cram + unit + runtime)
 .PHONY: test-promote
 test-promote: ## Run tests and promote expected outputs
 	$(DUNE) runtest --auto-promote
+
+.PHONY: test-browser
+test-browser: ## Run smoke tests against a local headless Chrome (needs Chrome)
+	$(DUNE) build @browser --force --no-buffer
+
+.PHONY: demo
+demo: ## Launch a headless Chrome and fetch a page title through the client
+	$(DUNE) exec examples/navigate.exe
 
 .PHONY: fmt
 fmt: ## Format code with ocamlformat

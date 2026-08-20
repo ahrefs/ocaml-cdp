@@ -1,0 +1,14 @@
+; opt-in: needs a local Chrome. Run with `make test-browser` (alias @browser),
+; deliberately NOT part of @runtest.
+
+(executable
+ (name test_browser)
+ (modules test_browser)
+ (libraries cdp cdp_lwt lwt lwt.unix yojson)
+ (preprocess
+  (pps lwt_ppx)))
+
+(rule
+ (alias browser)
+ (action
+  (run ./test_browser.exe)))

@@ -1,0 +1,6 @@
+(executable
+ (name navigate)
+ (modules navigate)
+ (libraries cdp cdp_lwt lwt lwt.unix)
+ (preprocess
+  (pps lwt_ppx)))
