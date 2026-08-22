@@ -1,8 +1,14 @@
-(* A minimal renderer: given a URL,
-   navigate a headless Chrome and report the main document's HTTP status,
-   headers, and the rendered HTML. Usage:
+(* A minimal renderer: given a URL, navigate a headless Chrome and report
+   the main document's HTTP status, headers, and the rendered HTML. Usage:
 
      dune exec examples/render.exe -- https://example.com *)
+
+let with_scheme url =
+  match String.length url >= 4 && String.sub url 0 4 = "http" with
+  | true -> url
+  | false -> "https://" ^ url
+
+let default_url = "https://example.com"
 
 type document_response = {
   status : int;
@@ -12,10 +18,12 @@ type document_response = {
 }
 
 let () =
+  let arguments = Array.to_list Sys.argv in
+  let read_argument position = List.nth_opt arguments position in
   let url =
-    match Array.to_list Sys.argv with
-    | _program :: requested :: _rest -> requested
-    | _no_argument -> "https://example.com"
+    match read_argument 1 with
+    | Some requested -> with_scheme requested
+    | None -> default_url
   in
   Lwt_main.run
     begin

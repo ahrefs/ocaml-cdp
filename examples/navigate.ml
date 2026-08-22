@@ -33,8 +33,8 @@ let () =
         call ~session (Cdp.Runtime.Evaluate.command (Cdp.Runtime.Evaluate.make_params ~expression:"document.title" ()))
       in
       (match evaluated.result.value with
-      | Some title -> Printf.printf "page title: %s\n" (Cdp.Json.show title)
-      | None -> print_endline "page title: <no value>");
+      | None -> print_endline "page title: <no value>"
+      | Some title -> Printf.printf "page title: %s\n" (Cdp.Json.show title));
       let%lwt () = Cdp_lwt.Connection.close connection in
       chrome.kill ()
     end

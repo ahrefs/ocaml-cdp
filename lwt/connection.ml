@@ -11,6 +11,15 @@ exception Connection_closed
 (** [call ~timeout] gave up waiting; carries the command name. *)
 exception Call_timeout of string
 
+(* human-readable exception messages: without a registered printer these
+   show as "Protocol_error(_)", hiding what Chrome actually said *)
+let () =
+  Printexc.register_printer (function
+    | Call_timeout command_name -> Some ("Cdp_lwt.Connection.Call_timeout: " ^ command_name)
+    | Protocol_error { code; message; data = _extra } ->
+      Some (Printf.sprintf "Cdp_lwt.Connection.Protocol_error: %d %s" code message)
+    | _other_exception -> None)
+
 (* what can happen to a command that was sent *)
 type outcome =
   | Result of Cdp_json.t

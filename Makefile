@@ -41,6 +41,21 @@ URL ?= https://example.com
 render: ## Render a URL: status, headers, and HTML through the client
 	$(DUNE) exec examples/render.exe -- $(URL)
 
+# usage: make screenshot URL=https://example.com NAME=screenshot_example WIDTH=1320 HEIGHT=1037
+WIDTH ?= 1320
+HEIGHT ?= 1037
+
+.PHONY: screenshot
+screenshot: NAME ?= screenshot_example
+screenshot: ## Save full-size and thumbnail screenshots of a URL into screenshots/
+	$(DUNE) exec examples/screenshot.exe -- $(URL) $(NAME) $(WIDTH) $(HEIGHT)
+
+# usage: make attach WS=ws://127.0.0.1:<port>/devtools/browser/<id> URL=https://example.com NAME=attach_example WIDTH=1320 HEIGHT=1037
+.PHONY: attach
+attach: NAME ?= attach_example
+attach: ## Screenshot through an already-running Chrome (WS= browser websocket url)
+	$(DUNE) exec examples/attach.exe -- $(WS) $(URL) $(NAME) $(WIDTH) $(HEIGHT)
+
 .PHONY: fmt
 fmt: ## Format code with ocamlformat
 	$(DUNE) build @fmt --auto-promote

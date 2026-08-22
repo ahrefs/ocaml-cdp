@@ -48,6 +48,22 @@ Every step is a typed command; failures are typed too (`Protocol_error`,
 **One rule to know:** `next_event` catches events arriving *after* it is
 called — subscribe first, then trigger (as the demo does around `navigate`).
 
+## Examples
+
+All examples live in [examples/](examples/) and run against a real Chrome:
+
+| Example | Command | What it does |
+|---|---|---|
+| [navigate](examples/navigate.ml) | `make demo` | launch Chrome, open a page, read its title back |
+| [render](examples/render.ml) | `make render URL=https://example.com` | report the main document's HTTP status, headers, and rendered HTML |
+| [screenshot](examples/screenshot.ml) | `make screenshot URL=https://example.com NAME=shot` | save a full-size screenshot and a small thumbnail into `screenshots/` |
+| [attach](examples/attach.ml) | `make attach WS=<websocket url>` | screenshot through a Chrome that is already running, closing only its own tab |
+
+`navigate`, `render`, and `screenshot` launch their own headless Chrome.
+`attach` connects to an existing one: start Chrome with
+`--remote-debugging-port=<port>`, read `webSocketDebuggerUrl` from
+`http://127.0.0.1:<port>/json/version`, and pass it as `WS=`.
+
 ## The types
 
 - Ids and timestamps are sealed: a `Request_id.t` cannot be confused with a

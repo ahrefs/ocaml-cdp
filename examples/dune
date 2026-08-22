@@ -11,3 +11,17 @@
  (libraries cdp cdp_lwt lwt lwt.unix)
  (preprocess
   (pps lwt_ppx)))
+
+(executable
+ (name screenshot)
+ (modules screenshot)
+ (libraries cdp cdp_lwt lwt lwt.unix base64 unix)
+ (preprocess
+  (pps lwt_ppx)))
+
+(executable
+ (name attach)
+ (modules attach)
+ (libraries cdp cdp_lwt lwt lwt.unix base64 unix)
+ (preprocess
+  (pps lwt_ppx)))
