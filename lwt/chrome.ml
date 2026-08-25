@@ -12,6 +12,28 @@ let default_executable =
   | Some path -> path
   | None -> "google-chrome"
 
+let random_state = lazy (Random.State.make_self_init ())
+
+(* atomic mkdir with 0700 keeps the profile private on a shared temp dir and
+   cannot be hijacked by a pre-created directory: EEXIST means pick a new name *)
+let rec create_profile_dir attempts_left =
+  let name = Printf.sprintf "cdp-chrome-%08x" (Random.State.int (Lazy.force random_state) 0x10000000) in
+  let path = Filename.concat (Filename.get_temp_dir_name ()) name in
+  try
+    Unix.mkdir path 0o700;
+    path
+  with Unix.Unix_error (Unix.EEXIST, _mkdir, _path) ->
+    (match attempts_left with
+    | 0 -> failwith "cdp-lwt: could not create a fresh Chrome profile directory in the temp dir"
+    | tries_remaining -> create_profile_dir (tries_remaining - 1))
+
+let rec remove_tree path =
+  match (Unix.lstat path).Unix.st_kind with
+  | Unix.S_DIR ->
+    Array.iter (fun entry -> remove_tree (Filename.concat path entry)) (Sys.readdir path);
+    Unix.rmdir path
+  | _file_or_link -> Unix.unlink path
+
 let announcement_prefix = "DevTools listening on "
 
 let rec read_announcement stderr_channel =
@@ -23,7 +45,7 @@ let rec read_announcement stderr_channel =
   | _not_the_announcement -> read_announcement stderr_channel
 
 let launch ?(executable = default_executable) ?(no_sandbox = false) ?(extra_args = []) () : t Lwt.t =
-  let profile_dir = Filename.concat (Filename.get_temp_dir_name ()) (Printf.sprintf "cdp-chrome-%d" (Unix.getpid ())) in
+  let profile_dir = create_profile_dir 10 in
   let sandbox_arguments = if no_sandbox then [ "--no-sandbox" ] else [] in
   let arguments =
     [ executable; "--headless"; "--remote-debugging-port=0" ]
@@ -35,6 +57,7 @@ let launch ?(executable = default_executable) ?(no_sandbox = false) ?(extra_args
   let kill () =
     process#terminate;
     let%lwt (_status : Unix.process_status) = process#close in
+    (try remove_tree profile_dir with Unix.Unix_error _ | Sys_error _ -> ());
     Lwt.return_unit
   in
   let announcement =
