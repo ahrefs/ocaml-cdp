@@ -15,6 +15,11 @@ open Protocol
 let spf = Printf.sprintf
 let protocol_files = [ "browser_protocol.json"; "js_protocol.json" ]
 
+(* the protocol JSONs are BSD-3-Clause (Chromium Authors); redistributing them
+   requires shipping the upstream license text alongside, so every fetch
+   refreshes it together with the JSONs *)
+let license_file = "LICENSE"
+
 let check_tool name =
   match Sys.command (spf "command -v %s > /dev/null 2>&1" name) with
   | 0 -> ()
@@ -71,9 +76,11 @@ let fetch ~outdir ~rev =
   let tarball = Filename.temp_file "cdp_gen_protocol" ".tgz" in
   (* pair each protocol file with the temporary path it is downloaded to *)
   let staged = List.map (fun file -> file, Filename.concat outdir (file ^ ".tmp")) protocol_files in
+  let license_tmp = Filename.concat outdir (license_file ^ ".tmp") in
   Fun.protect
     ~finally:(fun () ->
       remove_if_exists tarball;
+      remove_if_exists license_tmp;
       List.iter (fun (_file, tmp) -> remove_if_exists tmp) staged)
     (fun () ->
       curl ~url ~out:tarball;
@@ -83,7 +90,10 @@ let fetch ~outdir ~rev =
             (spf "tar -xzOf %s package/json/%s > %s" (Filename.quote tarball) file (Filename.quote tmp));
           validate_protocol_json ~file tmp)
         staged;
+      run_cmd ~context:(spf "extracting %s" license_file)
+        (spf "tar -xzOf %s package/%s > %s" (Filename.quote tarball) license_file (Filename.quote license_tmp));
       (* everything succeeded: move into place (same directory, so atomic) *)
       List.iter (fun (file, tmp) -> Sys.rename tmp (Filename.concat outdir file)) staged;
+      Sys.rename license_tmp (Filename.concat outdir license_file);
       write_file (Filename.concat outdir "REVISION") ("r" ^ revision ^ "\n"));
   Printf.printf "fetched protocol r%s into %s/\n" revision outdir

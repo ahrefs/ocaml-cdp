@@ -108,3 +108,12 @@ cdp-gen generate mydir/browser_protocol.json mydir/js_protocol.json out Network,
 - envelope and connection tests over a mock transport (`test/`, `test/lwt/`);
 - `make test-browser`: opt-in smoke tests against a local headless Chrome;
 - `make check-full`: generates and compiles ALL 58 protocol domains.
+
+## License
+
+MIT, with one exception: the vendored protocol definitions
+`protocol/browser_protocol.json` and `protocol/js_protocol.json` come from the
+[Chrome DevTools Protocol](https://github.com/ChromeDevTools/devtools-protocol)
+and are BSD-3-Clause, Copyright 2014 The Chromium Authors — see
+[protocol/LICENSE](protocol/LICENSE). `make update-protocol` refreshes that
+license file together with the JSONs.

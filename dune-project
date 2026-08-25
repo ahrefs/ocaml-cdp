@@ -12,7 +12,7 @@
  "Vitalii Shapoval <vytalych@gmail.com>"
  "Ahrefs <github@ahrefs.com>")
 
-(license MIT)
+(license "MIT AND BSD-3-Clause")
 
 (homepage "https://github.com/ahrefs/ocaml-cdp")
 
@@ -50,4 +50,5 @@
   (cdp (= :version))
   curl
   curl_lwt
-  lwt))
+  lwt
+  lwt_ppx))
