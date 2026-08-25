@@ -10,10 +10,12 @@
 
 (rule
  (alias runtest)
+ (package cdp)
  (action
   (run ./test_decode.exe)))
 
 (rule
  (alias runtest)
+ (package cdp)
  (action
   (run ./test_envelope.exe)))

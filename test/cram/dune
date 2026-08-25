@@ -3,4 +3,5 @@
 
 (cram
  (applies_to :whole_subtree)
+ (package cdp-gen)
  (deps %{bin:cdp-gen}))

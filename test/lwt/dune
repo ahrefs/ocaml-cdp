@@ -7,5 +7,6 @@
 
 (rule
  (alias runtest)
+ (package cdp-lwt)
  (action
   (run ./test_connection.exe)))

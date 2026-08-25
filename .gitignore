@@ -3,3 +3,4 @@ _check/
 _opam/
 Makefile.local
 screenshots/
+*.install

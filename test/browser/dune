@@ -10,5 +10,6 @@
 
 (rule
  (alias browser)
+ (package cdp-lwt)
  (action
   (run ./test_browser.exe)))

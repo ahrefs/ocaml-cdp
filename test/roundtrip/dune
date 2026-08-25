@@ -8,5 +8,6 @@
 
 (rule
  (alias runtest)
+ (package cdp)
  (action
   (run ./test_roundtrip.exe)))

@@ -10,10 +10,12 @@
 
 (rule
  (alias runtest)
+ (package cdp-gen)
  (action
   (run ./test_naming.exe)))
 
 (rule
  (alias runtest)
+ (package cdp-gen)
  (action
   (run ./test_emit.exe)))
