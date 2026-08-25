@@ -1,5 +1,5 @@
 (* cdp-gen: generates OCaml types from Chrome DevTools Protocol JSON
-   definitions. JSON codecs come from the melange-json ppx ([@@deriving json]
+   definitions. JSON codecs come from the jsonkit ppx ([@@deriving json]
    plus wire attributes); equal/show/make come from ppx_deriving.
 
    Modules: Naming (protocol names -> OCaml names), Protocol (JSON loading,

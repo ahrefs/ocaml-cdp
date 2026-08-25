@@ -105,10 +105,10 @@ check-full: ## Generate ALL protocol domains into a throwaway project and compil
 	@cp protocol/browser_protocol.json protocol/js_protocol.json protocol/REVISION $(FULL_CHECK_DIR)/
 	@printf '(lang dune 3.16)\n' > $(FULL_CHECK_DIR)/dune-project
 	@cp lib/cdp_json.ml lib/cdp_command.ml lib/cdp_event.ml lib/cdp_envelope.ml $(FULL_CHECK_DIR)/lib/
-	@printf '(library\n (name cdp)\n (wrapped false)\n (libraries melange-json-native yojson)\n (preprocess\n  (pps melange-json-native.ppx ppx_deriving.show ppx_deriving.eq ppx_deriving.make))\n (flags (:standard -w -a -alert -all)))\n' > $(FULL_CHECK_DIR)/lib/dune
+	@printf '(library\n (name cdp)\n (wrapped false)\n (libraries jsonkit yojson)\n (preprocess\n  (pps jsonkit.ppx ppx_deriving.show ppx_deriving.eq ppx_deriving.make))\n (flags (:standard -w -a -alert -all)))\n' > $(FULL_CHECK_DIR)/lib/dune
 	$(DUNE) exec gen/gen.exe -- generate \
 	  $(FULL_CHECK_DIR)/browser_protocol.json $(FULL_CHECK_DIR)/js_protocol.json $(FULL_CHECK_DIR)/lib all
-	cd $(FULL_CHECK_DIR) && $(DUNE) build
+	$(DUNE) build --root $(FULL_CHECK_DIR)
 	@rm -rf $(FULL_CHECK_DIR)
 	@echo "all protocol domains generate and compile"
 

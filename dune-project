@@ -27,7 +27,10 @@
  (depends
   (ocaml (>= "4.14"))
   yojson
-  melange-json-native
+  (jsonkit
+   (and
+    (>= "1.0.0")
+    (< "2.0.0")))
   ppx_deriving
   (ocamlformat
    (and

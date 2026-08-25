@@ -11,8 +11,8 @@ module Browser = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = string
     let of_string value = value
@@ -21,8 +21,8 @@ module Browser = struct
     let compare = String.compare
     let show (value : t) = Printf.sprintf "%S" value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.string_of_json
-    let to_json = Melange_json.Primitives.string_to_json
+    let of_json = Jsonkit.Primitives.string_of_json
+    let to_json = Jsonkit.Primitives.string_to_json
   end
   [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -34,8 +34,8 @@ module Browser = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = int
     let of_int value = value
@@ -44,8 +44,8 @@ module Browser = struct
     let compare = Int.compare
     let show (value : t) = string_of_int value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.int_of_json
-    let to_json = Melange_json.Primitives.int_to_json
+    let of_json = Jsonkit.Primitives.int_of_json
+    let to_json = Jsonkit.Primitives.int_to_json
   end
   [@@alert experimental "experimental in CDP, may change with Chrome"]
 end
@@ -59,8 +59,8 @@ module Dom = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = int
     let of_int value = value
@@ -69,8 +69,8 @@ module Dom = struct
     let compare = Int.compare
     let show (value : t) = string_of_int value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.int_of_json
-    let to_json = Melange_json.Primitives.int_to_json
+    let of_json = Jsonkit.Primitives.int_of_json
+    let to_json = Jsonkit.Primitives.int_to_json
   end
 
   module Backend_node_id : sig
@@ -81,8 +81,8 @@ module Dom = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = int
     let of_int value = value
@@ -91,8 +91,8 @@ module Dom = struct
     let compare = Int.compare
     let show (value : t) = string_of_int value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.int_of_json
-    let to_json = Melange_json.Primitives.int_to_json
+    let of_json = Jsonkit.Primitives.int_of_json
+    let to_json = Jsonkit.Primitives.int_to_json
   end
 
   module Style_sheet_id : sig
@@ -103,8 +103,8 @@ module Dom = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = string
     let of_string value = value
@@ -113,8 +113,8 @@ module Dom = struct
     let compare = String.compare
     let show (value : t) = Printf.sprintf "%S" value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.string_of_json
-    let to_json = Melange_json.Primitives.string_to_json
+    let of_json = Jsonkit.Primitives.string_of_json
+    let to_json = Jsonkit.Primitives.string_to_json
   end
 end
 
@@ -127,8 +127,8 @@ module Emulation = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = string
     let of_string value = value
@@ -137,8 +137,8 @@ module Emulation = struct
     let compare = String.compare
     let show (value : t) = Printf.sprintf "%S" value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.string_of_json
-    let to_json = Melange_json.Primitives.string_to_json
+    let of_json = Jsonkit.Primitives.string_of_json
+    let to_json = Jsonkit.Primitives.string_to_json
   end
   [@@alert experimental "experimental in CDP, may change with Chrome"]
 end
@@ -152,8 +152,8 @@ module Io = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = string
     let of_string value = value
@@ -162,8 +162,8 @@ module Io = struct
     let compare = String.compare
     let show (value : t) = Printf.sprintf "%S" value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.string_of_json
-    let to_json = Melange_json.Primitives.string_to_json
+    let of_json = Jsonkit.Primitives.string_of_json
+    let to_json = Jsonkit.Primitives.string_to_json
   end
 end
 
@@ -176,8 +176,8 @@ module Network = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = string
     let of_string value = value
@@ -186,8 +186,8 @@ module Network = struct
     let compare = String.compare
     let show (value : t) = Printf.sprintf "%S" value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.string_of_json
-    let to_json = Melange_json.Primitives.string_to_json
+    let of_json = Jsonkit.Primitives.string_of_json
+    let to_json = Jsonkit.Primitives.string_to_json
   end
 
   module Request_id : sig
@@ -198,8 +198,8 @@ module Network = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = string
     let of_string value = value
@@ -208,8 +208,8 @@ module Network = struct
     let compare = String.compare
     let show (value : t) = Printf.sprintf "%S" value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.string_of_json
-    let to_json = Melange_json.Primitives.string_to_json
+    let of_json = Jsonkit.Primitives.string_of_json
+    let to_json = Jsonkit.Primitives.string_to_json
   end
 
   module Time_since_epoch : sig
@@ -220,8 +220,8 @@ module Network = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = float
     let of_float value = value
@@ -230,8 +230,8 @@ module Network = struct
     let compare = Float.compare
     let show (value : t) = string_of_float value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.float_of_json
-    let to_json = Melange_json.Primitives.float_to_json
+    let of_json = Jsonkit.Primitives.float_of_json
+    let to_json = Jsonkit.Primitives.float_to_json
   end
 
   module Monotonic_time : sig
@@ -242,8 +242,8 @@ module Network = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = float
     let of_float value = value
@@ -252,8 +252,8 @@ module Network = struct
     let compare = Float.compare
     let show (value : t) = string_of_float value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.float_of_json
-    let to_json = Melange_json.Primitives.float_to_json
+    let of_json = Jsonkit.Primitives.float_of_json
+    let to_json = Jsonkit.Primitives.float_to_json
   end
 
   module Report_id : sig
@@ -264,8 +264,8 @@ module Network = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = string
     let of_string value = value
@@ -274,8 +274,8 @@ module Network = struct
     let compare = String.compare
     let show (value : t) = Printf.sprintf "%S" value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.string_of_json
-    let to_json = Melange_json.Primitives.string_to_json
+    let of_json = Jsonkit.Primitives.string_of_json
+    let to_json = Jsonkit.Primitives.string_to_json
   end
   [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -287,8 +287,8 @@ module Network = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = string
     let of_string value = value
@@ -297,8 +297,8 @@ module Network = struct
     let compare = String.compare
     let show (value : t) = Printf.sprintf "%S" value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.string_of_json
-    let to_json = Melange_json.Primitives.string_to_json
+    let of_json = Jsonkit.Primitives.string_of_json
+    let to_json = Jsonkit.Primitives.string_to_json
   end
   [@@alert experimental "experimental in CDP, may change with Chrome"]
 end
@@ -312,8 +312,8 @@ module Page = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = string
     let of_string value = value
@@ -322,8 +322,8 @@ module Page = struct
     let compare = String.compare
     let show (value : t) = Printf.sprintf "%S" value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.string_of_json
-    let to_json = Melange_json.Primitives.string_to_json
+    let of_json = Jsonkit.Primitives.string_of_json
+    let to_json = Jsonkit.Primitives.string_to_json
   end
 
   module Script_identifier : sig
@@ -334,8 +334,8 @@ module Page = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = string
     let of_string value = value
@@ -344,8 +344,8 @@ module Page = struct
     let compare = String.compare
     let show (value : t) = Printf.sprintf "%S" value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.string_of_json
-    let to_json = Melange_json.Primitives.string_to_json
+    let of_json = Jsonkit.Primitives.string_of_json
+    let to_json = Jsonkit.Primitives.string_to_json
   end
 end
 
@@ -358,8 +358,8 @@ module Security = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = int
     let of_int value = value
@@ -368,8 +368,8 @@ module Security = struct
     let compare = Int.compare
     let show (value : t) = string_of_int value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.int_of_json
-    let to_json = Melange_json.Primitives.int_to_json
+    let of_json = Jsonkit.Primitives.int_of_json
+    let to_json = Jsonkit.Primitives.int_to_json
   end
 end
 
@@ -382,8 +382,8 @@ module Target = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = string
     let of_string value = value
@@ -392,8 +392,8 @@ module Target = struct
     let compare = String.compare
     let show (value : t) = Printf.sprintf "%S" value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.string_of_json
-    let to_json = Melange_json.Primitives.string_to_json
+    let of_json = Jsonkit.Primitives.string_of_json
+    let to_json = Jsonkit.Primitives.string_to_json
   end
 
   module Session_id : sig
@@ -404,8 +404,8 @@ module Target = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = string
     let of_string value = value
@@ -414,8 +414,8 @@ module Target = struct
     let compare = String.compare
     let show (value : t) = Printf.sprintf "%S" value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.string_of_json
-    let to_json = Melange_json.Primitives.string_to_json
+    let of_json = Jsonkit.Primitives.string_of_json
+    let to_json = Jsonkit.Primitives.string_to_json
   end
 end
 
@@ -428,8 +428,8 @@ module Debugger = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = string
     let of_string value = value
@@ -438,8 +438,8 @@ module Debugger = struct
     let compare = String.compare
     let show (value : t) = Printf.sprintf "%S" value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.string_of_json
-    let to_json = Melange_json.Primitives.string_to_json
+    let of_json = Jsonkit.Primitives.string_of_json
+    let to_json = Jsonkit.Primitives.string_to_json
   end
 
   module Call_frame_id : sig
@@ -450,8 +450,8 @@ module Debugger = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = string
     let of_string value = value
@@ -460,8 +460,8 @@ module Debugger = struct
     let compare = String.compare
     let show (value : t) = Printf.sprintf "%S" value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.string_of_json
-    let to_json = Melange_json.Primitives.string_to_json
+    let of_json = Jsonkit.Primitives.string_of_json
+    let to_json = Jsonkit.Primitives.string_to_json
   end
 end
 
@@ -474,8 +474,8 @@ module Runtime = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = string
     let of_string value = value
@@ -484,8 +484,8 @@ module Runtime = struct
     let compare = String.compare
     let show (value : t) = Printf.sprintf "%S" value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.string_of_json
-    let to_json = Melange_json.Primitives.string_to_json
+    let of_json = Jsonkit.Primitives.string_of_json
+    let to_json = Jsonkit.Primitives.string_to_json
   end
 
   module Remote_object_id : sig
@@ -496,8 +496,8 @@ module Runtime = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = string
     let of_string value = value
@@ -506,8 +506,8 @@ module Runtime = struct
     let compare = String.compare
     let show (value : t) = Printf.sprintf "%S" value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.string_of_json
-    let to_json = Melange_json.Primitives.string_to_json
+    let of_json = Jsonkit.Primitives.string_of_json
+    let to_json = Jsonkit.Primitives.string_to_json
   end
 
   module Unserializable_value : sig
@@ -518,8 +518,8 @@ module Runtime = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = string
     let of_string value = value
@@ -528,8 +528,8 @@ module Runtime = struct
     let compare = String.compare
     let show (value : t) = Printf.sprintf "%S" value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.string_of_json
-    let to_json = Melange_json.Primitives.string_to_json
+    let of_json = Jsonkit.Primitives.string_of_json
+    let to_json = Jsonkit.Primitives.string_to_json
   end
 
   module Execution_context_id : sig
@@ -540,8 +540,8 @@ module Runtime = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = int
     let of_int value = value
@@ -550,8 +550,8 @@ module Runtime = struct
     let compare = Int.compare
     let show (value : t) = string_of_int value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.int_of_json
-    let to_json = Melange_json.Primitives.int_to_json
+    let of_json = Jsonkit.Primitives.int_of_json
+    let to_json = Jsonkit.Primitives.int_to_json
   end
 
   module Timestamp : sig
@@ -562,8 +562,8 @@ module Runtime = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = float
     let of_float value = value
@@ -572,8 +572,8 @@ module Runtime = struct
     let compare = Float.compare
     let show (value : t) = string_of_float value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.float_of_json
-    let to_json = Melange_json.Primitives.float_to_json
+    let of_json = Jsonkit.Primitives.float_of_json
+    let to_json = Jsonkit.Primitives.float_to_json
   end
 
   module Time_delta : sig
@@ -584,8 +584,8 @@ module Runtime = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = float
     let of_float value = value
@@ -594,8 +594,8 @@ module Runtime = struct
     let compare = Float.compare
     let show (value : t) = string_of_float value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.float_of_json
-    let to_json = Melange_json.Primitives.float_to_json
+    let of_json = Jsonkit.Primitives.float_of_json
+    let to_json = Jsonkit.Primitives.float_to_json
   end
 
   module Unique_debugger_id : sig
@@ -606,8 +606,8 @@ module Runtime = struct
     val compare : t -> t -> int
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_json : Melange_json.t -> t
-    val to_json : t -> Melange_json.t
+    val of_json : Jsonkit.t -> t
+    val to_json : t -> Jsonkit.t
   end = struct
     type t = string
     let of_string value = value
@@ -616,8 +616,8 @@ module Runtime = struct
     let compare = String.compare
     let show (value : t) = Printf.sprintf "%S" value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Melange_json.Primitives.string_of_json
-    let to_json = Melange_json.Primitives.string_to_json
+    let of_json = Jsonkit.Primitives.string_of_json
+    let to_json = Jsonkit.Primitives.string_to_json
   end
   [@@alert experimental "experimental in CDP, may change with Chrome"]
 end

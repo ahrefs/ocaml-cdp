@@ -150,8 +150,8 @@ let sealed_module ~mname ~prim ~attrs =
     \  val compare : t -> t -> int\n\
     \  val pp : Format.formatter -> t -> unit\n\
     \  val show : t -> string\n\
-    \  val of_json : Melange_json.t -> t\n\
-    \  val to_json : t -> Melange_json.t\n\
+    \  val of_json : Jsonkit.t -> t\n\
+    \  val to_json : t -> Jsonkit.t\n\
      end = struct\n\
     \  type t = %s\n\
     \  let of_%s value = value\n\
@@ -160,8 +160,8 @@ let sealed_module ~mname ~prim ~attrs =
     \  let compare = %s.compare\n\
     \  let show (value : t) = %s\n\
     \  let pp fmt value = Format.pp_print_string fmt (show value)\n\
-    \  let of_json = Melange_json.Primitives.%s_of_json\n\
-    \  let to_json = Melange_json.Primitives.%s_to_json\n\
+    \  let of_json = Jsonkit.Primitives.%s_of_json\n\
+    \  let to_json = Jsonkit.Primitives.%s_to_json\n\
      end%s\n"
     mname conv ml_ty conv ml_ty ml_ty conv conv eq_mod eq_mod show_expr prim_fn prim_fn attrs
 
@@ -197,7 +197,7 @@ let emit_base_file ~alias_tbl domains =
 let emit_types_file ~selected ~alias_tbl (domain : domain) =
   let buf = Buffer.create 4096 in
   Buffer.add_string buf (header ());
-  Buffer.add_string buf "open Melange_json.Primitives\n\n";
+  Buffer.add_string buf "open Jsonkit.Primitives\n\n";
   (* re-export sealed aliases so users write Cdp.Network.Request_id.t *)
   List.iter
     (fun type_def ->
@@ -302,7 +302,7 @@ let emit_domain_file ~selected ~alias_tbl (domain : domain) =
   let buf = Buffer.create 4096 in
   Buffer.add_string buf (header ());
   Buffer.add_string buf (spf "include %s\n" (types_module_of_domain domain.name));
-  Buffer.add_string buf "open Melange_json.Primitives\n\n";
+  Buffer.add_string buf "open Jsonkit.Primitives\n\n";
   List.iter
     (fun (mname, item) ->
       match item with

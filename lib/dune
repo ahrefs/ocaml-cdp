@@ -2,13 +2,9 @@
  (name cdp)
  (public_name cdp)
  (wrapped false)
- (libraries melange-json-native yojson)
+ (libraries jsonkit yojson)
  (preprocess
-  (pps
-   melange-json-native.ppx
-   ppx_deriving.show
-   ppx_deriving.eq
-   ppx_deriving.make))
+  (pps jsonkit.ppx ppx_deriving.show ppx_deriving.eq ppx_deriving.make))
  ; generated code trips unused warnings by construction, and its own
  ; derived functions reference deprecated/experimental items (alerts)
  (flags

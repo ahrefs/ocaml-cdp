@@ -24,9 +24,7 @@ let rec read_announcement stderr_channel =
 
 let launch ?(executable = default_executable) ?(no_sandbox = false) ?(extra_args = []) () : t Lwt.t =
   let profile_dir = Filename.concat (Filename.get_temp_dir_name ()) (Printf.sprintf "cdp-chrome-%d" (Unix.getpid ())) in
-  let sandbox_arguments =
-    if no_sandbox then [ "--no-sandbox" ] else []
-  in
+  let sandbox_arguments = if no_sandbox then [ "--no-sandbox" ] else [] in
   let arguments =
     [ executable; "--headless"; "--remote-debugging-port=0" ]
     @ sandbox_arguments
