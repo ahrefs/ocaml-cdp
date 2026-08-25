@@ -22,17 +22,15 @@ let rec read_announcement stderr_channel =
       (String.sub line (String.length announcement_prefix) (String.length line - String.length announcement_prefix))
   | _not_the_announcement -> read_announcement stderr_channel
 
-let launch ?(executable = default_executable) ?(extra_args = []) () : t Lwt.t =
+let launch ?(executable = default_executable) ?(no_sandbox = false) ?(extra_args = []) () : t Lwt.t =
   let profile_dir = Filename.concat (Filename.get_temp_dir_name ()) (Printf.sprintf "cdp-chrome-%d" (Unix.getpid ())) in
+  let sandbox_arguments =
+    if no_sandbox then [ "--no-sandbox" ] else []
+  in
   let arguments =
-    [
-      executable;
-      "--headless";
-      "--remote-debugging-port=0";
-      "--no-sandbox";
-      "--user-data-dir=" ^ profile_dir;
-      "about:blank";
-    ]
+    [ executable; "--headless"; "--remote-debugging-port=0" ]
+    @ sandbox_arguments
+    @ [ "--user-data-dir=" ^ profile_dir; "about:blank" ]
     @ extra_args
   in
   let process = Lwt_process.open_process_full ("", Array.of_list arguments) in

@@ -64,6 +64,11 @@ All examples live in [examples/](examples/) and run against a real Chrome:
 `--remote-debugging-port=<port>`, read `webSocketDebuggerUrl` from
 `http://127.0.0.1:<port>/json/version`, and pass it as `WS=`.
 
+`Chrome.launch` keeps Chrome's sandbox on — it is the isolation layer between
+web pages and your machine. In environments where the sandbox cannot start
+(typically running as root in a container without user namespaces), pass
+`~no_sandbox:true` and treat every page you open as untrusted.
+
 ## The types
 
 - Ids and timestamps are sealed: a `Request_id.t` cannot be confused with a
