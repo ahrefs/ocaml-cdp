@@ -23,13 +23,26 @@ let jbool field json =
   | `Bool value -> value
   | _not_a_bool -> false
 
+let is_letter ch = (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')
+let is_digit ch = ch >= '0' && ch <= '9'
+
+(* a domain name becomes output file names and module names in generated
+   code, so anything beyond a plain identifier (a path separator, a comment
+   opener) must be rejected before it reaches the filesystem *)
+let checked_domain_name name =
+  let plain =
+    String.length name > 0 && is_letter name.[0] && String.for_all (fun ch -> is_letter ch || is_digit ch) name
+  in
+  if plain then name
+  else failwith (spf "cdp-gen: domain name %S is not a plain identifier (letters and digits only)" name)
+
 let load_domains path =
   let json = Json.from_file path in
   Util.member "domains" json
   |> Util.to_list
   |> List.map (fun domain_json ->
     {
-      name = jstr "domain" domain_json;
+      name = checked_domain_name (jstr "domain" domain_json);
       types = jlist "types" domain_json;
       commands = jlist "commands" domain_json;
       events = jlist "events" domain_json;
