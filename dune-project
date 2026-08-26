@@ -1,6 +1,9 @@
-(lang dune 3.16)
+(lang dune 3.18)
 
 (name cdp)
+
+; maintain only the latest release in the opam repository
+(maintenance_intent "(latest)")
 
 (generate_opam_files true)
 

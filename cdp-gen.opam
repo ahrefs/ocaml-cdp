@@ -14,7 +14,7 @@ tags: ["org:ahrefs" "chrome" "devtools" "cdp" "codegen"]
 homepage: "https://github.com/ahrefs/ocaml-cdp"
 bug-reports: "https://github.com/ahrefs/ocaml-cdp/issues"
 depends: [
-  "dune" {>= "3.16"}
+  "dune" {>= "3.18"}
   "ocaml" {>= "4.14"}
   "yojson" {>= "1.6.0"}
   "odoc" {with-doc}
@@ -34,3 +34,4 @@ build: [
   ]
 ]
 dev-repo: "git+https://github.com/ahrefs/ocaml-cdp.git"
+x-maintenance-intent: ["(latest)"]
