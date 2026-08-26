@@ -5,7 +5,8 @@
 (** Chrome answered the command with an error. *)
 exception Protocol_error of Cdp.Envelope.error
 
-(** The transport died; every in-flight call and event wait fails with this. *)
+(** The transport closed; in-flight calls and event waits fail with this. A transport that died with its own error (like
+    [Curl_transport.Message_too_large]) delivers that error instead. *)
 exception Connection_closed
 
 (** [call ~timeout] gave up waiting; carries the command name. *)
@@ -24,7 +25,7 @@ let () =
 type outcome =
   | Result of Cdp_json.t
   | Protocol_failure of Cdp.Envelope.error
-  | Closed
+  | Died of exn
 
 type event_waiter = {
   wanted_session : string option;
@@ -47,13 +48,13 @@ type t = {
 
 let session_string session = Option.map Cdp.Target.Session_id.to_string session
 
-let fail_everything connection =
+let fail_everything connection ~failure =
   let calls = Hashtbl.fold (fun _id resolve accumulated -> resolve :: accumulated) connection.pending [] in
   let waiters = Hashtbl.fold (fun _name waiter accumulated -> waiter :: accumulated) connection.event_waiters [] in
   Hashtbl.reset connection.pending;
   Hashtbl.reset connection.event_waiters;
-  List.iter (fun resolve -> resolve Closed) calls;
-  List.iter (fun waiter -> waiter.abandon Connection_closed) waiters
+  List.iter (fun resolve -> resolve (Died failure)) calls;
+  List.iter (fun waiter -> waiter.abandon failure) waiters
 
 let handle_response connection ~id ~outcome =
   match Hashtbl.find_opt connection.pending id with
@@ -92,13 +93,15 @@ let handle_event connection ~name ~params ~session =
     List.iter (fun waiter -> Hashtbl.add connection.event_waiters name waiter) (List.rev remaining);
     List.iter (fun waiter -> waiter.deliver params) delivered
 
+let stop connection ~failure =
+  fail_everything connection ~failure;
+  Lwt.wakeup_later connection.set_closed ();
+  Lwt.return_unit
+
 let rec read_loop connection =
-  let%lwt incoming = connection.transport.Transport.receive () in
-  match incoming with
-  | None ->
-    fail_everything connection;
-    Lwt.wakeup_later connection.set_closed ();
-    Lwt.return_unit
+  match%lwt connection.transport.Transport.receive () with
+  | exception transport_failure -> stop connection ~failure:transport_failure
+  | None -> stop connection ~failure:Connection_closed
   | Some raw ->
     (match Yojson.Basic.from_string raw with
     | exception Yojson.Json_error _parse_error -> () (* not JSON: ignore, keep the connection alive *)
@@ -160,7 +163,7 @@ let call connection ?session ?timeout (command : 'result Cdp.Command.t) : 'resul
     Lwt.on_cancel result_promise (fun () -> Hashtbl.remove connection.pending id);
     Hashtbl.replace connection.pending id (fun outcome ->
       match outcome with
-      | Closed -> Lwt.wakeup_later_exn resolve_result Connection_closed
+      | Died failure -> Lwt.wakeup_later_exn resolve_result failure
       | Protocol_failure protocol_error -> Lwt.wakeup_later_exn resolve_result (Protocol_error protocol_error)
       | Result result_json ->
       match command.Cdp.Command.parse result_json with

@@ -2,6 +2,7 @@
     this record, so tests drive it with an in-memory fake and production uses the libcurl WebSocket. *)
 type t = {
   send : string -> unit Lwt.t;
-  receive : unit -> string option Lwt.t;  (** next complete incoming message; [None] means the transport is closed *)
+  receive : unit -> string option Lwt.t;
+    (** next complete incoming message; [None] means the transport closed cleanly. *)
   close : unit -> unit Lwt.t;
 }

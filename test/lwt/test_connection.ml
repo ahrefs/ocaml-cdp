@@ -11,6 +11,8 @@ type fake = {
   kill : unit -> unit;
 }
 
+exception Fake_transport_failure
+
 let make_fake () =
   let incoming, push_incoming = Lwt_stream.create () in
   let sent = ref [] in
@@ -266,6 +268,35 @@ let () =
     let%lwt () = settle () in
     assert (!seen = [ 2.0; 1.0 ]);
     pass "on_event sees every occurrence until unsubscribed";
+
+    (* 16. a transport that dies with its own error delivers it to in-flight
+           work, instead of the generic Connection_closed *)
+    let incoming, push_incoming = Lwt_stream.create () in
+    let dying_transport =
+      {
+        Cdp_lwt.Transport.send = (fun _payload -> Lwt.return_unit);
+        receive =
+          (fun () ->
+            match%lwt Lwt_stream.get incoming with
+            | Some _ as message -> Lwt.return message
+            | None -> Lwt.fail Fake_transport_failure);
+        close =
+          (fun () ->
+            push_incoming None;
+            Lwt.return_unit);
+      }
+    in
+    let connection = Cdp_lwt.Connection.create dying_transport in
+    let in_flight = Cdp_lwt.Connection.call connection enable_security in
+    push_incoming None;
+    let%lwt () =
+      match%lwt in_flight with
+      | exception Fake_transport_failure -> Lwt.return_unit
+      | exception _other -> assert false
+      | () -> assert false
+    in
+    let%lwt () = Cdp_lwt.Connection.closed connection in
+    pass "a transport's own error reaches in-flight calls typed";
     Lwt.return_unit
     end
 

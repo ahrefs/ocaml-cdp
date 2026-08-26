@@ -2,6 +2,17 @@
    receive frames in the write callback, reassemble fragmented messages.
    Use Curl.ws_send for the outgoing direction. *)
 
+let default_max_message_size = 256 * 1024 * 1024
+
+(** One incoming message passed [max_message_size]; carries the cap in bytes. In-flight calls fail with this and the
+    connection closes. *)
+exception Message_too_large of int
+
+let () =
+  Printexc.register_printer (function
+    | Message_too_large cap -> Some (Printf.sprintf "Cdp_lwt.Curl_transport.Message_too_large: cap %d bytes" cap)
+    | _other_exception -> None)
+
 let configure ~url =
   let handle = Curl.init () in
   Curl.set_url handle url;
@@ -22,16 +33,26 @@ let rec send_with_retry handle payload ~attempts_left =
     let%lwt () = Lwt_unix.sleep 0.1 in
     send_with_retry handle payload ~attempts_left:(attempts_left - 1)
 
-(** [connect ~url ()] opens a WebSocket to [url] (a [ws://] DevTools address, e.g. {!Chrome.launch}'s [ws_url]) and
-    returns the transport for {!Connection.create}. *)
-let connect ~url () : Transport.t Lwt.t =
+(** [connect ~url ()] opens a WebSocket and returns the transport for {!Connection.create}.
+
+    - [url]: a [ws://] DevTools address, e.g. {!Chrome.launch}'s [ws_url].
+    - [max_message_size]: cap for one incoming message *)
+let connect ~url ?(max_message_size = default_max_message_size) () : Transport.t Lwt.t =
   let handle = configure ~url in
   let incoming, push_incoming = Lwt_stream.create () in
   let message_buffer = Buffer.create 8192 in
   let closing = ref false in
+  let transport_failure = ref None in
   Curl.set_writefunction handle (fun chunk ->
     match !closing with
     | true -> 0 (* wrong length aborts the transfer, ending Curl_lwt.perform *)
+    | false ->
+    match Buffer.length message_buffer + String.length chunk > max_message_size with
+    | true ->
+      (* the message passed the cap: abort the transfer, the stream ends *)
+      transport_failure := Some (Message_too_large max_message_size);
+      closing := true;
+      0
     | false ->
       (match Curl.ws_meta handle with
       | None -> () (* not a websocket frame; nothing we can use *)
@@ -64,7 +85,14 @@ let connect ~url () : Transport.t Lwt.t =
   let transport =
     {
       Transport.send = (fun payload -> send_with_retry handle payload ~attempts_left:50);
-      receive = (fun () -> Lwt_stream.get incoming);
+      receive =
+        (fun () ->
+          match%lwt Lwt_stream.get incoming with
+          | Some _ as message -> Lwt.return message
+          | None ->
+          match !transport_failure with
+          | Some died -> Lwt.fail died
+          | None -> Lwt.return_none);
       close =
         (fun () ->
           closing := true;

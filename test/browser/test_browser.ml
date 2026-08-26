@@ -61,6 +61,24 @@ let () =
       pass "state roundtrip: cookie written and read back typed";
       let%lwt () = Cdp_lwt.Connection.close connection in
       let%lwt () = chrome.kill () in
+      (* shape 6: the message size cap — a response over the cap must fail
+         the call with the typed error and close the connection. Own Chrome:
+         a browser endpoint accepts one client, and reusing the endpoint of
+         the connection closed above could be refused mid-teardown, which
+         would end as a plain close and not exercise the cap. *)
+      let%lwt capped_chrome = Cdp_lwt.Chrome.launch () in
+      let%lwt capped_transport = Cdp_lwt.Curl_transport.connect ~url:capped_chrome.ws_url ~max_message_size:64 () in
+      let capped_connection = Cdp_lwt.Connection.create capped_transport in
+      let%lwt () =
+        try%lwt
+          let%lwt (_version : Cdp.Browser.Get_version.result) =
+            Cdp_lwt.Connection.call capped_connection ~timeout:10.0 Cdp.Browser.Get_version.command
+          in
+          assert false
+        with Cdp_lwt.Curl_transport.Message_too_large 64 -> Lwt.return_unit
+      in
+      pass "a message over max_message_size fails typed and closes the connection";
+      let%lwt () = capped_chrome.kill () in
       Lwt.return_unit
     end
 
