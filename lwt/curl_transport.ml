@@ -22,8 +22,13 @@ let configure ~url =
   handle
 
 (* sending can start only after the WebSocket handshake; retry briefly
-   instead of tracking handshake state through curl callbacks *)
-let rec send_with_retry handle payload ~attempts_left =
+   instead of tracking handshake state.
+   [alive] is re-checked on every attempt — the transfer can end during the
+   sleep, and touching the handle after Curl.cleanup segfaults *)
+let rec send_with_retry ~alive ~death_error handle payload ~attempts_left =
+  match !alive with
+  | false -> Lwt.fail (death_error ())
+  | true ->
   match Curl.ws_send handle payload [ Curl.CURLWS_TEXT ] with
   | _bytes_sent -> Lwt.return_unit
   | exception failure ->
@@ -31,7 +36,7 @@ let rec send_with_retry handle payload ~attempts_left =
   | false -> Lwt.fail failure
   | true ->
     let%lwt () = Lwt_unix.sleep 0.1 in
-    send_with_retry handle payload ~attempts_left:(attempts_left - 1)
+    send_with_retry ~alive ~death_error handle payload ~attempts_left:(attempts_left - 1)
 
 (** [connect ~url ()] opens a WebSocket and returns the transport for {!Connection.create}.
 
@@ -42,7 +47,13 @@ let connect ~url ?(max_message_size = default_max_message_size) () : Transport.t
   let incoming, push_incoming = Lwt_stream.create () in
   let message_buffer = Buffer.create 8192 in
   let closing = ref false in
+  let alive = ref true in
   let transport_failure = ref None in
+  let death_error () =
+    match !transport_failure with
+    | Some died -> died
+    | None -> Transport.Closed
+  in
   Curl.set_writefunction handle (fun chunk ->
     match !closing with
     | true -> 0 (* wrong length aborts the transfer, ending Curl_lwt.perform *)
@@ -79,12 +90,14 @@ let connect ~url ?(max_message_size = default_max_message_size) () : Transport.t
       | Curl.CurlException (code, _errno, _message) -> Lwt.return code
       | _unexpected -> Lwt.return Curl.CURLE_RECV_ERROR
     in
+    (* dead before cleanup: send/close must never touch a freed handle *)
+    alive := false;
     push_incoming None;
     Curl.cleanup handle;
     Lwt.return_unit);
   let transport =
     {
-      Transport.send = (fun payload -> send_with_retry handle payload ~attempts_left:50);
+      Transport.send = (fun payload -> send_with_retry ~alive ~death_error handle payload ~attempts_left:50);
       receive =
         (fun () ->
           match%lwt Lwt_stream.get incoming with
@@ -96,9 +109,12 @@ let connect ~url ?(max_message_size = default_max_message_size) () : Transport.t
       close =
         (fun () ->
           closing := true;
+          (match !alive with
+          | false -> () (* the transfer is over and the handle is freed; nothing left to tell the server *)
+          | true ->
           (* tell the server we are leaving; if the connection is already
-             dead this fails, which is fine — perform is ending anyway *)
-          (try ignore (Curl.ws_send handle "" [ Curl.CURLWS_CLOSE ] : int) with _already_dead -> ());
+               dead this fails, which is fine — perform is ending anyway *)
+          try ignore (Curl.ws_send handle "" [ Curl.CURLWS_CLOSE ] : int) with _already_dead -> ());
           Lwt.return_unit);
     }
   in

@@ -78,6 +78,10 @@ let () =
         with Cdp_lwt.Curl_transport.Message_too_large 64 -> Lwt.return_unit
       in
       pass "a message over max_message_size fails typed and closes the connection";
+      (* closing after the transport died and freed its handle must be a
+         safe no-op *)
+      let%lwt () = Cdp_lwt.Connection.close capped_connection in
+      pass "close after transport death is a safe no-op";
       let%lwt () = capped_chrome.kill () in
       (* shape 7: a binary that exits without announcing must fail with a
          clear message and clean up its profile directory *)

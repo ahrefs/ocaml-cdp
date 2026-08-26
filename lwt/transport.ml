@@ -1,3 +1,7 @@
+(** [send] on a transport that already closed. A transport that died with its own error fails [send] with that error
+    instead. *)
+exception Closed
+
 (** A transport is anything that moves whole text messages in both directions. The connection logic is written against
     this record, so tests drive it with an in-memory fake and production uses the libcurl WebSocket. *)
 type t = {
