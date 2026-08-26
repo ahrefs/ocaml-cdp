@@ -15,6 +15,36 @@ against a real Chrome (see the demo below); the API may still change.
 | `cdp-lwt` | The connection: WebSocket transport, typed `call` and `next_event` |
 | `cdp-gen` | The generator CLI: protocol JSON in, OCaml out |
 
+`cdp` ships 10 domains: Browser, DOM, Debugger, Emulation, IO, Network, Page,
+Runtime, Security, and Target. The generator covers all 58 — see
+[How generation works](#how-generation-works) to build your own selection.
+
+## Build from source
+
+The packages are not on opam yet; build from a clone:
+
+```sh
+git clone https://github.com/ahrefs/ocaml-cdp.git
+cd ocaml-cdp
+opam switch create . 5.4.1 --no-install
+
+# cdp-lwt uses libcurl's WebSocket API. ocurl has not released it yet
+# (latest release is 0.10.0), so pin ocurl master for now:
+opam pin add -n curl 'git+https://github.com/ygrek/ocurl.git#dc00dcb3ec5c1b55a28448a2f301fa1ce6af3019'
+opam pin add -n curl_lwt 'git+https://github.com/ygrek/ocurl.git#dc00dcb3ec5c1b55a28448a2f301fa1ce6af3019'
+
+opam install . --deps-only --with-test
+make build test
+```
+
+Your system libcurl must be 7.86 or newer with WebSocket support (check with
+`curl-config --version`). Chrome-launching code and examples need a Chrome:
+by default the executable is `google-chrome` from `PATH`; set the
+`CDP_CHROME` environment variable (or pass `~executable` to `Chrome.launch`)
+to use another binary, e.g. `chromium` or
+`CDP_CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"`
+on macOS.
+
 ## Demo
 
 `make demo` launches a headless Chrome and runs [examples/navigate.ml](examples/navigate.ml):
@@ -34,7 +64,7 @@ let session = attached.session_id in
 
 let%lwt () = call ~session (Cdp.Page.Enable.command (Cdp.Page.Enable.make_params ())) in
 let loaded = Cdp_lwt.Connection.next_event connection ~session Cdp.Page.Load_event_fired.event in
-let%lwt _navigation = call ~session (Cdp.Page.Navigate.command (Cdp.Page.Navigate.make_params ~url ())) in
+let%lwt _navigation = call ~session (Cdp.Page.Navigate.command (Cdp.Page.Navigate.make_params ~url:"https://example.com" ())) in
 let%lwt _fired = loaded in
 
 let%lwt evaluated =
@@ -47,6 +77,8 @@ Every step is a typed command; failures are typed too (`Protocol_error`,
 
 **One rule to know:** `next_event` catches events arriving *after* it is
 called — subscribe first, then trigger (as the demo does around `navigate`).
+`next_event` waits for one occurrence; for a persistent subscription use
+`Connection.on_event`, which fires on every occurrence until unsubscribed.
 
 ## Examples
 
@@ -102,9 +134,26 @@ cdp-gen fetch mydir 1650000
 cdp-gen generate mydir/browser_protocol.json mydir/js_protocol.json out Network,Page
 ```
 
+To compile the output as a library: copy the four hand-written glue files
+`cdp_json.ml`, `cdp_command.ml`, `cdp_event.ml`, and `cdp_envelope.ml` from
+[lib/](lib/) next to the generated files, and use this dune stanza (the same
+one `make check-full` uses):
+
+```
+(library
+ (name my_cdp)
+ (libraries jsonkit yojson)
+ (preprocess
+  (pps jsonkit.ppx ppx_deriving.show ppx_deriving.eq ppx_deriving.make))
+ (flags
+  (:standard -w -a -alert -all)))
+```
+
 ## Development
 
-`make help` lists all targets. Tests:
+`make help` lists all targets. The `screenshot` and `attach` examples also
+need the `base64` package (`opam install base64`); it is not a dependency of
+any released package. Tests:
 
 - cram tests (`test/cram/*.t`): small protocol JSON in, generated OCaml out —
   review diffs with `dune runtest`, accept with `dune promote`;
