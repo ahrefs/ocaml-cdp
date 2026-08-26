@@ -79,6 +79,25 @@ let () =
       in
       pass "a message over max_message_size fails typed and closes the connection";
       let%lwt () = capped_chrome.kill () in
+      (* shape 7: a binary that exits without announcing must fail with a
+         clear message and clean up its profile directory *)
+      let profile_dirs () =
+        Sys.readdir (Filename.get_temp_dir_name ())
+        |> Array.to_list
+        |> List.filter (fun entry -> String.starts_with ~prefix:"cdp-chrome-" entry)
+        |> List.length
+      in
+      let dirs_before = profile_dirs () in
+      let%lwt () =
+        try%lwt
+          let%lwt (_chrome : Cdp_lwt.Chrome.t) = Cdp_lwt.Chrome.launch ~executable:"/bin/false" () in
+          assert false
+        with Failure message ->
+          assert (message = "cdp-lwt: /bin/false exited before announcing a DevTools address — is it a Chrome binary?");
+          Lwt.return_unit
+      in
+      assert (profile_dirs () = dirs_before);
+      pass "a silently exiting binary fails with a clear error and no leftover profile";
       Lwt.return_unit
     end
 

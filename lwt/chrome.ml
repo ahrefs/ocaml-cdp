@@ -74,11 +74,22 @@ let launch ?(executable = default_executable) ?(no_sandbox = false) ?(timeout = 
   in
   let announcement =
     let%lwt ws_url = read_announcement process#stderr in
-    Lwt.return { ws_url; kill }
+    Lwt.return (`Announced ws_url)
   in
-  let gave_up =
+  let deadline =
     let%lwt () = Lwt_unix.sleep timeout in
+    Lwt.return `Deadline
+  in
+  match%lwt Lwt.pick [ announcement; deadline ] with
+  | `Announced ws_url -> Lwt.return { ws_url; kill }
+  | `Deadline ->
     let%lwt () = kill () in
     Lwt.fail (Failure (Printf.sprintf "cdp-lwt: %s did not announce a DevTools address within %gs" executable timeout))
-  in
-  Lwt.pick [ announcement; gave_up ]
+  | exception End_of_file ->
+    let%lwt () = kill () in
+    Lwt.fail
+      (Failure
+         (Printf.sprintf "cdp-lwt: %s exited before announcing a DevTools address — is it a Chrome binary?" executable))
+  | exception failure ->
+    let%lwt () = kill () in
+    Lwt.fail failure
