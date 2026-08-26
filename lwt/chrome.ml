@@ -2,6 +2,8 @@
    Chrome announces "DevTools listening on ws://..." on stderr; we start it
    with --remote-debugging-port=0 (pick any free port) and read that line. *)
 
+(** A launched Chrome: [ws_url] is the DevTools WebSocket address to connect a transport to; [kill] terminates the
+    process and removes its temporary profile directory. *)
 type t = {
   ws_url : string;
   kill : unit -> unit Lwt.t;
@@ -13,19 +15,21 @@ let default_executable =
   | None -> "google-chrome"
 
 let random_state = lazy (Random.State.make_self_init ())
+let random_suffix_bound = 0x10000000
+let owner_only_permissions = 0o700
 
-(* atomic mkdir with 0700 keeps the profile private on a shared temp dir and
-   cannot be hijacked by a pre-created directory: EEXIST means pick a new name *)
-let rec create_profile_dir attempts_left =
-  let name = Printf.sprintf "cdp-chrome-%08x" (Random.State.int (Lazy.force random_state) 0x10000000) in
+(* atomic mkdir keeps the profile private on a shared temp dir and cannot be
+   hijacked by a pre-created directory *)
+let rec create_profile_dir ~attempts_left =
+  let name = Printf.sprintf "cdp-chrome-%08x" (Random.State.int (Lazy.force random_state) random_suffix_bound) in
   let path = Filename.concat (Filename.get_temp_dir_name ()) name in
   try
-    Unix.mkdir path 0o700;
+    Unix.mkdir path owner_only_permissions;
     path
   with Unix.Unix_error (Unix.EEXIST, _mkdir, _path) ->
     (match attempts_left with
     | 0 -> failwith "cdp-lwt: could not create a fresh Chrome profile directory in the temp dir"
-    | tries_remaining -> create_profile_dir (tries_remaining - 1))
+    | tries_remaining -> create_profile_dir ~attempts_left:(tries_remaining - 1))
 
 let rec remove_tree path =
   match (Unix.lstat path).Unix.st_kind with
@@ -44,11 +48,19 @@ let rec read_announcement stderr_channel =
       (String.sub line (String.length announcement_prefix) (String.length line - String.length announcement_prefix))
   | _not_the_announcement -> read_announcement stderr_channel
 
-let launch ?(executable = default_executable) ?(no_sandbox = false) ?(extra_args = []) () : t Lwt.t =
-  let profile_dir = create_profile_dir 10 in
+(** [launch ()] starts a headless Chrome with a fresh private profile and returns its DevTools WebSocket address.
+
+    - [executable]: the Chrome binary; defaults to [$CDP_CHROME] or ["google-chrome"].
+    - [timeout]: seconds to wait for the DevTools address.
+    - [no_sandbox]: turn off Chrome's sandbox.
+    - [port]: DevTools port; [0] (the default) picks any free port.
+    - [extra_args]: appended to the Chrome command line. *)
+let launch ?(executable = default_executable) ?(no_sandbox = false) ?(timeout = 15.0) ?(port = 0) ?(extra_args = []) ()
+  : t Lwt.t =
+  let profile_dir = create_profile_dir ~attempts_left:10 in
   let sandbox_arguments = if no_sandbox then [ "--no-sandbox" ] else [] in
   let arguments =
-    [ executable; "--headless"; "--remote-debugging-port=0" ]
+    [ executable; "--headless"; "--remote-debugging-port=" ^ string_of_int port ]
     @ sandbox_arguments
     @ [ "--user-data-dir=" ^ profile_dir; "about:blank" ]
     @ extra_args
@@ -65,8 +77,8 @@ let launch ?(executable = default_executable) ?(no_sandbox = false) ?(extra_args
     Lwt.return { ws_url; kill }
   in
   let gave_up =
-    let%lwt () = Lwt_unix.sleep 15.0 in
+    let%lwt () = Lwt_unix.sleep timeout in
     let%lwt () = kill () in
-    Lwt.fail (Failure ("cdp-lwt: " ^ executable ^ " did not announce a DevTools address within 15s"))
+    Lwt.fail (Failure (Printf.sprintf "cdp-lwt: %s did not announce a DevTools address within %gs" executable timeout))
   in
   Lwt.pick [ announcement; gave_up ]

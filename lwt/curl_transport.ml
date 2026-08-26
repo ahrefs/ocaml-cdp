@@ -22,6 +22,8 @@ let rec send_with_retry handle payload ~attempts_left =
     let%lwt () = Lwt_unix.sleep 0.1 in
     send_with_retry handle payload ~attempts_left:(attempts_left - 1)
 
+(** [connect ~url ()] opens a WebSocket to [url] (a [ws://] DevTools address, e.g. {!Chrome.launch}'s [ws_url]) and
+    returns the transport for {!Connection.create}. *)
 let connect ~url () : Transport.t Lwt.t =
   let handle = configure ~url in
   let incoming, push_incoming = Lwt_stream.create () in

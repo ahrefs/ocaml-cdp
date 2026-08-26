@@ -112,6 +112,7 @@ let rec read_loop connection =
     | Ok (Event { name; params; session }) -> handle_event connection ~name ~params ~session);
     read_loop connection
 
+(** [create transport] starts the read loop on [transport] and returns a connection ready for {!call}. *)
 let create transport =
   let closed, set_closed = Lwt.wait () in
   let connection =
@@ -120,8 +121,10 @@ let create transport =
   Lwt.async (fun () -> read_loop connection);
   connection
 
+(** A promise that resolves once the connection is closed — by {!close}, by the peer, or by a transport failure. *)
 let closed connection = connection.closed
 
+(** Close the transport. Every in-flight call and event wait fails with {!Connection_closed}, and {!closed} resolves. *)
 let close connection =
   (* the transport signals the read loop with a final None, which fails the
      in-flight calls and event waits and resolves [closed] *)
@@ -143,6 +146,10 @@ let is_closed connection =
   | Lwt.Sleep -> false
   | Lwt.Fail _never_fails -> false
 
+(** [call connection command] sends [command] and waits for its typed result. [session] targets one attached session.
+    Without [timeout] it waits forever; with [~timeout] seconds it raises {!Call_timeout} on expiry and drops the late
+    response. Raises {!Protocol_error} when Chrome answers with an error, {!Connection_closed} when the connection dies
+    first. Cancelling the returned promise forgets the pending command. *)
 let call connection ?session ?timeout (command : 'result Cdp.Command.t) : 'result Lwt.t =
   if is_closed connection then Lwt.fail Connection_closed
   else begin
@@ -173,6 +180,8 @@ let call connection ?session ?timeout (command : 'result Cdp.Command.t) : 'resul
         Lwt.fail failure)
   end
 
+(** [next_event connection event] waits for one occurrence of [event] arriving {e after} this call — subscribe first,
+    then trigger. [session] filters to one session. One-shot; for every occurrence use {!on_event}. *)
 let next_event connection ?session (event : 'params Cdp.Event.t) : 'params Lwt.t =
   if is_closed connection then Lwt.fail Connection_closed
   else begin
@@ -194,9 +203,8 @@ let next_event connection ?session (event : 'params Cdp.Event.t) : 'params Lwt.t
     params_promise
   end
 
-(* a persistent subscription: [handler] runs on every matching event until
-   the returned unsubscribe function is called or the connection closes.
-   Payloads that fail to parse are skipped. *)
+(** A persistent subscription: [handler] runs on every matching event until the returned unsubscribe function is called
+    or the connection closes. Payloads that fail to parse are skipped. *)
 let on_event connection ?session (event : 'params Cdp.Event.t) (handler : 'params -> unit) : unit -> unit =
   let waiter =
     {
