@@ -194,14 +194,19 @@ let connect ~url ?(max_message_size = default_max_message_size) () : Transport.t
     {
       Transport.send =
         (fun payload ->
-          send_all ~alive ~death_error
-            ~abort:(fun failure ->
-              abort failure;
-              cancel_transfer ())
-            ~ws_send:(fun piece ->
-              try Curl.ws_send handle piece [ Curl.CURLWS_TEXT ]
-              with Curl.CurlException (code, _errno, message) -> raise (Transport_failure { code; message }))
-            payload);
+          match !closing with
+          | true ->
+            (* fail fast on send-after-close instead of racing the teardown *)
+            Lwt.fail (death_error ())
+          | false ->
+            send_all ~alive ~death_error
+              ~abort:(fun failure ->
+                abort failure;
+                cancel_transfer ())
+              ~ws_send:(fun piece ->
+                try Curl.ws_send handle piece [ Curl.CURLWS_TEXT ]
+                with Curl.CurlException (code, _errno, message) -> raise (Transport_failure { code; message }))
+              payload);
       receive =
         (fun () ->
           match%lwt Lwt_stream.get incoming with

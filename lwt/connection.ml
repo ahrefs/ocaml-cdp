@@ -233,7 +233,10 @@ let call connection ?session ?(timeout = default_call_timeout) (command : 'resul
       Cdp.Envelope.request ~id ?session:(session_string session) ~name:command.Cdp.Command.name
         ~params:command.Cdp.Command.params ()
     in
-    let%lwt () = connection.transport.Transport.send (Yojson.Basic.to_string request) in
+    let%lwt () =
+      try%lwt connection.transport.Transport.send (Yojson.Basic.to_string request)
+      with Transport.Closed -> Lwt.fail Connection_closed
+    in
     (* on timeout (or any failure), forget the pending entry so a very late
      response is dropped instead of waking a dead promise *)
     Lwt.catch
@@ -267,22 +270,28 @@ let next_event connection ?session (event : 'params Cdp.Event.t) : 'params Lwt.t
   end
 
 (** A persistent subscription: [handler] runs on every matching event until the returned unsubscribe function is called
-    or the connection closes. Payloads that fail to parse are skipped. *)
+    or the connection closes.
+    Payloads that fail to parse are skipped.
+    On a closed connection this is a no-op — the handler never runs and the returned unsubscribe does nothing (like event listeners in every CDP client;
+    unlike {!next_event}, whose promise would hang and therefore raises). *)
 let on_event connection ?session (event : 'params Cdp.Event.t) (handler : 'params -> unit) : unit -> unit =
-  let waiter =
-    {
-      wanted_session = session_string session;
-      deliver =
-        (fun params ->
-          match event.Cdp.Event.parse params with
-          | parsed -> handler parsed
-          | exception _unparseable_payload -> ());
-      abandon = (fun _connection_closed -> ());
-      persistent = true;
-    }
-  in
-  Hashtbl.add connection.event_waiters event.Cdp.Event.name waiter;
-  fun () -> remove_waiter connection ~name:event.Cdp.Event.name waiter
+  match is_closed connection with
+  | true -> fun () -> ()
+  | false ->
+    let waiter =
+      {
+        wanted_session = session_string session;
+        deliver =
+          (fun params ->
+            match event.Cdp.Event.parse params with
+            | parsed -> handler parsed
+            | exception _unparseable_payload -> ());
+        abandon = (fun _connection_closed -> ());
+        persistent = true;
+      }
+    in
+    Hashtbl.add connection.event_waiters event.Cdp.Event.name waiter;
+    fun () -> remove_waiter connection ~name:event.Cdp.Event.name waiter
 
 (** [with_connection transport f] runs [f] with a fresh connection and always closes it — also when [f] raises. *)
 let with_connection transport callback =

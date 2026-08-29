@@ -426,6 +426,41 @@ let () =
     fake.inject {|{"id":1,"result":{}}|};
     let%lwt () = awaiting in
     pass "an infinite timeout is a clean opt-out of the default";
+
+    (* 24. a transport refusing a send because it closed surfaces through
+       call as Connection_closed — the documented failure, not a transport
+       internal *)
+    let incoming, push_incoming = Lwt_stream.create () in
+    let refusing_transport =
+      {
+        Cdp_lwt.Transport.send = (fun _payload -> Lwt.fail Cdp_lwt.Transport.Closed);
+        receive = (fun () -> Lwt_stream.get incoming);
+        close =
+          (fun () ->
+            push_incoming None;
+            Lwt.return_unit);
+      }
+    in
+    let connection = Cdp_lwt.Connection.create refusing_transport in
+    let%lwt () =
+      match%lwt Cdp_lwt.Connection.call connection enable_security with
+      | exception Cdp_lwt.Connection.Connection_closed -> Lwt.return_unit
+      | exception _other -> assert false
+      | () -> assert false
+    in
+    pass "a refused send surfaces as Connection_closed through call";
+
+    (* 25. on_event on a closed connection is a silent no-op: no exception,
+       a callable no-op unsubscribe, and a handler that can never run *)
+    let fake = make_fake () in
+    let connection = Cdp_lwt.Connection.create fake.transport in
+    fake.kill ();
+    let%lwt () = Cdp_lwt.Connection.closed connection in
+    let unsubscribe =
+      Cdp_lwt.Connection.on_event connection Cdp.Page.Load_event_fired.event (fun _fired -> assert false)
+    in
+    unsubscribe ();
+    pass "on_event on a closed connection is a harmless no-op";
     Lwt.return_unit
     end
 

@@ -284,6 +284,15 @@ let () =
           ]
       in
       pass "close on an idle connection resolves closed and ends the transfer";
+      (* a send racing close() must fail fast and typed, not touch the
+         closing transfer: close set the flag synchronously above *)
+      let%lwt () =
+        try%lwt
+          let%lwt () = idle_transport.Cdp_lwt.Transport.send "too late" in
+          assert false
+        with Cdp_lwt.Transport.Closed -> Lwt.return_unit
+      in
+      pass "send after close fails fast with Transport.Closed";
       (* shape 11: nothing listens on port 1 — connect must fail typed, not
          "succeed" and die later as a clean close *)
       let%lwt () =
