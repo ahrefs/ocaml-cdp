@@ -10,3 +10,16 @@
  (package cdp-lwt)
  (action
   (run ./test_connection.exe)))
+
+(executable
+ (name test_send_all)
+ (modules test_send_all)
+ (libraries cdp_lwt lwt lwt.unix)
+ (preprocess
+  (pps lwt_ppx)))
+
+(rule
+ (alias runtest)
+ (package cdp-lwt)
+ (action
+  (run ./test_send_all.exe)))

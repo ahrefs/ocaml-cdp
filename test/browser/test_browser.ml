@@ -45,6 +45,17 @@ let () =
       | Some (`String "smoke") -> ()
       | _unexpected -> assert false);
       pass "params + typed result (Runtime.evaluate)";
+      (* a command far larger than one socket write: libcurl accepts big
+         frames in pieces, and a dropped piece would hang this call forever *)
+      let big_length = (3 * 1024 * 1024) + 12345 in
+      let big_expression = Printf.sprintf "%S.length" (String.make big_length 'a') in
+      let%lwt measured =
+        call ~session (Cdp.Runtime.Evaluate.command (Cdp.Runtime.Evaluate.make_params ~expression:big_expression ()))
+      in
+      (match measured.result.value with
+      | Some (`Int reported_length) -> assert (reported_length = big_length)
+      | _unexpected -> assert false);
+      pass "a multi-megabyte command payload round-trips uncorrupted";
       (* shape 5: state roundtrip — write a cookie, read it back typed *)
       let%lwt cookie_set =
         call ~session

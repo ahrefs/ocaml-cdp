@@ -21,22 +21,43 @@ let configure ~url =
   Curl.set_timeout handle 0;
   handle
 
-(* sending can start only after the WebSocket handshake; retry briefly
-   instead of tracking handshake state.
-   [alive] is re-checked on every attempt — the transfer can end during the
-   sleep, and touching the handle after Curl.cleanup segfaults *)
-let rec send_with_retry ~alive ~death_error handle payload ~attempts_left =
-  match !alive with
-  | false -> Lwt.fail (death_error ())
-  | true ->
-  match Curl.ws_send handle payload [ Curl.CURLWS_TEXT ] with
-  | _bytes_sent -> Lwt.return_unit
-  | exception failure ->
-  match attempts_left > 0 with
-  | false -> Lwt.fail failure
-  | true ->
-    let%lwt () = Lwt_unix.sleep 0.1 in
-    send_with_retry ~alive ~death_error handle payload ~attempts_left:(attempts_left - 1)
+(* 50 x 0.1s: how long one send may sit with no byte accepted before giving
+   up — covers both the pre-handshake window and a full socket buffer *)
+let default_stall_budget = 50
+
+(* libcurl may accept only PART of a large frame per ws_send call ("short
+   send"); the remainder must be re-offered from the returned offset or the
+   frame is silently truncated on the wire.
+   
+   stalls (pre-handshake, full socket) are retried briefly;
+   the budget resets whenever bytes are accepted.
+   [alive] is re-checked on every attempt — the transfer can end
+   during a sleep, and touching the handle after Curl.cleanup segfaults.
+   
+   send that gives up mid-frame has corrupted the stream, so it kills the
+   whole transport via [abort].
+   [ws_send] is injected so tests can drive short sends and stalls deterministically. *)
+let send_all ?(stall_budget = default_stall_budget) ~alive ~death_error ~abort ~ws_send payload =
+  let total = String.length payload in
+  let rec from_offset ~offset ~stalls_left =
+    match !alive with
+    | false -> Lwt.fail (death_error ())
+    | true ->
+    match ws_send (String.sub payload offset (total - offset)) with
+    | sent when offset + sent >= total -> Lwt.return_unit
+    | sent when sent > 0 -> from_offset ~offset:(offset + sent) ~stalls_left:stall_budget
+    | _no_progress -> stalled ~offset ~stalls_left (Failure "cdp-lwt: websocket send made no progress")
+    | exception failure -> stalled ~offset ~stalls_left failure
+  and stalled ~offset ~stalls_left failure =
+    match stalls_left with
+    | 0 ->
+      if offset > 0 then abort failure;
+      Lwt.fail failure
+    | _tries_remaining ->
+      let%lwt () = Lwt_unix.sleep 0.1 in
+      from_offset ~offset ~stalls_left:(stalls_left - 1)
+  in
+  from_offset ~offset:0 ~stalls_left:stall_budget
 
 (** [connect ~url ()] opens a WebSocket and returns the transport for {!Connection.create}.
 
@@ -53,6 +74,10 @@ let connect ~url ?(max_message_size = default_max_message_size) () : Transport.t
     match !transport_failure with
     | Some died -> died
     | None -> Transport.Closed
+  in
+  let abort failure =
+    transport_failure := Some failure;
+    closing := true
   in
   Curl.set_writefunction handle (fun chunk ->
     match !closing with
@@ -97,7 +122,11 @@ let connect ~url ?(max_message_size = default_max_message_size) () : Transport.t
     Lwt.return_unit);
   let transport =
     {
-      Transport.send = (fun payload -> send_with_retry ~alive ~death_error handle payload ~attempts_left:50);
+      Transport.send =
+        (fun payload ->
+          send_all ~alive ~death_error ~abort
+            ~ws_send:(fun piece -> Curl.ws_send handle piece [ Curl.CURLWS_TEXT ])
+            payload);
       receive =
         (fun () ->
           match%lwt Lwt_stream.get incoming with
