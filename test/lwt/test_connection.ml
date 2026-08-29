@@ -344,6 +344,34 @@ let () =
     let%lwt version = root_call in
     assert (version.product = "alive");
     pass "a detached session fails its calls and waiters; the rest survives";
+
+    (* 20. on_event ~session sees only its session's events, and only until
+       unsubscribed; an unfiltered subscription alongside sees everything *)
+    let fake = make_fake () in
+    let connection = Cdp_lwt.Connection.create fake.transport in
+    let session_a = Cdp.Target.Session_id.of_string "session-a" in
+    let seen_a = ref [] in
+    let seen_all = ref [] in
+    let unsubscribe_a =
+      Cdp_lwt.Connection.on_event connection ~session:session_a Cdp.Page.Load_event_fired.event (fun fired ->
+        seen_a := Cdp.Network.Monotonic_time.to_float fired.timestamp :: !seen_a)
+    in
+    let (_unsubscribe_all : unit -> unit) =
+      Cdp_lwt.Connection.on_event connection Cdp.Page.Load_event_fired.event (fun fired ->
+        seen_all := Cdp.Network.Monotonic_time.to_float fired.timestamp :: !seen_all)
+    in
+    fake.inject {|{"method":"Page.loadEventFired","params":{"timestamp":1.0},"sessionId":"session-a"}|};
+    fake.inject {|{"method":"Page.loadEventFired","params":{"timestamp":2.0},"sessionId":"session-b"}|};
+    fake.inject {|{"method":"Page.loadEventFired","params":{"timestamp":3.0}}|};
+    let%lwt () = settle () in
+    assert (!seen_a = [ 1.0 ]);
+    assert (!seen_all = [ 3.0; 2.0; 1.0 ]);
+    unsubscribe_a ();
+    fake.inject {|{"method":"Page.loadEventFired","params":{"timestamp":4.0},"sessionId":"session-a"}|};
+    let%lwt () = settle () in
+    assert (!seen_a = [ 1.0 ]);
+    assert (!seen_all = [ 4.0; 3.0; 2.0; 1.0 ]);
+    pass "on_event with a session filters to that session until unsubscribed";
     Lwt.return_unit
     end
 
