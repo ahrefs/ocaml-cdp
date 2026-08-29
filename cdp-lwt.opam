@@ -21,6 +21,7 @@ depends: [
   "curl_lwt"
   "lwt" {>= "5.10"}
   "lwt_ppx" {>= "5.9"}
+  "base64" {with-test}
   "odoc" {with-doc}
 ]
 build: [
@@ -39,3 +40,12 @@ build: [
 ]
 dev-repo: "git+https://github.com/ahrefs/ocaml-cdp.git"
 x-maintenance-intent: ["(latest)"]
+# cdp-lwt uses libcurl's WebSocket API (Curl.ws_send/ws_meta), which ocurl
+# has not released yet (latest release: 0.10.0). These pins make a source
+# install (`opam install .`) work out of the box. The official opam
+# repository rejects pin-depends, so cdp-lwt cannot be published there until
+# ocurl cuts a release — cdp and cdp-gen are unaffected.
+pin-depends: [
+  [ "curl.0.10.0" "git+https://github.com/ygrek/ocurl.git#dc00dcb3ec5c1b55a28448a2f301fa1ce6af3019" ]
+  [ "curl_lwt.0.10.0" "git+https://github.com/ygrek/ocurl.git#dc00dcb3ec5c1b55a28448a2f301fa1ce6af3019" ]
+]

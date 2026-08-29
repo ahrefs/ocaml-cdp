@@ -27,15 +27,13 @@ The packages are not on opam yet; build from a clone:
 git clone https://github.com/ahrefs/ocaml-cdp.git
 cd ocaml-cdp
 opam switch create . 5.4.1 --no-install
-
-# cdp-lwt uses libcurl's WebSocket API. ocurl has not released it yet
-# (latest release is 0.10.0), so pin ocurl master for now:
-opam pin add -n curl 'git+https://github.com/ygrek/ocurl.git#dc00dcb3ec5c1b55a28448a2f301fa1ce6af3019'
-opam pin add -n curl_lwt 'git+https://github.com/ygrek/ocurl.git#dc00dcb3ec5c1b55a28448a2f301fa1ce6af3019'
-
 opam install . --deps-only --with-test
 make build test
 ```
+
+cdp-lwt uses libcurl's WebSocket API, which ocurl has not released yet
+(latest release: 0.10.0) — `cdp-lwt.opam` therefore pins ocurl master via
+`pin-depends`, and `opam install` picks that up by itself.
 
 Your system libcurl must be 7.86 or newer with WebSocket support (check with
 `curl-config --version`). Chrome-launching code and examples need a Chrome:
@@ -156,9 +154,7 @@ one `make check-full` uses):
 
 ## Development
 
-`make help` lists all targets. The `screenshot` and `attach` examples also
-need the `base64` package (`opam install base64`); it is not a dependency of
-any released package. Tests:
+`make help` lists all targets. Tests:
 
 - cram tests (`test/cram/*.t`): small protocol JSON in, generated OCaml out —
   review diffs with `dune runtest`, accept with `dune promote`;

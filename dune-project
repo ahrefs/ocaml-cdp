@@ -3,6 +3,7 @@
 (name cdp)
 
 ; maintain only the latest release in the opam repository
+
 (maintenance_intent "(latest)")
 
 (generate_opam_files true)
@@ -32,13 +33,16 @@
  (tags
   ("org:ahrefs" chrome devtools cdp browser))
  (depends
-  (ocaml (>= "4.14"))
-  (yojson (>= "1.6.0"))
+  (ocaml
+   (>= "4.14"))
+  (yojson
+   (>= "1.6.0"))
   (jsonkit
    (and
     (>= "1.0.0")
     (< "2.0.0")))
-  (ppx_deriving (>= "6.0"))
+  (ppx_deriving
+   (>= "6.0"))
   (ocamlformat
    (and
     (= "0.29.0")
@@ -53,8 +57,10 @@
  (tags
   ("org:ahrefs" chrome devtools cdp codegen))
  (depends
-  (ocaml (>= "4.14"))
-  (yojson (>= "1.6.0"))))
+  (ocaml
+   (>= "4.14"))
+  (yojson
+   (>= "1.6.0"))))
 
 (package
  (name cdp-lwt)
@@ -64,9 +70,14 @@
  (tags
   ("org:ahrefs" chrome devtools cdp lwt))
  (depends
-  (ocaml (>= "4.14"))
-  (cdp (= :version))
+  (ocaml
+   (>= "4.14"))
+  (cdp
+   (= :version))
   curl
   curl_lwt
-  (lwt (>= "5.10"))
-  (lwt_ppx (>= "5.9"))))
+  (lwt
+   (>= "5.10"))
+  (lwt_ppx
+   (>= "5.9"))
+  (base64 :with-test)))
