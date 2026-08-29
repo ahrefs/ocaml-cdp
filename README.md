@@ -35,8 +35,8 @@ cdp-lwt uses libcurl's WebSocket API, which ocurl has not released yet
 (latest release: 0.10.0) — `cdp-lwt.opam` therefore pins ocurl master via
 `pin-depends`, and `opam install` picks that up by itself.
 
-Your system libcurl must be 7.86 or newer with WebSocket support (check with
-`curl-config --version`). Chrome-launching code and examples need a Chrome:
+Your system libcurl must be 7.86 or newer (check with
+`curl-config --version`) and built with WebSocket support. Chrome-launching code and examples need a Chrome:
 by default the executable is `google-chrome` from `PATH`; set the
 `CDP_CHROME` environment variable (or pass `~executable` to `Chrome.launch`)
 to use another binary, e.g. `chromium` or
@@ -62,7 +62,7 @@ let session = attached.session_id in
 
 let%lwt () = call ~session (Cdp.Page.Enable.command (Cdp.Page.Enable.make_params ())) in
 let loaded = Cdp_lwt.Connection.next_event connection ~session Cdp.Page.Load_event_fired.event in
-let%lwt _navigation = call ~session (Cdp.Page.Navigate.command (Cdp.Page.Navigate.make_params ~url:"https://example.com" ())) in
+let%lwt _navigation = call ~session (Cdp.Page.Navigate.command (Cdp.Page.Navigate.make_params ~url:"data:text/html,<title>Hello from OCaml CDP</title>" ())) in
 let%lwt _fired = loaded in
 
 let%lwt evaluated =
@@ -71,7 +71,9 @@ in
 ```
 
 Every step is a typed command; failures are typed too (`Protocol_error`,
-`Connection_closed`, `Call_timeout`).
+`Call_timeout`, `Session_detached`, `Connection_closed`). `call` waits up to
+180 seconds by default — pass `~timeout` to change it (the demo shortens it
+to 10), or `Float.infinity` to wait forever.
 
 **One rule to know:** `next_event` catches events arriving *after* it is
 called — subscribe first, then trigger (as the demo does around `navigate`).
@@ -139,12 +141,13 @@ cdp-gen generate mydir/browser_protocol.json mydir/js_protocol.json out Network,
 
 To compile the output as a library: copy the four hand-written glue files
 `cdp_json.ml`, `cdp_command.ml`, `cdp_event.ml`, and `cdp_envelope.ml` from
-[lib/](lib/) next to the generated files, and use this dune stanza (the same
-one `make check-full` uses):
+[lib/](lib/) next to the generated files, and use this dune stanza (the one
+`make check-full` uses, under whatever library name you like):
 
 ```
 (library
  (name my_cdp)
+ (wrapped false)
  (libraries jsonkit yojson)
  (preprocess
   (pps jsonkit.ppx ppx_deriving.show ppx_deriving.eq ppx_deriving.make))

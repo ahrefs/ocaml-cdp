@@ -3,7 +3,8 @@
    with --remote-debugging-port=0 (pick any free port) and read that line. *)
 
 (** A launched Chrome: [ws_url] is the DevTools WebSocket address to connect a transport to; [kill] terminates the
-    process and removes its temporary profile directory. *)
+    process (SIGTERM first, then SIGKILL) and removes its temporary profile directory — best effort, retried briefly
+    while Chrome's helpers finish dying. *)
 type t = {
   ws_url : string;
   kill : unit -> unit Lwt.t;
@@ -108,7 +109,10 @@ let rec read_announcement ~recent stderr_channel =
     - [timeout]: seconds to wait for the DevTools address.
     - [no_sandbox]: turn off Chrome's sandbox.
     - [port]: DevTools port; [0] (the default) picks any free port.
-    - [extra_args]: appended to the Chrome command line. *)
+    - [extra_args]: appended to the Chrome command line.
+
+    Fails with {!Launch_failed}, whose {!launch_error} says why: the executable is missing, the announcement timed out,
+    or Chrome exited early *)
 let launch ?(executable = default_executable) ?(no_sandbox = false) ?(timeout = 15.0) ?(port = 0) ?(extra_args = []) ()
   : t Lwt.t =
   match executable_exists executable with

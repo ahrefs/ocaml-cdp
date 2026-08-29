@@ -21,6 +21,7 @@ depends: [
   "curl_lwt"
   "lwt" {>= "5.10"}
   "lwt_ppx" {>= "5.9"}
+  "yojson" {>= "1.6.0"}
   "base64" {with-test}
   "odoc" {with-doc}
 ]

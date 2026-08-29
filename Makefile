@@ -19,7 +19,7 @@ build: ## Build the project
 	$(DUNE) build
 
 .PHONY: test
-test: ## Run all tests (cram + unit + runtime)
+test: ## Run all tests (cram + generator + wire + mock-connection suites)
 	$(DUNE) runtest
 
 .PHONY: test-promote

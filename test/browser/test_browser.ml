@@ -1,6 +1,7 @@
-(* Smoke tests against a real headless Chrome — the only place the curl
-   transport is exercised. Five checks chosen by command SHAPE, so every
-   kind of exchange the protocol has is proven on a live browser. *)
+(* Smoke tests against a real headless Chrome. The first shapes prove every
+   kind of protocol exchange on a live browser; the rest pin the hardening
+   work end to end: size caps, transport death, launch failures, timeouts,
+   surrogate repair, oversized integers, session detach, concurrent sends. *)
 
 let pass name = Printf.printf "PASS %s\n" name
 let page_url = "data:text/html,<title>smoke</title><p>hello</p>"
