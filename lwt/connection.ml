@@ -103,18 +103,17 @@ let rec read_loop connection =
   | exception transport_failure -> stop connection ~failure:transport_failure
   | None -> stop connection ~failure:Connection_closed
   | Some raw ->
-    let parse_wire text =
-      match Yojson.Basic.from_string text with
-      | json -> Some json
-      | exception Yojson.Json_error _parse_error -> None
-    in
     let parsed =
-      match parse_wire raw with
-      | Some _ as json -> json
-      | None ->
-        (* Chrome can emit unpaired \uXXXX surrogates that strict parsers
-           reject; repair them and retry before dropping the message *)
-        parse_wire (Cdp.Json.repair_lone_surrogates raw)
+      match Yojson.Basic.from_string raw with
+      | json -> Some json
+      | exception Yojson.Json_error _strict_parser_rejected ->
+      (* Chrome legally sends two things the strict parser rejects:
+           unpaired \uXXXX surrogates, and integers past OCaml's 63 bits.
+           Repair the surrogates, reparse with the tolerant parser, and carry
+           oversized integers as floats — only then drop the message. *)
+      match Yojson.Safe.from_string (Cdp.Json.repair_lone_surrogates raw) with
+      | json -> Some (Cdp.Json.basic_of_safe json)
+      | exception Yojson.Json_error _still_malformed -> None
     in
     (match parsed with
     | None -> () (* not JSON: ignore, keep the connection alive *)
@@ -165,9 +164,9 @@ let is_closed connection =
 (** [call connection command] sends [command] and waits for its typed result.
     - [session]: target one attached session.
     - [timeout]: seconds to wait, forever when absent. On expiry raises {!Call_timeout} and drops the late response.
-    Failures: {!Protocol_error} — Chrome answered with an error; {!Connection_closed} — the connection closed cleanly;
-    the transport's own error (like [Curl_transport.Transport_failure]) — it died of one. Cancelling the returned
-    promise forgets the command. *)
+      Failures: {!Protocol_error} — Chrome answered with an error; {!Connection_closed} — the connection closed cleanly;
+      the transport's own error (like [Curl_transport.Transport_failure]) — it died of one. Cancelling the returned
+      promise forgets the command. *)
 let call connection ?session ?timeout (command : 'result Cdp.Command.t) : 'result Lwt.t =
   if is_closed connection then Lwt.fail Connection_closed
   else begin

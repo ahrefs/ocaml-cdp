@@ -306,6 +306,15 @@ let () =
     fake.inject "{\"id\":1,\"result\":{},\"note\":\"\\ud83d\"}";
     let%lwt () = awaiting in
     pass "a lone-surrogate message is repaired, not dropped";
+
+    (* 18. a message holding an integer past OCaml's 63 bits is reparsed
+       tolerantly and delivered, not silently dropped *)
+    let fake = make_fake () in
+    let connection = Cdp_lwt.Connection.create fake.transport in
+    let awaiting = Cdp_lwt.Connection.call connection enable_security in
+    fake.inject "{\"id\":1,\"result\":{},\"big\":4611686018427387904}";
+    let%lwt () = awaiting in
+    pass "an oversized-integer message is delivered, not dropped";
     Lwt.return_unit
     end
 

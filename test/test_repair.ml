@@ -53,4 +53,18 @@ let () =
   assert (repair looks_like_surrogate = looks_like_surrogate);
   pass "escaped-backslash text that merely looks like a surrogate survives";
 
+  (* basic_of_safe: integers past OCaml's 63 bits become floats; everything
+     that fits stays exactly what it was *)
+  let convert text = Cdp_json.basic_of_safe (Yojson.Safe.from_string text) in
+  assert (convert "4611686018427387904" = `Float (2. ** 62.));
+  assert (convert "-4611686018427387905" = `Float (-.(2. ** 62.) -. 1.));
+  assert (convert "4611686018427387903" = `Int max_int);
+  assert (
+    convert {|{"big":9007199254740993,"small":1,"text":"9223372036854775807"}|}
+    = `Assoc [ "big", `Int 9007199254740993; "small", `Int 1; "text", `String "9223372036854775807" ]);
+  (match Yojson.Basic.from_string "4611686018427387904" with
+  | exception Yojson.Json_error _overflow -> ()
+  | _parsed -> assert false);
+  pass "integers past 63 bits convert to floats; smaller ones and strings are untouched";
+
   print_endline "all repair tests passed"

@@ -4,13 +4,12 @@
 
 let default_max_message_size = 256 * 1024 * 1024
 
-(** One incoming message passed [max_message_size]; carries the cap in bytes.
-    In-flight calls fail with this and the connection closes. *)
+(** One incoming message passed [max_message_size]; carries the cap in bytes. In-flight calls fail with this and the
+    connection closes. *)
 exception Message_too_large of int
 
-(** WebSocket transfer failed: unreachable server, refused upgrade, or a mid-session network error.
-    [connect] fails with this when the handshake cannot complete; 
-    in-flight calls fail with it when an established connection dies. *)
+(** WebSocket transfer failed: unreachable server, refused upgrade, or a mid-session network error. [connect] fails with
+    this when the handshake cannot complete; in-flight calls fail with it when an established connection dies. *)
 exception
   Transport_failure of {
     code : Curl.curlCode;

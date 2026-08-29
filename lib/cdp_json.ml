@@ -94,3 +94,17 @@ let repair_lone_surrogates raw =
   in
   copy_from 0;
   Buffer.contents buf
+
+(** Convert a [Yojson.Safe] tree to [Yojson.Basic], turning integers past OCaml's 63 bits ([`Intlit]) into floats —
+    which is what they were in JavaScript, where every number is a float. The strict [Basic] parser rejects such
+    integers outright, dropping the whole message; parsing with [Safe] and converting keeps it. *)
+let rec basic_of_safe (json : Yojson.Safe.t) : t =
+  match json with
+  | `Intlit big_integer -> `Float (float_of_string big_integer)
+  | `Assoc fields -> `Assoc (List.map (fun (key, value) -> key, basic_of_safe value) fields)
+  | `List items -> `List (List.map basic_of_safe items)
+  | `Null -> `Null
+  | `Bool flag -> `Bool flag
+  | `Int number -> `Int number
+  | `Float number -> `Float number
+  | `String text -> `String text

@@ -153,6 +153,17 @@ let () =
       | Some (`String "\239\191\189") -> ()
       | _unexpected -> assert false);
       pass "half an emoji from page content is repaired, not dropped";
+      (* a whole-number JavaScript value past OCaml's 63 bits: Chrome prints
+         it as a bare integer, which must arrive as a float, not kill the
+         message and hang this call *)
+      let%lwt huge_number =
+        noisy_call ~session:noisy_session
+          (Cdp.Runtime.Evaluate.command (Cdp.Runtime.Evaluate.make_params ~expression:"2**62" ()))
+      in
+      (match huge_number.result.value with
+      | Some (`Float value) -> assert (value = 2. ** 62.)
+      | _unexpected -> assert false);
+      pass "an integer past 63 bits arrives as a float, not a dropped message";
       let%lwt () = Cdp_lwt.Connection.close noisy_connection in
       let%lwt () = noisy_chrome.kill () in
       (* shape 10: close with zero traffic — an idle peer never volunteers a
