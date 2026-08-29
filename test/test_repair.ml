@@ -53,6 +53,25 @@ let () =
   assert (repair looks_like_surrogate = looks_like_surrogate);
   pass "escaped-backslash text that merely looks like a surrogate survives";
 
+  (* the trap that makes pre-parse repair mandatory: Yojson ACCEPTS a lone
+     low surrogate and produces invalid UTF-8 — it never reaches the
+     on-failure fallback. Pin the hazard and the repaired outcome. *)
+  (match Yojson.Basic.from_string (quoted low) with
+  | `String accepted -> assert (not (String.is_valid_utf_8 accepted))
+  | _unexpected -> assert false);
+  (match Yojson.Basic.from_string (repair (quoted low)) with
+  | `String repaired_value ->
+    assert (String.is_valid_utf_8 repaired_value);
+    assert (repaired_value = "\239\191\189")
+  | _unexpected -> assert false);
+  pass "a lone low surrogate parses into invalid utf-8 unless repaired first";
+
+  (* clean input comes back without a copy — the repair is free to run on
+     every message *)
+  let untouched = {|{"id":1,"result":{"value":"plain"}}|} in
+  assert (repair untouched == untouched);
+  pass "input without surrogate escapes is returned physically unchanged";
+
   (* basic_of_safe: integers past OCaml's 63 bits become floats; everything
      that fits stays exactly what it was *)
   let convert text = Cdp_json.basic_of_safe (Yojson.Safe.from_string text) in

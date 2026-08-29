@@ -186,6 +186,19 @@ let () =
       | Some (`String "\239\191\189") -> ()
       | _unexpected -> assert false);
       pass "half an emoji from page content is repaired, not dropped";
+      (* the OTHER half: a lone low surrogate parses without error, so it
+         must be repaired before parsing or invalid UTF-8 reaches the caller *)
+      let%lwt low_half =
+        noisy_call ~session:noisy_session
+          (Cdp.Runtime.Evaluate.command
+             (Cdp.Runtime.Evaluate.make_params ~expression:"'\240\159\152\128'.substring(1, 2)" ()))
+      in
+      (match low_half.result.value with
+      | Some (`String repaired_value) ->
+        assert (String.is_valid_utf_8 repaired_value);
+        assert (repaired_value = "\239\191\189")
+      | _unexpected -> assert false);
+      pass "the low half of an emoji arrives repaired, never as invalid utf-8";
       (* a whole-number JavaScript value past OCaml's 63 bits: Chrome prints
          it as a bare integer, which must arrive as a float, not kill the
          message and hang this call *)

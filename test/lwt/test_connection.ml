@@ -372,6 +372,18 @@ let () =
     assert (!seen_a = [ 1.0 ]);
     assert (!seen_all = [ 4.0; 3.0; 2.0; 1.0 ]);
     pass "on_event with a session filters to that session until unsubscribed";
+
+    (* 21. a lone LOW surrogate parses without error, so only a pre-parse
+       repair keeps invalid UTF-8 bytes out of delivered strings *)
+    let fake = make_fake () in
+    let connection = Cdp_lwt.Connection.create fake.transport in
+    let awaiting = Cdp_lwt.Connection.call connection get_version in
+    fake.inject
+      "{\"id\":1,\"result\":{\"protocolVersion\":\"1.3\",\"product\":\"\\udc00\",\"revision\":\"r\",\"userAgent\":\"u\",\"jsVersion\":\"14\"}}";
+    let%lwt version = awaiting in
+    assert (String.is_valid_utf_8 version.product);
+    assert (version.product = "\239\191\189");
+    pass "a lone low surrogate arrives repaired, not as invalid utf-8";
     Lwt.return_unit
     end
 

@@ -141,15 +141,14 @@ let rec read_loop connection =
   | exception transport_failure -> stop connection ~failure:transport_failure
   | None -> stop connection ~failure:Connection_closed
   | Some raw ->
+    (* unpaired surrogates must be repaired BEFORE parsing *)
+    let repaired = Cdp.Json.repair_lone_surrogates raw in
     let parsed =
-      match Yojson.Basic.from_string raw with
+      match Yojson.Basic.from_string repaired with
       | json -> Some json
       | exception Yojson.Json_error _strict_parser_rejected ->
-      (* Chrome legally sends two things the strict parser rejects:
-           unpaired \uXXXX surrogates, and integers past OCaml's 63 bits.
-           Repair the surrogates, reparse with the tolerant parser, and carry
-           oversized integers as floats — only then drop the message. *)
-      match Yojson.Safe.from_string (Cdp.Json.repair_lone_surrogates raw) with
+      (* integers past OCaml's 63 bits: the tolerant reparse carries them as floats *)
+      match Yojson.Safe.from_string repaired with
       | json -> Some (Cdp.Json.basic_of_safe json)
       | exception Yojson.Json_error _still_malformed -> None
     in

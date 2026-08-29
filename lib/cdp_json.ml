@@ -54,11 +54,19 @@ let unicode_escape_at raw position =
 let is_high_surrogate code = code >= 0xD800 && code <= 0xDBFF
 let is_low_surrogate code = code >= 0xDC00 && code <= 0xDFFF
 
-(** Chrome escapes every non-ASCII UTF-16 code unit as [\uXXXX] without checking surrogate pairing, and JavaScript
-    strings may hold unpaired surrogates (an emoji cut in half by [substring], a truncated title). Strict JSON parsers
-    reject the whole message over one such escape, so this replaces each unpaired surrogate escape with [�] (the
-    replacement character). Literal text like [\\ud800] (an escaped backslash) is left untouched. *)
-let repair_lone_surrogates raw =
+(* every surrogate escape's first hex digit is d/D (U+D800..U+DFFF), so a
+   backslash-u-d scan gates the repair; memchr makes it cheap on the huge
+   backslash-free payloads (base64 screenshots) *)
+let rec contains_surrogate_escape raw position =
+  match String.index_from_opt raw position '\\' with
+  | None -> false
+  | Some backslash ->
+    backslash + 2 < String.length raw
+    && raw.[backslash + 1] = 'u'
+    && (raw.[backslash + 2] = 'd' || raw.[backslash + 2] = 'D')
+    || contains_surrogate_escape raw (backslash + 1)
+
+let repair_all_surrogates raw =
   let length = String.length raw in
   let buf = Buffer.create length in
   let rec copy_from position =
@@ -94,6 +102,17 @@ let repair_lone_surrogates raw =
   in
   copy_from 0;
   Buffer.contents buf
+
+(** Chrome escapes every non-ASCII UTF-16 code unit as [\uXXXX] without checking surrogate pairing, and JavaScript
+    strings may hold unpaired surrogates (an emoji cut in half by [substring], a truncated title). A lone HIGH surrogate
+    makes a strict parser reject the whole message; a lone LOW surrogate is worse — Yojson accepts it and produces
+    invalid UTF-8 bytes. So this must run BEFORE parsing, on every message: it replaces each unpaired surrogate escape
+    with [�] (the replacement character). Literal text like [\\ud800] (an escaped backslash) is left untouched, and
+    input without surrogate escapes is returned as-is, without a copy. *)
+let repair_lone_surrogates raw =
+  match contains_surrogate_escape raw 0 with
+  | false -> raw
+  | true -> repair_all_surrogates raw
 
 (** Convert a [Yojson.Safe] tree to [Yojson.Basic], turning integers past OCaml's 63 bits ([`Intlit]) into floats —
     which is what they were in JavaScript, where every number is a float. The strict [Basic] parser rejects such

@@ -109,6 +109,11 @@ web pages and your machine. In environments where the sandbox cannot start
   never crash a decode.
 - Optional fields are `option`; `None` fields are omitted on the wire.
 - Deprecated and experimental protocol items carry compiler alerts.
+- Broken characters from pages are repaired, not fatal: JavaScript strings
+  may hold half of a two-unit character (`"😀".substring(0, 1)`), and Chrome
+  sends the lone half as-is. OCaml strings are UTF-8 and cannot represent
+  it, and dropping the message would hang the pending call — so each
+  unpaired half becomes U+FFFD (`�`) before parsing.
 
 ## How generation works
 
