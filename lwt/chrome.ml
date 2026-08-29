@@ -79,7 +79,19 @@ let launch ?(executable = default_executable) ?(no_sandbox = false) ?(timeout = 
      after the announcement was read from it (below). *)
   Lwt.async (fun () -> drain process#stdout);
   let kill () =
-    process#terminate;
+    process#kill Sys.sigterm;
+    let exited =
+      let%lwt (_status : Unix.process_status) = Lwt.protected process#status in
+      Lwt.return `Exited
+    in
+    let deadline =
+      let%lwt () = Lwt_unix.sleep 2.0 in
+      Lwt.return `Still_running
+    in
+    let%lwt outcome = Lwt.pick [ exited; deadline ] in
+    (match outcome with
+    | `Exited -> ()
+    | `Still_running -> process#terminate);
     let%lwt (_status : Unix.process_status) = process#close in
     (try remove_tree profile_dir with Unix.Unix_error _ | Sys_error _ -> ());
     Lwt.return_unit
