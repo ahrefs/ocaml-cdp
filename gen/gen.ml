@@ -32,7 +32,17 @@ open Emit
 let load_protocol ~browser ~js ~domains_arg =
   (revision :=
      let revision_file = Filename.concat (Filename.dirname browser) "REVISION" in
-     try read_file revision_file with Sys_error _ -> "unknown");
+     match read_file revision_file with
+     | contents ->
+       (* the revision is stamped into every generated header comment; refuse
+          anything that could not be a revision id *)
+       let plain =
+         contents <> ""
+         && String.for_all (fun ch -> is_letter ch || is_digit ch || ch = '.' || ch = '_' || ch = '-') contents
+       in
+       if plain then contents
+       else failwith (spf "cdp-gen: REVISION next to the protocol JSON holds %S, which is not a revision id" contents)
+     | exception Sys_error _no_revision_file -> "unknown");
   let all = load_domains browser @ load_domains js in
   check_unique_names all;
   let selected =

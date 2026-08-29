@@ -21,7 +21,8 @@ let jlist field json =
 let jbool field json =
   match Util.member field json with
   | `Bool value -> value
-  | _not_a_bool -> false
+  | `Null -> false
+  | wrong_type -> failwith (spf "cdp-gen: field %S must be a boolean, got %s" field (Json.to_string wrong_type))
 
 let is_letter ch = (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')
 let is_digit ch = ch >= '0' && ch <= '9'

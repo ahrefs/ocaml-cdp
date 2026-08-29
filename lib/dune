@@ -1,6 +1,9 @@
 (library
  (name cdp)
  (public_name cdp)
+ ; wrapped false on purpose: every module is Cdp_-prefixed, the cdp.ml index
+ ; exposes them as Cdp.Network etc., and a future melange twin must share
+ ; these sources under stable module names (the jsonkit pattern)
  (wrapped false)
  (libraries jsonkit yojson)
  (preprocess
