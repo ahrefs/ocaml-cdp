@@ -107,13 +107,22 @@ let connect ~url ?(max_message_size = default_max_message_size) () : Transport.t
           end
         end);
       String.length chunk);
-  (* run the transfer in the background; when it ends — server closed, network
-     died, or we aborted — the incoming stream ends with None *)
+  (* the background transfer; whenever it ends, the stream ends with None.
+     The promise is kept: with an idle peer only a cancel can end it. *)
+  let transfer = Curl_lwt.perform handle in
+  (* libcurl forbids removing a transfer from inside its own callbacks, where
+     close/abort can run — defer the cancel by one loop tick *)
+  let cancel_transfer () =
+    Lwt.async (fun () ->
+      let%lwt () = Lwt.pause () in
+      Lwt.cancel transfer;
+      Lwt.return_unit)
+  in
   Lwt.async (fun () ->
     let%lwt (_finished : Curl.curlCode) =
-      try%lwt Curl_lwt.perform handle with
+      try%lwt transfer with
       | Curl.CurlException (code, _errno, _message) -> Lwt.return code
-      | _unexpected -> Lwt.return Curl.CURLE_RECV_ERROR
+      | _cancelled_or_unexpected -> Lwt.return Curl.CURLE_RECV_ERROR
     in
     (* dead before cleanup: send/close must never touch a freed handle *)
     alive := false;
@@ -124,7 +133,10 @@ let connect ~url ?(max_message_size = default_max_message_size) () : Transport.t
     {
       Transport.send =
         (fun payload ->
-          send_all ~alive ~death_error ~abort
+          send_all ~alive ~death_error
+            ~abort:(fun failure ->
+              abort failure;
+              cancel_transfer ())
             ~ws_send:(fun piece -> Curl.ws_send handle piece [ Curl.CURLWS_TEXT ])
             payload);
       receive =
@@ -141,9 +153,11 @@ let connect ~url ?(max_message_size = default_max_message_size) () : Transport.t
           (match !alive with
           | false -> () (* the transfer is over and the handle is freed; nothing left to tell the server *)
           | true ->
-          (* tell the server we are leaving; if the connection is already
-               dead this fails, which is fine — perform is ending anyway *)
-          try ignore (Curl.ws_send handle "" [ Curl.CURLWS_CLOSE ] : int) with _already_dead -> ());
+            (* tell the server we are leaving (best effort — pre-handshake
+               this fails), then end the transfer ourselves: an idle peer
+               would never send the frame that lets it end on its own *)
+            (try ignore (Curl.ws_send handle "" [ Curl.CURLWS_CLOSE ] : int) with _already_dead -> ());
+            cancel_transfer ());
           Lwt.return_unit);
     }
   in

@@ -155,6 +155,22 @@ let () =
       pass "half an emoji from page content is repaired, not dropped";
       let%lwt () = Cdp_lwt.Connection.close noisy_connection in
       let%lwt () = noisy_chrome.kill () in
+      (* shape 10: close with zero traffic — an idle peer never volunteers a
+         frame, so close itself must end the transfer and resolve [closed] *)
+      let%lwt idle_chrome = Cdp_lwt.Chrome.launch () in
+      let%lwt idle_transport = Cdp_lwt.Curl_transport.connect ~url:idle_chrome.ws_url () in
+      let idle_connection = Cdp_lwt.Connection.create idle_transport in
+      let%lwt () = Cdp_lwt.Connection.close idle_connection in
+      let%lwt () =
+        Lwt.pick
+          [
+            Cdp_lwt.Connection.closed idle_connection;
+            (let%lwt () = Lwt_unix.sleep 5.0 in
+             Lwt.fail (Failure "close on an idle connection did not resolve closed"));
+          ]
+      in
+      pass "close on an idle connection resolves closed and ends the transfer";
+      let%lwt () = idle_chrome.kill () in
       Lwt.return_unit
     end
 
