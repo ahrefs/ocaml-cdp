@@ -128,6 +128,24 @@ let () =
       in
       assert (profile_dirs () = dirs_before);
       pass "a silently exiting binary fails with a clear error and no leftover profile";
+      (* the other launch failure: a binary that stays alive but never
+         announces — the timeout must fire, kill the process, and clean up *)
+      let quiet_binary = Filename.concat (Filename.get_temp_dir_name ()) "cdp-test-quiet-binary" in
+      let script = open_out quiet_binary in
+      output_string script "#!/bin/sh\nexec sleep 30\n";
+      close_out script;
+      Unix.chmod quiet_binary 0o755;
+      let%lwt () =
+        try%lwt
+          let%lwt (_chrome : Cdp_lwt.Chrome.t) = Cdp_lwt.Chrome.launch ~executable:quiet_binary ~timeout:1.0 () in
+          assert false
+        with Failure message ->
+          assert (message = Printf.sprintf "cdp-lwt: %s did not announce a DevTools address within 1s" quiet_binary);
+          Lwt.return_unit
+      in
+      assert (profile_dirs () = dirs_before);
+      Sys.remove quiet_binary;
+      pass "a binary that never announces times out and cleans up";
       (* shape 8: a page that logs ~600KB to Chrome's stderr during ONE call.
          A pipe holds ~64KB; without the drain loops Chrome blocks on its own
          logging mid-call, the response never arrives, and this times out *)
