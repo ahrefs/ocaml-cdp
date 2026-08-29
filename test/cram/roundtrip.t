@@ -39,3 +39,19 @@ encode/decode checks for every generated type.
     match !failures with
     | 0 -> print_endline "all roundtrip tests passed"
     | count -> failwith (Printf.sprintf "%d roundtrip failures" count)
+
+A type whose required fields cycle back to itself has no finite sample; it
+is skipped loudly instead of looping forever, and no check is emitted.
+
+  $ cat > browser.json << 'EOF2'
+  > {"domains":[{"domain":"Demo","types":[
+  >   {"id":"Tree","type":"object","properties":[
+  >     {"name":"children","type":"array","items":{"$ref":"Tree"}}
+  >   ]}
+  > ]}]}
+  > EOF2
+  $ cdp-gen roundtrip browser.json js.json tree_out.ml Demo
+  generated tree_out.ml: 0 roundtrip checks, 1 skipped
+  skipped Demo.Tree: cdp-gen: required-field cycle through Demo.Tree
+  $ grep "let () = check" tree_out.ml
+  [1]
