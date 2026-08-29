@@ -315,6 +315,35 @@ let () =
     fake.inject "{\"id\":1,\"result\":{},\"big\":4611686018427387904}";
     let%lwt () = awaiting in
     pass "an oversized-integer message is delivered, not dropped";
+
+    (* 19. a detached session fails ITS in-flight work typed; work on other
+       sessions (and the root) survives untouched *)
+    let fake = make_fake () in
+    let connection = Cdp_lwt.Connection.create fake.transport in
+    let session = Cdp.Target.Session_id.of_string "dead-session" in
+    let session_call = Cdp_lwt.Connection.call connection ~session enable_security in
+    let session_event = Cdp_lwt.Connection.next_event connection ~session Cdp.Page.Load_event_fired.event in
+    let root_call = Cdp_lwt.Connection.call connection get_version in
+    fake.inject {|{"method":"Target.detachedFromTarget","params":{"sessionId":"dead-session","targetId":"t"}}|};
+    let%lwt () =
+      match%lwt session_call with
+      | exception Cdp_lwt.Connection.Session_detached detached ->
+        assert (Cdp.Target.Session_id.to_string detached = "dead-session");
+        Lwt.return_unit
+      | exception _other -> assert false
+      | () -> assert false
+    in
+    let%lwt () =
+      match%lwt Lwt.map ignore session_event with
+      | exception Cdp_lwt.Connection.Session_detached _detached -> Lwt.return_unit
+      | exception _other -> assert false
+      | () -> assert false
+    in
+    fake.inject
+      {|{"id":2,"result":{"protocolVersion":"1.3","product":"alive","revision":"r","userAgent":"u","jsVersion":"14"}}|};
+    let%lwt version = root_call in
+    assert (version.product = "alive");
+    pass "a detached session fails its calls and waiters; the rest survives";
     Lwt.return_unit
     end
 

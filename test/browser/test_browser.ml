@@ -164,6 +164,37 @@ let () =
       | Some (`Float value) -> assert (value = 2. ** 62.)
       | _unexpected -> assert false);
       pass "an integer past 63 bits arrives as a float, not a dropped message";
+      (* a target that dies mid-wait: Chrome announces it with
+         Target.detachedFromTarget, and the session's waiters must fail
+         typed instead of hanging *)
+      let%lwt doomed_created =
+        noisy_call (Cdp.Target.Create_target.command (Cdp.Target.Create_target.make_params ~url:"about:blank" ()))
+      in
+      let%lwt doomed_attached =
+        noisy_call
+          (Cdp.Target.Attach_to_target.command
+             (Cdp.Target.Attach_to_target.make_params ~target_id:doomed_created.target_id ~flatten:true ()))
+      in
+      let doomed_wait =
+        Cdp_lwt.Connection.next_event noisy_connection ~session:doomed_attached.session_id
+          Cdp.Page.Load_event_fired.event
+      in
+      let%lwt (_closed : Cdp.Target.Close_target.result) =
+        noisy_call
+          (Cdp.Target.Close_target.command (Cdp.Target.Close_target.make_params ~target_id:doomed_created.target_id))
+      in
+      let%lwt () =
+        Lwt.pick
+          [
+            (match%lwt Lwt.map ignore doomed_wait with
+            | exception Cdp_lwt.Connection.Session_detached _gone -> Lwt.return_unit
+            | exception _other -> assert false
+            | () -> assert false);
+            (let%lwt () = Lwt_unix.sleep 10.0 in
+             Lwt.fail (Failure "session detach did not fail the waiter"));
+          ]
+      in
+      pass "a closed target fails its session's waiters typed";
       let%lwt () = Cdp_lwt.Connection.close noisy_connection in
       let%lwt () = noisy_chrome.kill () in
       (* shape 10: close with zero traffic — an idle peer never volunteers a
