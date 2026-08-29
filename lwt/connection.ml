@@ -103,9 +103,22 @@ let rec read_loop connection =
   | exception transport_failure -> stop connection ~failure:transport_failure
   | None -> stop connection ~failure:Connection_closed
   | Some raw ->
-    (match Yojson.Basic.from_string raw with
-    | exception Yojson.Json_error _parse_error -> () (* not JSON: ignore, keep the connection alive *)
-    | json ->
+    let parse_wire text =
+      match Yojson.Basic.from_string text with
+      | json -> Some json
+      | exception Yojson.Json_error _parse_error -> None
+    in
+    let parsed =
+      match parse_wire raw with
+      | Some _ as json -> json
+      | None ->
+        (* Chrome can emit unpaired \uXXXX surrogates that strict parsers
+           reject; repair them and retry before dropping the message *)
+        parse_wire (Cdp.Json.repair_lone_surrogates raw)
+    in
+    (match parsed with
+    | None -> () (* not JSON: ignore, keep the connection alive *)
+    | Some json ->
     match Cdp.Envelope.parse json with
     | Error _classification_error -> () (* unknown shape: ignore *)
     | Ok (Response { id; outcome = Ok result_json; session = _ignored }) ->

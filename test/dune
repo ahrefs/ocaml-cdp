@@ -8,11 +8,22 @@
  (modules test_envelope)
  (libraries cdp yojson))
 
+(executable
+ (name test_repair)
+ (modules test_repair)
+ (libraries cdp))
+
 (rule
  (alias runtest)
  (package cdp)
  (action
   (run ./test_decode.exe)))
+
+(rule
+ (alias runtest)
+ (package cdp)
+ (action
+  (run ./test_repair.exe)))
 
 (rule
  (alias runtest)

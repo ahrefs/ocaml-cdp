@@ -140,6 +140,19 @@ let () =
       | Some (`String "still alive") -> ()
       | _unexpected -> assert false);
       pass "chrome survives flooding its own stderr mid-call (pipes are drained)";
+      (* shape 9: half an emoji — JavaScript can split a two-unit character,
+         and Chrome sends the lone half as an unpaired \uXXXX escape. The
+         message must be repaired to the replacement character, not dropped
+         (a drop would hang this call until its timeout) *)
+      let%lwt half_emoji =
+        noisy_call ~session:noisy_session
+          (Cdp.Runtime.Evaluate.command
+             (Cdp.Runtime.Evaluate.make_params ~expression:"'\240\159\152\128'.substring(0, 1)" ()))
+      in
+      (match half_emoji.result.value with
+      | Some (`String "\239\191\189") -> ()
+      | _unexpected -> assert false);
+      pass "half an emoji from page content is repaired, not dropped";
       let%lwt () = Cdp_lwt.Connection.close noisy_connection in
       let%lwt () = noisy_chrome.kill () in
       Lwt.return_unit

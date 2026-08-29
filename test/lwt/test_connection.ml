@@ -297,6 +297,15 @@ let () =
     in
     let%lwt () = Cdp_lwt.Connection.closed connection in
     pass "a transport's own error reaches in-flight calls typed";
+
+    (* 17. a message the json parser rejects only for an unpaired surrogate
+       escape is repaired and delivered, not silently dropped *)
+    let fake = make_fake () in
+    let connection = Cdp_lwt.Connection.create fake.transport in
+    let awaiting = Cdp_lwt.Connection.call connection enable_security in
+    fake.inject "{\"id\":1,\"result\":{},\"note\":\"\\ud83d\"}";
+    let%lwt () = awaiting in
+    pass "a lone-surrogate message is repaired, not dropped";
     Lwt.return_unit
     end
 
