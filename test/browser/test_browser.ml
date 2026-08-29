@@ -56,6 +56,21 @@ let () =
       | Some (`Int reported_length) -> assert (reported_length = big_length)
       | _unexpected -> assert false);
       pass "a multi-megabyte command payload round-trips uncorrupted";
+      (* the mirror direction: a multi-megabyte RESPONSE arrives in dozens of
+         socket chunks and must reassemble intact — and the default message
+         cap must admit it *)
+      let incoming_length = (3 * 1024 * 1024) + 54321 in
+      let%lwt returned =
+        call ~session
+          (Cdp.Runtime.Evaluate.command
+             (Cdp.Runtime.Evaluate.make_params ~expression:(Printf.sprintf "'x'.repeat(%d)" incoming_length) ()))
+      in
+      (match returned.result.value with
+      | Some (`String text) ->
+        assert (String.length text = incoming_length);
+        assert (String.for_all (fun ch -> ch = 'x') text)
+      | _unexpected -> assert false);
+      pass "a multi-megabyte response reassembles intact under the default cap";
       (* shape 5: state roundtrip — write a cookie, read it back typed *)
       let%lwt cookie_set =
         call ~session

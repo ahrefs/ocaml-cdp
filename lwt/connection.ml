@@ -206,8 +206,7 @@ let is_closed connection =
 (** [call connection command] sends [command] and waits for its typed result.
     - [session]: target one attached session.
     - [timeout]: seconds to wait, forever when absent. On expiry raises {!Call_timeout} and drops the late response.
-      Failures: {!Protocol_error} — Chrome answered with an error;
-      {!Session_detached} — the call's session detached;
+      Failures: {!Protocol_error} — Chrome answered with an error; {!Session_detached} — the call's session detached;
       {!Connection_closed} — the connection closed cleanly; the transport's own error (like
       [Curl_transport.Transport_failure]) — it died of one. Cancelling the returned promise forgets the command. *)
 let call connection ?session ?timeout (command : 'result Cdp.Command.t) : 'result Lwt.t =

@@ -18,6 +18,17 @@
  (preprocess
   (pps lwt_ppx)))
 
+(executable
+ (name test_reassembly)
+ (modules test_reassembly)
+ (libraries cdp_lwt))
+
+(rule
+ (alias runtest)
+ (package cdp-lwt)
+ (action
+  (run ./test_reassembly.exe)))
+
 (rule
  (alias runtest)
  (package cdp-lwt)

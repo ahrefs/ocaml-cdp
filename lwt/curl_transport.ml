@@ -68,6 +68,26 @@ let send_all ?(stall_budget = default_stall_budget) ~alive ~death_error ~abort ~
   in
   from_offset ~offset:0 ~stalls_left:stall_budget
 
+type accumulation =
+  | Ignored (* not a payload chunk, e.g. a control frame *)
+  | Accumulating
+  | Complete of string
+
+(* payload chunks accumulate until the final chunk of a message's final
+   frame arrives; [Complete] hands the finished message over and resets the
+   buffer for the next one. Split out so frame sequences are testable. *)
+let accumulate ~message_buffer ~chunk ~is_payload ~is_final =
+  match is_payload with
+  | false -> Ignored
+  | true ->
+    Buffer.add_string message_buffer chunk;
+    (match is_final with
+    | false -> Accumulating
+    | true ->
+      let message = Buffer.contents message_buffer in
+      Buffer.clear message_buffer;
+      Complete message)
+
 (** [connect ~url ()] opens a WebSocket, waits for the server to accept the upgrade, and returns the transport for
     {!Connection.create}. Fails with {!Transport_failure} when the server cannot be reached or refuses the upgrade.
 
@@ -116,14 +136,10 @@ let connect ~url ?(max_message_size = default_max_message_size) () : Transport.t
           || List.mem Curl.CURLWS_BINARY frame.Curl.flags
           || List.mem Curl.CURLWS_CONT frame.Curl.flags
         in
-        if is_payload then begin
-          Buffer.add_string message_buffer chunk;
-          let is_final = (not (List.mem Curl.CURLWS_CONT frame.Curl.flags)) && frame.Curl.bytesleft = 0 in
-          if is_final then begin
-            push_incoming (Some (Buffer.contents message_buffer));
-            Buffer.clear message_buffer
-          end
-        end);
+        let is_final = (not (List.mem Curl.CURLWS_CONT frame.Curl.flags)) && frame.Curl.bytesleft = 0 in
+        (match accumulate ~message_buffer ~chunk ~is_payload ~is_final with
+        | Complete message -> push_incoming (Some message)
+        | Ignored | Accumulating -> ()));
       String.length chunk);
   (* the background transfer; whenever it ends, the stream ends with None.
      The promise is kept: with an idle peer only a cancel can end it. *)
