@@ -34,6 +34,7 @@ let load_protocol ~browser ~js ~domains_arg =
      let revision_file = Filename.concat (Filename.dirname browser) "REVISION" in
      try read_file revision_file with Sys_error _ -> "unknown");
   let all = load_domains browser @ load_domains js in
+  check_unique_names all;
   let selected =
     match domains_arg with
     | "all" -> List.map (fun (domain : domain) -> domain.name) all
@@ -45,23 +46,35 @@ let load_protocol ~browser ~js ~domains_arg =
    with
   | [] -> ()
   | missing -> failwith ("cdp-gen: unknown domains: " ^ String.concat "," missing));
+  check_refs_exist ~all ~selected:domains;
   let alias_tbl = build_alias_table domains in
   check_types_dag domains ~alias_tbl;
   selected, domains, alias_tbl
 
 let generate ~browser ~js ~outdir ~domains_arg =
   let selected, domains, alias_tbl = load_protocol ~browser ~js ~domains_arg in
-  write_file (Filename.concat outdir "cdp_base.ml") (emit_base_file ~alias_tbl domains);
+  (* failure halfway through must not leave the output directory with a half-new, half-old mix *)
+  let base_file = emit_base_file ~alias_tbl domains in
+  let domain_files =
+    List.map
+      (fun (domain : domain) ->
+        let base = Filename.concat outdir (file_of_domain domain.name) in
+        ( domain,
+          (base ^ "_types.ml", emit_types_file ~selected ~alias_tbl domain),
+          (base ^ ".ml", emit_domain_file ~selected ~alias_tbl domain) ))
+      domains
+  in
+  let index = emit_index domains in
+  write_file (Filename.concat outdir "cdp_base.ml") base_file;
   Printf.printf "generated cdp_base.ml: %d sealed alias modules\n" (Hashtbl.length alias_tbl);
   List.iter
-    (fun (domain : domain) ->
-      let base = Filename.concat outdir (file_of_domain domain.name) in
-      write_file (base ^ "_types.ml") (emit_types_file ~selected ~alias_tbl domain);
-      write_file (base ^ ".ml") (emit_domain_file ~selected ~alias_tbl domain);
+    (fun ((domain : domain), (types_path, types_contents), (domain_path, domain_contents)) ->
+      write_file types_path types_contents;
+      write_file domain_path domain_contents;
       Printf.printf "generated %s(_types).ml: %d types, %d commands, %d events\n" (file_of_domain domain.name)
         (List.length domain.types) (List.length domain.commands) (List.length domain.events))
-    domains;
-  write_file (Filename.concat outdir "cdp.ml") (emit_index domains);
+    domain_files;
+  write_file (Filename.concat outdir "cdp.ml") index;
   Printf.printf "generated cdp.ml index (%d domains, protocol %s)\n" (List.length domains) !revision
 
 let roundtrip ~browser ~js ~outfile ~domains_arg =
@@ -88,6 +101,16 @@ let () =
     | _invalid_arguments ->
       prerr_endline usage;
       exit 1
-  with Failure message ->
+  with
+  | Failure message ->
     prerr_endline message;
+    exit 1
+  | Yojson.Json_error message ->
+    prerr_endline ("cdp-gen: invalid protocol JSON: " ^ message);
+    exit 1
+  | Yojson.Safe.Util.Type_error (message, _fragment) ->
+    prerr_endline ("cdp-gen: unexpected protocol shape: " ^ message);
+    exit 1
+  | Sys_error message ->
+    prerr_endline ("cdp-gen: " ^ message);
     exit 1

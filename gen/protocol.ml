@@ -48,6 +48,25 @@ let load_domains path =
       events = jlist "events" domain_json;
     })
 
+(* a domain name or type id defined twice would silently overwrite its
+   sibling in the output; refuse instead of generating wrong code *)
+let check_unique_names domains =
+  let seen_domains = Hashtbl.create 16 in
+  List.iter
+    (fun domain ->
+      (match Hashtbl.mem seen_domains domain.name with
+      | false -> Hashtbl.add seen_domains domain.name ()
+      | true -> failwith (spf "cdp-gen: domain %s is defined twice" domain.name));
+      let seen_types = Hashtbl.create 16 in
+      List.iter
+        (fun type_def ->
+          let id = jstr "id" type_def in
+          match Hashtbl.mem seen_types id with
+          | false -> Hashtbl.add seen_types id ()
+          | true -> failwith (spf "cdp-gen: type %s.%s is defined twice" domain.name id))
+        domain.types)
+    domains
+
 let read_file path =
   let input = open_in path in
   let length = in_channel_length input in
@@ -131,3 +150,32 @@ let check_types_dag domains ~alias_tbl =
     end
   in
   List.iter (fun (domain : domain) -> visit [] domain.name) domains
+
+(* a $ref to a type that exists nowhere would surface much later, as a
+   compile error inside generated code; refuse with the referrer's name.
+   Refs to types in loaded-but-unselected domains are left to the emitter's
+   selection check, which names the missing domain. *)
+let check_refs_exist ~all ~selected =
+  let defined = Hashtbl.create 256 in
+  List.iter
+    (fun domain -> List.iter (fun type_def -> Hashtbl.add defined (domain.name, jstr "id" type_def) ()) domain.types)
+    all;
+  List.iter
+    (fun domain ->
+      let check_fragment ~owner fragment =
+        List.iter
+          (fun ref_string ->
+            let target_domain, target_id = parse_ref ~current:domain.name ref_string in
+            match Hashtbl.mem defined (target_domain, target_id) with
+            | true -> ()
+            | false -> failwith (spf "cdp-gen: %s references %s.%s, which does not exist" owner target_domain target_id))
+          (collect_refs fragment [])
+      in
+      List.iter
+        (fun type_def -> check_fragment ~owner:(spf "%s.%s" domain.name (jstr "id" type_def)) type_def)
+        domain.types;
+      List.iter
+        (fun command -> check_fragment ~owner:(spf "%s.%s" domain.name (jstr "name" command)) command)
+        domain.commands;
+      List.iter (fun event -> check_fragment ~owner:(spf "%s.%s" domain.name (jstr "name" event)) event) domain.events)
+    selected
