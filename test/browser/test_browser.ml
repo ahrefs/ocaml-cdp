@@ -293,6 +293,23 @@ let () =
         with Cdp_lwt.Transport.Closed -> Lwt.return_unit
       in
       pass "send after close fails fast with Transport.Closed";
+      (* the fixed-port path: ask the OS for a free port, launch on it, and
+         the announced address must carry exactly that port *)
+      let probe = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
+      Unix.bind probe (Unix.ADDR_INET (Unix.inet_addr_loopback, 0));
+      let chosen_port =
+        match Unix.getsockname probe with
+        | Unix.ADDR_INET (_loopback, port) -> port
+        | Unix.ADDR_UNIX _impossible -> assert false
+      in
+      Unix.close probe;
+      let%lwt () =
+        Cdp_lwt.Chrome.with_launch ~port:chosen_port (fun fixed ->
+          let expected_prefix = Printf.sprintf "ws://127.0.0.1:%d/" chosen_port in
+          assert (String.starts_with ~prefix:expected_prefix fixed.Cdp_lwt.Chrome.ws_url);
+          Lwt.return_unit)
+      in
+      pass "a fixed devtools port is honored in the announced address";
       (* shape 11: nothing listens on port 1 — connect must fail typed, not
          "succeed" and die later as a clean close *)
       let%lwt () =

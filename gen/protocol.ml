@@ -180,3 +180,55 @@ let check_refs_exist ~all ~selected =
         domain.commands;
       List.iter (fun event -> check_fragment ~owner:(spf "%s.%s" domain.name (jstr "name" event)) event) domain.events)
     selected
+
+(* every name from the protocol becomes OCaml code — record fields, module
+   names, variant constructors. Reject what the sanitizers cannot turn into
+   a valid, unambiguous identifier, instead of emitting code that fails to
+   compile with an error pointing into generated files. *)
+let check_identifiers domains =
+  let plain_name name =
+    String.length name > 0
+    && is_letter name.[0]
+    && String.for_all (fun ch -> is_letter ch || is_digit ch || ch = '_') name
+  in
+  let check_name ~owner name =
+    match plain_name name with
+    | true -> ()
+    | false -> failwith (spf "cdp-gen: %s: name %S is not a plain identifier" owner name)
+  in
+  let check_enum ~owner values =
+    let seen = Hashtbl.create 8 in
+    List.iter
+      (fun value ->
+        match value with
+        | `String "" -> failwith (spf "cdp-gen: %s: an enum value is empty" owner)
+        | `String text ->
+          let constructor = Naming.constructor_of_enum_value text in
+          (match Hashtbl.find_opt seen constructor with
+          | Some earlier ->
+            failwith
+              (spf "cdp-gen: %s: enum values %S and %S both become the constructor %s" owner earlier text constructor)
+          | None -> Hashtbl.add seen constructor text)
+        | _not_a_string -> failwith (spf "cdp-gen: %s: enum values must be strings" owner))
+      values
+  in
+  let rec walk ~owner json =
+    match json with
+    | `Assoc fields ->
+      List.iter
+        (fun (key, value) ->
+          match key, value with
+          | ("name" | "id"), `String text -> check_name ~owner text
+          | "enum", `List values -> check_enum ~owner values
+          | _other_field -> walk ~owner value)
+        fields
+    | `List items -> List.iter (walk ~owner) items
+    | _scalar -> ()
+  in
+  List.iter
+    (fun domain ->
+      let owner = spf "domain %s" domain.name in
+      List.iter (walk ~owner) domain.types;
+      List.iter (walk ~owner) domain.commands;
+      List.iter (walk ~owner) domain.events)
+    domains

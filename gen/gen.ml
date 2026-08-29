@@ -45,6 +45,7 @@ let load_protocol ~browser ~js ~domains_arg =
      | exception Sys_error _no_revision_file -> "unknown");
   let all = load_domains browser @ load_domains js in
   check_unique_names all;
+  check_identifiers all;
   let selected =
     match domains_arg with
     | "all" -> List.map (fun (domain : domain) -> domain.name) all
