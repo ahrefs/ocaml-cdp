@@ -236,6 +236,21 @@ let () =
       | Some (`Float value) -> assert (value = 2. ** 62.)
       | _unexpected -> assert false);
       pass "an integer past 63 bits arrives as a float, not a dropped message";
+      (* two big concurrent sends: the send mutex must keep frames whole *)
+      let big_eval label =
+        noisy_call ~session:noisy_session
+          (Cdp.Runtime.Evaluate.command
+             (Cdp.Runtime.Evaluate.make_params
+                ~expression:(Printf.sprintf "%S.length" (String.make (2 * 1024 * 1024) label))
+                ()))
+      in
+      let%lwt first_big, second_big = Lwt.both (big_eval 'a') (big_eval 'b') in
+      (match first_big.result.value, second_big.result.value with
+      | Some (`Int first_length), Some (`Int second_length) ->
+        assert (first_length = 2 * 1024 * 1024);
+        assert (second_length = 2 * 1024 * 1024)
+      | _unexpected -> assert false);
+      pass "two concurrent multi-megabyte sends stay uncorrupted";
       (* a target that dies mid-wait: Chrome announces it with
          Target.detachedFromTarget, and the session's waiters must fail
          typed instead of hanging *)
@@ -310,6 +325,29 @@ let () =
           Lwt.return_unit)
       in
       pass "a fixed devtools port is honored in the announced address";
+      (* a server that accepts TCP but never answers the handshake: connect
+         must fail typed within its deadline, not hang forever *)
+      let silent = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
+      Unix.bind silent (Unix.ADDR_INET (Unix.inet_addr_loopback, 0));
+      Unix.listen silent 8;
+      let silent_port =
+        match Unix.getsockname silent with
+        | Unix.ADDR_INET (_loopback, port) -> port
+        | Unix.ADDR_UNIX _impossible -> assert false
+      in
+      let%lwt () =
+        try%lwt
+          let%lwt (_transport : Cdp_lwt.Transport.t) =
+            Cdp_lwt.Curl_transport.connect
+              ~url:(Printf.sprintf "ws://127.0.0.1:%d/" silent_port)
+              ~connect_timeout:1.0 ()
+          in
+          assert false
+        with Cdp_lwt.Curl_transport.Transport_failure { message = "no websocket handshake within 1s"; _ } ->
+          Lwt.return_unit
+      in
+      Unix.close silent;
+      pass "a silent tcp server fails connect typed within the deadline";
       (* shape 11: nothing listens on port 1 — connect must fail typed, not
          "succeed" and die later as a clean close *)
       let%lwt () =

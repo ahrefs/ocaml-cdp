@@ -461,6 +461,39 @@ let () =
     in
     unsubscribe ();
     pass "on_event on a closed connection is a harmless no-op";
+
+    (* 26. hostile detach shapes must not kill the loop: params absent, and
+       params of a non-object type *)
+    let fake = make_fake () in
+    let connection = Cdp_lwt.Connection.create fake.transport in
+    let surviving = Cdp_lwt.Connection.call connection enable_security in
+    fake.inject {|{"method":"Target.detachedFromTarget"}|};
+    fake.inject {|{"method":"Target.detachedFromTarget","params":"not an object"}|};
+    fake.inject {|{"method":"Target.detachedFromTarget","params":{"sessionId":42}}|};
+    fake.inject {|{"id":1,"result":{}}|};
+    let%lwt () = surviving in
+    pass "malformed detach events are dropped, the connection survives";
+
+    (* 27. a raising on_event handler must not kill the loop; later events
+       still reach other subscribers and calls keep working *)
+    let fake = make_fake () in
+    let connection = Cdp_lwt.Connection.create fake.transport in
+    let seen = ref [] in
+    let (_unsubscribe_raising : unit -> unit) =
+      Cdp_lwt.Connection.on_event connection Cdp.Page.Load_event_fired.event (fun _fired -> failwith "handler exploded")
+    in
+    let (_unsubscribe_watching : unit -> unit) =
+      Cdp_lwt.Connection.on_event connection Cdp.Page.Load_event_fired.event (fun fired ->
+        seen := Cdp.Network.Monotonic_time.to_float fired.timestamp :: !seen)
+    in
+    fake.inject {|{"method":"Page.loadEventFired","params":{"timestamp":1.0}}|};
+    fake.inject {|{"method":"Page.loadEventFired","params":{"timestamp":2.0}}|};
+    let%lwt () = settle () in
+    assert (!seen = [ 2.0; 1.0 ]);
+    let after_explosions = Cdp_lwt.Connection.call connection enable_security in
+    fake.inject {|{"id":1,"result":{}}|};
+    let%lwt () = after_explosions in
+    pass "a raising event handler is contained; the loop and other subscribers live on";
     Lwt.return_unit
     end
 

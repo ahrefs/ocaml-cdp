@@ -98,11 +98,13 @@ let accumulate ~max_retained ~message_buffer ~chunk ~is_payload ~is_final =
     {!Connection.create}. Fails with {!Transport_failure} when the server cannot be reached or refuses the upgrade.
 
     - [url]: a [ws://] DevTools address, e.g. {!Chrome.launch}'s [ws_url].
+    - [connect_timeout]: seconds to wait for the server to accept the upgrade (default 30) — a server that opens the
+      socket but never answers must not hang the connect forever.
     - [max_message_size]: cap for one incoming message.
     - [max_retained_buffer]: reassembly memory kept between messages (default 50 MB); after delivering a message larger
       than this, the buffer is released instead of holding peak capacity for the connection's life. *)
-let connect ~url ?(max_message_size = default_max_message_size) ?(max_retained_buffer = default_max_retained_buffer) ()
-  : Transport.t Lwt.t =
+let connect ~url ?(connect_timeout = 30.) ?(max_message_size = default_max_message_size)
+  ?(max_retained_buffer = default_max_retained_buffer) () : Transport.t Lwt.t =
   let handle = configure ~url in
   let incoming, push_incoming = Lwt_stream.create () in
   let message_buffer = Buffer.create 8192 in
@@ -199,23 +201,27 @@ let connect ~url ?(max_message_size = default_max_message_size) ?(max_retained_b
     Curl.cleanup handle;
     resolve_connect (Error (death_error ()));
     Lwt.return_unit);
+  (* one frame at a time: a send that stalls mid-frame yields, and a second
+     send interleaving into the half-sent frame would corrupt the stream *)
+  let send_lock = Lwt_mutex.create () in
   let transport =
     {
       Transport.send =
         (fun payload ->
-          match !closing with
-          | true ->
-            (* fail fast on send-after-close instead of racing the teardown *)
-            Lwt.fail (death_error ())
-          | false ->
-            send_all ~alive ~death_error
-              ~abort:(fun failure ->
-                abort failure;
-                cancel_transfer ())
-              ~ws_send:(fun piece ->
-                try Curl.ws_send handle piece [ Curl.CURLWS_TEXT ]
-                with Curl.CurlException (code, _errno, message) -> raise (Transport_failure { code; message }))
-              payload);
+          Lwt_mutex.with_lock send_lock (fun () ->
+            match !closing with
+            | true ->
+              (* fail fast on send-after-close instead of racing the teardown *)
+              Lwt.fail (death_error ())
+            | false ->
+              send_all ~alive ~death_error
+                ~abort:(fun failure ->
+                  abort failure;
+                  cancel_transfer ())
+                ~ws_send:(fun piece ->
+                  try Curl.ws_send handle piece [ Curl.CURLWS_TEXT ]
+                  with Curl.CurlException (code, _errno, message) -> raise (Transport_failure { code; message }))
+                payload));
       receive =
         (fun () ->
           match%lwt Lwt_stream.get incoming with
@@ -231,13 +237,31 @@ let connect ~url ?(max_message_size = default_max_message_size) ?(max_retained_b
           | false -> () (* the transfer is over and the handle is freed; nothing left to tell the server *)
           | true ->
             (* tell the server we are leaving (best effort — pre-handshake
-               this fails), then end the transfer ourselves: an idle peer
-               would never send the frame that lets it end on its own *)
-            (try ignore (Curl.ws_send handle "" [ Curl.CURLWS_CLOSE ] : int) with _already_dead -> ());
+               this fails, and a send mid-frame must not be interleaved),
+               then end the transfer ourselves: an idle peer would never
+               send the frame that lets it end on its own *)
+            (match Lwt_mutex.is_locked send_lock with
+            | true -> () (* a frame is in flight; the cancel below ends the transfer anyway *)
+            | false -> try ignore (Curl.ws_send handle "" [ Curl.CURLWS_CLOSE ] : int) with _already_dead -> ());
             cancel_transfer ());
           Lwt.return_unit);
     }
   in
-  match%lwt connect_outcome with
+  let handshake_deadline =
+    let%lwt () = Lwt_unix.sleep connect_timeout in
+    Lwt.return
+      (Error
+         (Transport_failure
+            {
+              code = Curl.CURLE_OPERATION_TIMEOUTED;
+              message = Printf.sprintf "no websocket handshake within %gs" connect_timeout;
+            }))
+  in
+  match%lwt Lwt.pick [ connect_outcome; handshake_deadline ] with
   | Ok () -> Lwt.return transport
-  | Error failure -> Lwt.fail failure
+  | Error failure ->
+    (* the transfer may still be running against a silent server: record the
+       reason and end it, or the handle would linger forever *)
+    abort failure;
+    cancel_transfer ();
+    Lwt.fail failure

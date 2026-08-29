@@ -101,6 +101,7 @@ let handle_event connection ~name ~params ~session =
    event waits now instead of letting them hang *)
 let handle_detach connection ~params =
   match Yojson.Basic.Util.member "sessionId" params with
+  | exception _params_not_an_object -> ()
   | `String detached ->
     let failure = Session_detached (Cdp.Target.Session_id.of_string detached) in
     let session_calls =
@@ -152,20 +153,22 @@ let rec read_loop connection =
       | json -> Some (Cdp.Json.basic_of_safe json)
       | exception Yojson.Json_error _still_malformed -> None
     in
-    (match parsed with
-    | None -> () (* not JSON: ignore, keep the connection alive *)
-    | Some json ->
-    match Cdp.Envelope.parse json with
-    | Error _classification_error -> () (* unknown shape: ignore *)
-    | Ok (Response { id; outcome = Ok result_json; session = _ignored }) ->
-      handle_response connection ~id ~outcome:(Result result_json)
-    | Ok (Response { id; outcome = Error protocol_error; session = _ignored }) ->
-      handle_response connection ~id ~outcome:(Protocol_failure protocol_error)
-    | Ok (Event { name; params; session }) ->
-      (match name with
-      | "Target.detachedFromTarget" -> handle_detach connection ~params
-      | _ordinary_event -> ());
-      handle_event connection ~name ~params ~session);
+    (try
+       match parsed with
+       | None -> () (* not JSON: ignore, keep the connection alive *)
+       | Some json ->
+       match Cdp.Envelope.parse json with
+       | Error _classification_error -> () (* unknown shape: ignore *)
+       | Ok (Response { id; outcome = Ok result_json; session = _ignored }) ->
+         handle_response connection ~id ~outcome:(Result result_json)
+       | Ok (Response { id; outcome = Error protocol_error; session = _ignored }) ->
+         handle_response connection ~id ~outcome:(Protocol_failure protocol_error)
+       | Ok (Event { name; params; session }) ->
+         (match name with
+         | "Target.detachedFromTarget" -> handle_detach connection ~params
+         | _ordinary_event -> ());
+         handle_event connection ~name ~params ~session
+     with _one_bad_message -> ());
     read_loop connection
 
 (** [create transport] starts the read loop on [transport] and returns a connection ready for {!call}. *)
@@ -283,8 +286,8 @@ let on_event connection ?session (event : 'params Cdp.Event.t) (handler : 'param
         deliver =
           (fun params ->
             match event.Cdp.Event.parse params with
-            | parsed -> handler parsed
-            | exception _unparseable_payload -> ());
+            | exception _unparseable_payload -> ()
+            | parsed -> try handler parsed with _handler_failed -> ());
         abandon = (fun _connection_closed -> ());
         persistent = true;
       }
