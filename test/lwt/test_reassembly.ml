@@ -7,7 +7,7 @@ let pass name = Printf.printf "PASS %s\n" name
 
 let () =
   let message_buffer = Buffer.create 64 in
-  let feed = accumulate ~message_buffer in
+  let feed = accumulate ~max_retained:max_int ~message_buffer in
 
   (* a whole message in one chunk *)
   assert (feed ~chunk:"hello" ~is_payload:true ~is_final:true = Complete "hello");
@@ -35,5 +35,14 @@ let () =
   assert (feed ~chunk:"tail" ~is_payload:true ~is_final:false = Accumulating);
   assert (feed ~chunk:"" ~is_payload:true ~is_final:true = Complete "tail");
   pass "an empty final chunk completes the pending message";
+
+  (* a message past max_retained releases the buffer (Buffer.reset instead
+     of clear — memory release itself is stdlib-guaranteed, not observable
+     here); assembly must keep working afterwards *)
+  let feed_small = accumulate ~max_retained:8 ~message_buffer in
+  assert (feed_small ~chunk:"0123456789" ~is_payload:true ~is_final:true = Complete "0123456789");
+  assert (feed_small ~chunk:"next " ~is_payload:true ~is_final:false = Accumulating);
+  assert (feed_small ~chunk:"message" ~is_payload:true ~is_final:true = Complete "next message");
+  pass "an oversized message releases the buffer and assembly continues";
 
   print_endline "all reassembly tests passed"

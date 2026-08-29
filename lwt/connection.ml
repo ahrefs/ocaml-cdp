@@ -270,10 +270,9 @@ let next_event connection ?session (event : 'params Cdp.Event.t) : 'params Lwt.t
   end
 
 (** A persistent subscription: [handler] runs on every matching event until the returned unsubscribe function is called
-    or the connection closes.
-    Payloads that fail to parse are skipped.
-    On a closed connection this is a no-op — the handler never runs and the returned unsubscribe does nothing (like event listeners in every CDP client;
-    unlike {!next_event}, whose promise would hang and therefore raises). *)
+    or the connection closes. Payloads that fail to parse are skipped. On a closed connection this is a no-op — the
+    handler never runs and the returned unsubscribe does nothing (like event listeners in every CDP client; unlike
+    {!next_event}, whose promise would hang and therefore raises). *)
 let on_event connection ?session (event : 'params Cdp.Event.t) (handler : 'params -> unit) : unit -> unit =
   match is_closed connection with
   | true -> fun () -> ()

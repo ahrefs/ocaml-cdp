@@ -3,6 +3,7 @@
    Use Curl.ws_send for the outgoing direction. *)
 
 let default_max_message_size = 256 * 1024 * 1024
+let default_max_retained_buffer = 50 * 1024 * 1024
 
 (** One incoming message passed [max_message_size]; carries the cap in bytes. In-flight calls fail with this and the
     connection closes. *)
@@ -76,7 +77,7 @@ type accumulation =
 (* payload chunks accumulate until the final chunk of a message's final
    frame arrives; [Complete] hands the finished message over and resets the
    buffer for the next one. Split out so frame sequences are testable. *)
-let accumulate ~message_buffer ~chunk ~is_payload ~is_final =
+let accumulate ~max_retained ~message_buffer ~chunk ~is_payload ~is_final =
   match is_payload with
   | false -> Ignored
   | true ->
@@ -85,15 +86,23 @@ let accumulate ~message_buffer ~chunk ~is_payload ~is_final =
     | false -> Accumulating
     | true ->
       let message = Buffer.contents message_buffer in
-      Buffer.clear message_buffer;
+      (* Buffer.clear keeps the grown storage; after an unusually large
+         message, release it instead of holding peak capacity for the
+         connection's whole life *)
+      (match String.length message > max_retained with
+      | true -> Buffer.reset message_buffer
+      | false -> Buffer.clear message_buffer);
       Complete message)
 
 (** [connect ~url ()] opens a WebSocket, waits for the server to accept the upgrade, and returns the transport for
     {!Connection.create}. Fails with {!Transport_failure} when the server cannot be reached or refuses the upgrade.
 
     - [url]: a [ws://] DevTools address, e.g. {!Chrome.launch}'s [ws_url].
-    - [max_message_size]: cap for one incoming message *)
-let connect ~url ?(max_message_size = default_max_message_size) () : Transport.t Lwt.t =
+    - [max_message_size]: cap for one incoming message.
+    - [max_retained_buffer]: reassembly memory kept between messages (default 50 MB); after delivering a message larger
+      than this, the buffer is released instead of holding peak capacity for the connection's life. *)
+let connect ~url ?(max_message_size = default_max_message_size) ?(max_retained_buffer = default_max_retained_buffer) ()
+  : Transport.t Lwt.t =
   let handle = configure ~url in
   let incoming, push_incoming = Lwt_stream.create () in
   let message_buffer = Buffer.create 8192 in
@@ -137,7 +146,7 @@ let connect ~url ?(max_message_size = default_max_message_size) () : Transport.t
           || List.mem Curl.CURLWS_CONT frame.Curl.flags
         in
         let is_final = (not (List.mem Curl.CURLWS_CONT frame.Curl.flags)) && frame.Curl.bytesleft = 0 in
-        (match accumulate ~message_buffer ~chunk ~is_payload ~is_final with
+        (match accumulate ~max_retained:max_retained_buffer ~message_buffer ~chunk ~is_payload ~is_final with
         | Complete message -> push_incoming (Some message)
         | Ignored | Accumulating -> ()));
       String.length chunk);
