@@ -4,13 +4,23 @@
 
 let default_max_message_size = 256 * 1024 * 1024
 
-(** One incoming message passed [max_message_size]; carries the cap in bytes. In-flight calls fail with this and the
-    connection closes. *)
+(** One incoming message passed [max_message_size]; carries the cap in bytes.
+    In-flight calls fail with this and the connection closes. *)
 exception Message_too_large of int
+
+(** WebSocket transfer failed: unreachable server, refused upgrade, or a mid-session network error.
+    [connect] fails with this when the handshake cannot complete; 
+    in-flight calls fail with it when an established connection dies. *)
+exception
+  Transport_failure of {
+    code : Curl.curlCode;
+    message : string;
+  }
 
 let () =
   Printexc.register_printer (function
     | Message_too_large cap -> Some (Printf.sprintf "Cdp_lwt.Curl_transport.Message_too_large: cap %d bytes" cap)
+    | Transport_failure { code = _; message } -> Some ("Cdp_lwt.Curl_transport.Transport_failure: " ^ message)
     | _other_exception -> None)
 
 let configure ~url =
@@ -59,7 +69,8 @@ let send_all ?(stall_budget = default_stall_budget) ~alive ~death_error ~abort ~
   in
   from_offset ~offset:0 ~stalls_left:stall_budget
 
-(** [connect ~url ()] opens a WebSocket and returns the transport for {!Connection.create}.
+(** [connect ~url ()] opens a WebSocket, waits for the server to accept the upgrade, and returns the transport for
+    {!Connection.create}. Fails with {!Transport_failure} when the server cannot be reached or refuses the upgrade.
 
     - [url]: a [ws://] DevTools address, e.g. {!Chrome.launch}'s [ws_url].
     - [max_message_size]: cap for one incoming message *)
@@ -78,6 +89,14 @@ let connect ~url ?(max_message_size = default_max_message_size) () : Transport.t
   let abort failure =
     transport_failure := Some failure;
     closing := true
+  in
+  (* resolved once, by whichever comes first: the accepted upgrade (Ok) or
+     the transfer's death (Error) *)
+  let connect_outcome, set_connect_outcome = Lwt.wait () in
+  let resolve_connect outcome =
+    match Lwt.state connect_outcome with
+    | Lwt.Sleep -> Lwt.wakeup_later set_connect_outcome outcome
+    | _already_resolved -> ()
   in
   Curl.set_writefunction handle (fun chunk ->
     match !closing with
@@ -118,16 +137,43 @@ let connect ~url ?(max_message_size = default_max_message_size) () : Transport.t
       Lwt.cancel transfer;
       Lwt.return_unit)
   in
+  (* the upgrade response arrives through the header callback: a status line,
+     then fields, then an empty line ending the block — only a 101 block
+     means the websocket is established *)
+  let upgrade_accepted = ref false in
+  Curl.set_headerfunction handle (fun header ->
+    (match String.trim header with
+    | "" ->
+      (match !upgrade_accepted with
+      | true -> resolve_connect (Ok ())
+      | false ->
+        abort
+          (Transport_failure
+             (* CURLE_HTTP_NOT_FOUND is ocurl's name for CURLE_HTTP_RETURNED_ERROR *)
+             { code = Curl.CURLE_HTTP_NOT_FOUND; message = "server did not accept the websocket upgrade" });
+        cancel_transfer ())
+    | line when String.starts_with ~prefix:"HTTP/" line ->
+      (match String.split_on_char ' ' line with
+      | _http_version :: "101" :: _reason -> upgrade_accepted := true
+      | _not_an_upgrade -> ())
+    | _header_field -> ());
+    String.length header);
   Lwt.async (fun () ->
-    let%lwt (_finished : Curl.curlCode) =
+    let%lwt (finished : Curl.curlCode) =
       try%lwt transfer with
       | Curl.CurlException (code, _errno, _message) -> Lwt.return code
       | _cancelled_or_unexpected -> Lwt.return Curl.CURLE_RECV_ERROR
     in
+    (* a transfer that died uninvited carries its reason to receive/send *)
+    (match !closing, !transport_failure, finished with
+    | true, _, _ | _, Some _, _ | _, _, Curl.CURLE_OK -> ()
+    | false, None, failed_code ->
+      transport_failure := Some (Transport_failure { code = failed_code; message = Curl.strerror failed_code }));
     (* dead before cleanup: send/close must never touch a freed handle *)
     alive := false;
     push_incoming None;
     Curl.cleanup handle;
+    resolve_connect (Error (death_error ()));
     Lwt.return_unit);
   let transport =
     {
@@ -137,7 +183,9 @@ let connect ~url ?(max_message_size = default_max_message_size) () : Transport.t
             ~abort:(fun failure ->
               abort failure;
               cancel_transfer ())
-            ~ws_send:(fun piece -> Curl.ws_send handle piece [ Curl.CURLWS_TEXT ])
+            ~ws_send:(fun piece ->
+              try Curl.ws_send handle piece [ Curl.CURLWS_TEXT ]
+              with Curl.CurlException (code, _errno, message) -> raise (Transport_failure { code; message }))
             payload);
       receive =
         (fun () ->
@@ -161,4 +209,6 @@ let connect ~url ?(max_message_size = default_max_message_size) () : Transport.t
           Lwt.return_unit);
     }
   in
-  Lwt.return transport
+  match%lwt connect_outcome with
+  | Ok () -> Lwt.return transport
+  | Error failure -> Lwt.fail failure

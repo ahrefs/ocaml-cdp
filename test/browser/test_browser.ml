@@ -170,6 +170,30 @@ let () =
           ]
       in
       pass "close on an idle connection resolves closed and ends the transfer";
+      (* shape 11: nothing listens on port 1 — connect must fail typed, not
+         "succeed" and die later as a clean close *)
+      let%lwt () =
+        try%lwt
+          let%lwt (_transport : Cdp_lwt.Transport.t) = Cdp_lwt.Curl_transport.connect ~url:"ws://127.0.0.1:1/" () in
+          assert false
+        with Cdp_lwt.Curl_transport.Transport_failure _refused -> Lwt.return_unit
+      in
+      pass "connect to a dead address fails typed";
+      (* shape 12: an HTTP endpoint that answers 200 instead of accepting the
+         upgrade — Chrome's own /json/version, reached on the DevTools port *)
+      let authority_end =
+        match String.index_from_opt idle_chrome.ws_url (String.length "ws://") '/' with
+        | Some slash -> slash
+        | None -> String.length idle_chrome.ws_url
+      in
+      let version_url = String.sub idle_chrome.ws_url 0 authority_end ^ "/json/version" in
+      let%lwt () =
+        try%lwt
+          let%lwt (_transport : Cdp_lwt.Transport.t) = Cdp_lwt.Curl_transport.connect ~url:version_url () in
+          assert false
+        with Cdp_lwt.Curl_transport.Transport_failure _not_an_upgrade -> Lwt.return_unit
+      in
+      pass "a refused websocket upgrade fails connect typed";
       let%lwt () = idle_chrome.kill () in
       Lwt.return_unit
     end

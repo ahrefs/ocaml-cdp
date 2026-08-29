@@ -162,10 +162,12 @@ let is_closed connection =
   | Lwt.Sleep -> false
   | Lwt.Fail _never_fails -> false
 
-(** [call connection command] sends [command] and waits for its typed result. [session] targets one attached session.
-    Without [timeout] it waits forever; with [~timeout] seconds it raises {!Call_timeout} on expiry and drops the late
-    response. Raises {!Protocol_error} when Chrome answers with an error, {!Connection_closed} when the connection dies
-    first. Cancelling the returned promise forgets the pending command. *)
+(** [call connection command] sends [command] and waits for its typed result.
+    - [session]: target one attached session.
+    - [timeout]: seconds to wait, forever when absent. On expiry raises {!Call_timeout} and drops the late response.
+    Failures: {!Protocol_error} — Chrome answered with an error; {!Connection_closed} — the connection closed cleanly;
+    the transport's own error (like [Curl_transport.Transport_failure]) — it died of one. Cancelling the returned
+    promise forgets the command. *)
 let call connection ?session ?timeout (command : 'result Cdp.Command.t) : 'result Lwt.t =
   if is_closed connection then Lwt.fail Connection_closed
   else begin
