@@ -38,6 +38,15 @@ let rec remove_tree path =
     Unix.rmdir path
   | _file_or_link -> Unix.unlink path
 
+(* Chrome logs to its pipes for its whole life; a pipe holds ~64KB, and once
+   it fills, Chrome's next write BLOCKS — the entire browser freezes. So both
+   pipes must be read forever, and the output discarded. *)
+let rec drain channel =
+  match%lwt Lwt_io.read ~count:4096 channel with
+  | "" -> Lwt.return_unit (* EOF: Chrome is gone *)
+  | _discarded -> drain channel
+  | exception _closed_by_kill -> Lwt.return_unit
+
 let announcement_prefix = "DevTools listening on "
 
 let rec read_announcement stderr_channel =
@@ -66,6 +75,9 @@ let launch ?(executable = default_executable) ?(no_sandbox = false) ?(timeout = 
     @ extra_args
   in
   let process = Lwt_process.open_process_full ("", Array.of_list arguments) in
+  (* stdout is never used: drain it from the start. stderr is drained only
+     after the announcement was read from it (below). *)
+  Lwt.async (fun () -> drain process#stdout);
   let kill () =
     process#terminate;
     let%lwt (_status : Unix.process_status) = process#close in
@@ -81,7 +93,9 @@ let launch ?(executable = default_executable) ?(no_sandbox = false) ?(timeout = 
     Lwt.return `Deadline
   in
   match%lwt Lwt.pick [ announcement; deadline ] with
-  | `Announced ws_url -> Lwt.return { ws_url; kill }
+  | `Announced ws_url ->
+    Lwt.async (fun () -> drain process#stderr);
+    Lwt.return { ws_url; kill }
   | `Deadline ->
     let%lwt () = kill () in
     Lwt.fail (Failure (Printf.sprintf "cdp-lwt: %s did not announce a DevTools address within %gs" executable timeout))

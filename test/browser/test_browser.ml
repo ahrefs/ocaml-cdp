@@ -113,6 +113,35 @@ let () =
       in
       assert (profile_dirs () = dirs_before);
       pass "a silently exiting binary fails with a clear error and no leftover profile";
+      (* shape 8: a page that logs ~600KB to Chrome's stderr during ONE call.
+         A pipe holds ~64KB; without the drain loops Chrome blocks on its own
+         logging mid-call, the response never arrives, and this times out *)
+      let%lwt noisy_chrome = Cdp_lwt.Chrome.launch ~extra_args:[ "--enable-logging=stderr" ] () in
+      let%lwt noisy_transport = Cdp_lwt.Curl_transport.connect ~url:noisy_chrome.ws_url () in
+      let noisy_connection = Cdp_lwt.Connection.create noisy_transport in
+      let noisy_call ?session command = Cdp_lwt.Connection.call noisy_connection ?session ~timeout:20.0 command in
+      let%lwt noisy_created =
+        noisy_call (Cdp.Target.Create_target.command (Cdp.Target.Create_target.make_params ~url:"about:blank" ()))
+      in
+      let%lwt noisy_attached =
+        noisy_call
+          (Cdp.Target.Attach_to_target.command
+             (Cdp.Target.Attach_to_target.make_params ~target_id:noisy_created.target_id ~flatten:true ()))
+      in
+      let noisy_session = noisy_attached.session_id in
+      let%lwt logged =
+        noisy_call ~session:noisy_session
+          (Cdp.Runtime.Evaluate.command
+             (Cdp.Runtime.Evaluate.make_params
+                ~expression:"for (let i = 0; i < 4000; i++) console.log('drain'.repeat(30)); 'still alive'"
+                ()))
+      in
+      (match logged.result.value with
+      | Some (`String "still alive") -> ()
+      | _unexpected -> assert false);
+      pass "chrome survives flooding its own stderr mid-call (pipes are drained)";
+      let%lwt () = Cdp_lwt.Connection.close noisy_connection in
+      let%lwt () = noisy_chrome.kill () in
       Lwt.return_unit
     end
 
