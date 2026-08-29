@@ -186,12 +186,14 @@ let close connection =
      in-flight calls and event waits and resolves [closed] *)
   connection.transport.Transport.close ()
 
+let default_call_timeout = 180.
+
 let with_timeout ~timeout ~command_name waiting =
-  match timeout with
-  | None -> waiting
-  | Some seconds ->
+  match Float.is_finite timeout with
+  | false -> waiting (* explicit opt-out: ~timeout:Float.infinity — no timer armed *)
+  | true ->
     let expired =
-      let%lwt () = Lwt_unix.sleep seconds in
+      let%lwt () = Lwt_unix.sleep timeout in
       Lwt.fail (Call_timeout command_name)
     in
     Lwt.pick [ waiting; expired ]
@@ -204,11 +206,12 @@ let is_closed connection =
 
 (** [call connection command] sends [command] and waits for its typed result.
     - [session]: target one attached session.
-    - [timeout]: seconds to wait, forever when absent. On expiry raises {!Call_timeout} and drops the late response.
-      Failures: {!Protocol_error} — Chrome answered with an error; {!Session_detached} — the call's session detached;
-      {!Connection_closed} — the connection closed cleanly; the transport's own error (like
-      [Curl_transport.Transport_failure]) — it died of one. Cancelling the returned promise forgets the command. *)
-let call connection ?session ?timeout (command : 'result Cdp.Command.t) : 'result Lwt.t =
+    - [timeout]: seconds to wait, 180 by default; pass [Float.infinity] to wait forever. On expiry raises
+      {!Call_timeout} and drops the late response. Failures: {!Protocol_error} — Chrome answered with an error;
+      {!Session_detached} — the call's session detached; {!Connection_closed} — the connection closed cleanly; the
+      transport's own error (like [Curl_transport.Transport_failure]) — it died of one. Cancelling the returned promise
+      forgets the command. *)
+let call connection ?session ?(timeout = default_call_timeout) (command : 'result Cdp.Command.t) : 'result Lwt.t =
   if is_closed connection then Lwt.fail Connection_closed
   else begin
     incr connection.next_id;
@@ -280,3 +283,8 @@ let on_event connection ?session (event : 'params Cdp.Event.t) (handler : 'param
   in
   Hashtbl.add connection.event_waiters event.Cdp.Event.name waiter;
   fun () -> remove_waiter connection ~name:event.Cdp.Event.name waiter
+
+(** [with_connection transport f] runs [f] with a fresh connection and always closes it — also when [f] raises. *)
+let with_connection transport callback =
+  let connection = create transport in
+  Lwt.finalize (fun () -> callback connection) (fun () -> close connection)

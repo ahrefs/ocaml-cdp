@@ -12,6 +12,7 @@ type fake = {
 }
 
 exception Fake_transport_failure
+exception Fake_callback_failure
 
 let make_fake () =
   let incoming, push_incoming = Lwt_stream.create () in
@@ -384,6 +385,47 @@ let () =
     assert (String.is_valid_utf_8 version.product);
     assert (version.product = "\239\191\189");
     pass "a lone low surrogate arrives repaired, not as invalid utf-8";
+
+    (* 22. with_connection closes on both exits: a returned value and a
+       raised exception *)
+    let fake = make_fake () in
+    let seen = ref None in
+    let%lwt result =
+      Cdp_lwt.Connection.with_connection fake.transport (fun connection ->
+        seen := Some connection;
+        assert (not (Cdp_lwt.Connection.is_closed connection));
+        Lwt.return 42)
+    in
+    assert (result = 42);
+    let%lwt () =
+      match !seen with
+      | Some connection -> Cdp_lwt.Connection.closed connection
+      | None -> assert false
+    in
+    let fake = make_fake () in
+    let seen = ref None in
+    let%lwt () =
+      try%lwt
+        Cdp_lwt.Connection.with_connection fake.transport (fun connection ->
+          seen := Some connection;
+          Lwt.fail Fake_callback_failure)
+      with Fake_callback_failure -> Lwt.return_unit
+    in
+    let%lwt () =
+      match !seen with
+      | Some connection -> Cdp_lwt.Connection.closed connection
+      | None -> assert false
+    in
+    pass "with_connection closes on normal return and on a raising callback";
+
+    (* 23. ~timeout:Float.infinity opts out of the 180s default: no timer is
+       armed and the call still completes *)
+    let fake = make_fake () in
+    let connection = Cdp_lwt.Connection.create fake.transport in
+    let awaiting = Cdp_lwt.Connection.call connection ~timeout:Float.infinity enable_security in
+    fake.inject {|{"id":1,"result":{}}|};
+    let%lwt () = awaiting in
+    pass "an infinite timeout is a clean opt-out of the default";
     Lwt.return_unit
     end
 

@@ -111,10 +111,17 @@ let () =
       let%lwt () = capped_chrome.kill () in
       (* shape 7: a binary that exits without announcing must fail with a
          clear message and clean up its profile directory *)
+      (* count only this library's naming scheme (8 hex chars): the shared
+         temp dir also holds old PID-named profiles from other processes *)
       let profile_dirs () =
+        let prefix = "cdp-chrome-" in
+        let is_hex ch = (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') in
         Sys.readdir (Filename.get_temp_dir_name ())
         |> Array.to_list
-        |> List.filter (fun entry -> String.starts_with ~prefix:"cdp-chrome-" entry)
+        |> List.filter (fun entry ->
+          String.starts_with ~prefix entry
+          && String.length entry = String.length prefix + 8
+          && String.for_all is_hex (String.sub entry (String.length prefix) 8))
         |> List.length
       in
       let dirs_before = profile_dirs () in
@@ -122,12 +129,20 @@ let () =
         try%lwt
           let%lwt (_chrome : Cdp_lwt.Chrome.t) = Cdp_lwt.Chrome.launch ~executable:"/bin/false" () in
           assert false
-        with Failure message ->
-          assert (message = "cdp-lwt: /bin/false exited before announcing a DevTools address — is it a Chrome binary?");
+        with Cdp_lwt.Chrome.Launch_failed (Cdp_lwt.Chrome.Exited_early { stderr = [] }) -> Lwt.return_unit
+      in
+      assert (profile_dirs () = dirs_before);
+      pass "a silently exiting binary fails typed and leaves no profile";
+      (* a binary that is not there at all: refused before anything is spawned *)
+      let%lwt () =
+        try%lwt
+          let%lwt (_chrome : Cdp_lwt.Chrome.t) = Cdp_lwt.Chrome.launch ~executable:"not-a-chrome-anywhere" () in
+          assert false
+        with Cdp_lwt.Chrome.Launch_failed (Cdp_lwt.Chrome.Executable_not_found "not-a-chrome-anywhere") ->
           Lwt.return_unit
       in
       assert (profile_dirs () = dirs_before);
-      pass "a silently exiting binary fails with a clear error and no leftover profile";
+      pass "a missing executable fails typed before spawning";
       (* the other launch failure: a binary that stays alive but never
          announces — the timeout must fire, kill the process, and clean up *)
       let quiet_binary = Filename.concat (Filename.get_temp_dir_name ()) "cdp-test-quiet-binary" in
@@ -139,13 +154,24 @@ let () =
         try%lwt
           let%lwt (_chrome : Cdp_lwt.Chrome.t) = Cdp_lwt.Chrome.launch ~executable:quiet_binary ~timeout:1.0 () in
           assert false
-        with Failure message ->
-          assert (message = Printf.sprintf "cdp-lwt: %s did not announce a DevTools address within 1s" quiet_binary);
+        with Cdp_lwt.Chrome.Launch_failed (Cdp_lwt.Chrome.Announce_timeout { timeout = waited; stderr = [] }) ->
+          assert (waited = 1.0);
           Lwt.return_unit
       in
       assert (profile_dirs () = dirs_before);
       Sys.remove quiet_binary;
-      pass "a binary that never announces times out and cleans up";
+      pass "a binary that never announces times out typed and cleans up";
+      (* with_launch: the bracket must kill and clean up also when the
+         callback raises *)
+      let%lwt () =
+        try%lwt
+          Cdp_lwt.Chrome.with_launch (fun bracketed ->
+            assert (String.length bracketed.Cdp_lwt.Chrome.ws_url > 0);
+            Lwt.fail Exit)
+        with Exit -> Lwt.return_unit
+      in
+      assert (profile_dirs () = dirs_before);
+      pass "with_launch kills chrome and removes the profile when the callback raises";
       (* shape 8: a page that logs ~600KB to Chrome's stderr during ONE call.
          A pipe holds ~64KB; without the drain loops Chrome blocks on its own
          logging mid-call, the response never arrives, and this times out *)
