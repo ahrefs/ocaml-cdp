@@ -4,8 +4,9 @@ OCaml client for the [Chrome DevTools Protocol](https://chromedevtools.github.io
 (CDP): typed protocol modules generated from the official protocol JSON, plus
 an Lwt connection over libcurl WebSockets.
 
-**Status: experimental, not released.** The full stack works end to end
-against a real Chrome (see the demo below); the API may still change.
+**Status: 0.1.0.** `cdp` and `cdp-gen` are on opam; `cdp-lwt` builds from
+source for now (see below). The full stack works end to end against a real
+Chrome (see the demo below); the API may still change.
 
 ## Packages
 
@@ -19,21 +20,32 @@ against a real Chrome (see the demo below); the API may still change.
 Runtime, Security, and Target. The generator covers all 58 — see
 [How generation works](#how-generation-works) to build your own selection.
 
-## Build from source
+## Install
 
-The packages are not on opam yet; build from a clone:
+The protocol library and the generator are on opam:
+
+```sh
+opam install cdp cdp-gen
+```
+
+`cdp-lwt` is not on opam yet: it uses libcurl's WebSocket API, which ocurl
+has not released yet (latest release: 0.10.0). Until then, build the full
+stack from a clone:
 
 ```sh
 git clone https://github.com/ahrefs/ocaml-cdp.git
 cd ocaml-cdp
 opam switch create . 5.4.1 --no-install
+opam pin add -yn . --with-version dev
 opam install . --deps-only --with-test
 make build test
 ```
 
-cdp-lwt uses libcurl's WebSocket API, which ocurl has not released yet
-(latest release: 0.10.0) — `cdp-lwt.opam` therefore pins ocurl master via
-`pin-depends`, and `opam install` picks that up by itself.
+The `opam pin` line gives all three packages the same `dev` version — without
+it, opam picks the released `0.1.0` for `cdp` but `dev` for `cdp-lwt`, and
+`cdp-lwt`'s exact-version dependency on `cdp` cannot be solved. The pin also
+brings in ocurl master via `cdp-lwt.opam`'s `pin-depends`, and `opam install`
+picks everything up by itself.
 
 Your system libcurl must be 7.86 or newer (check with
 `curl-config --version`) and built with WebSocket support. Chrome-launching code and examples need a Chrome:
