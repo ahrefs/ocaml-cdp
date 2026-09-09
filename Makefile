@@ -56,6 +56,11 @@ attach: NAME ?= attach_example
 attach: ## Screenshot through an already-running Chrome (WS= browser websocket url)
 	$(DUNE) exec examples/attach.exe -- $(WS) $(URL) $(NAME) $(WIDTH) $(HEIGHT)
 
+# usage: make tail URL=http://localhost:3333 COOKIE=session=abc123
+.PHONY: tail
+tail: ## Open a visible Chrome on URL= and print its page/network/console events until Ctrl+C (COOKIE=name=value logs it in)
+	$(DUNE) exec examples/tail.exe -- $(URL) $(COOKIE)
+
 .PHONY: fmt
 fmt: ## Format code with ocamlformat
 	$(DUNE) build @fmt --auto-promote

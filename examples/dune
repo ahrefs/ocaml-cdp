@@ -25,3 +25,10 @@
  (libraries cdp cdp_lwt lwt lwt.unix base64 unix)
  (preprocess
   (pps lwt_ppx)))
+
+(executable
+ (name tail)
+ (modules tail)
+ (libraries cdp cdp_lwt lwt lwt.unix yojson)
+ (preprocess
+  (pps lwt_ppx)))

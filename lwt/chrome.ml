@@ -108,20 +108,24 @@ let rec read_announcement ~recent stderr_channel =
     - [executable]: the Chrome binary; defaults to [$CDP_CHROME] or ["google-chrome"].
     - [timeout]: seconds to wait for the DevTools address.
     - [no_sandbox]: turn off Chrome's sandbox.
+    - [headless]: [true] (the default) runs without a window; [false] opens a visible browser.
     - [port]: DevTools port; [0] (the default) picks any free port.
     - [extra_args]: appended to the Chrome command line.
 
     Fails with {!Launch_failed}, whose {!launch_error} says why: the executable is missing, the announcement timed out,
     or Chrome exited early *)
-let launch ?(executable = default_executable) ?(no_sandbox = false) ?(timeout = 15.0) ?(port = 0) ?(extra_args = []) ()
-  : t Lwt.t =
+let launch ?(executable = default_executable) ?(no_sandbox = false) ?(headless = true) ?(timeout = 15.0) ?(port = 0)
+  ?(extra_args = []) () : t Lwt.t =
   match executable_exists executable with
   | false -> Lwt.fail (Launch_failed (Executable_not_found executable))
   | true ->
     let profile_dir = create_profile_dir ~attempts_left:10 in
     let sandbox_arguments = if no_sandbox then [ "--no-sandbox" ] else [] in
+    let headless_arguments = if headless then [ "--headless" ] else [] in
     let arguments =
-      [ executable; "--headless"; "--remote-debugging-port=" ^ string_of_int port ]
+      [ executable ]
+      @ headless_arguments
+      @ [ "--remote-debugging-port=" ^ string_of_int port ]
       @ sandbox_arguments
       @ [ "--user-data-dir=" ^ profile_dir; "about:blank" ]
       @ extra_args
@@ -185,6 +189,6 @@ let launch ?(executable = default_executable) ?(no_sandbox = false) ?(timeout = 
 
 (** [with_launch f] launches like {!launch}, runs [f], and always kills the Chrome — the process is reaped and its
     profile removed also when [f] raises. *)
-let with_launch ?executable ?no_sandbox ?timeout ?port ?extra_args callback =
-  let%lwt chrome = launch ?executable ?no_sandbox ?timeout ?port ?extra_args () in
+let with_launch ?executable ?no_sandbox ?headless ?timeout ?port ?extra_args callback =
+  let%lwt chrome = launch ?executable ?no_sandbox ?headless ?timeout ?port ?extra_args () in
   Lwt.finalize (fun () -> callback chrome) (fun () -> chrome.kill ())
