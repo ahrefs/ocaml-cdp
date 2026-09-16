@@ -65,7 +65,7 @@ let enum_decl ~tname ~attrs values =
   }
 
 (* a record; fields with an inline enum get that enum hoisted to a named
-   type (name chosen by ~hoist_name). Returns hoisted decls ++ [record]. *)
+   type (name chosen by ~hoist_name). Returns the hoisted decls and the record. *)
 let record_decl ~selected ~alias_tbl ~domain ~tname ~attrs ~hoist_name props =
   let hoisted = ref [] in
   let hoist raw_name enum_json =
@@ -93,8 +93,8 @@ let record_decl ~selected ~alias_tbl ~domain ~tname ~attrs ~hoist_name props =
         spf "  %s : %s%s%s;" fname field_type (if optional then " option" else "") attrs)
       props
   in
-  !hoisted
-  @ [ { name = tname; body = spf "%s = {\n%s\n}\n[@@allow_extra_fields]%s" tname (String.concat "\n" fields) attrs } ]
+  ( !hoisted,
+    { name = tname; body = spf "%s = {\n%s\n}\n[@@allow_extra_fields]%s" tname (String.concat "\n" fields) attrs } )
 
 let alias_decl ~tname ~attrs type_expr = { name = tname; body = spf "%s = %s%s" tname type_expr attrs }
 
@@ -106,9 +106,12 @@ let named_type_decls ~selected ~alias_tbl ~domain type_def =
   | `List values, _ -> [ enum_decl ~tname ~attrs (List.map Util.to_string values) ]
   | `Null, `List (_ :: _ as props) ->
     let parent = camel_to_snake (jstr "id" type_def) in
-    record_decl ~selected ~alias_tbl ~domain ~tname ~attrs
-      ~hoist_name:(fun field -> spf "%s_%s" parent (camel_to_snake field))
-      props
+    let hoisted, record =
+      record_decl ~selected ~alias_tbl ~domain ~tname ~attrs
+        ~hoist_name:(fun field -> spf "%s_%s" parent (camel_to_snake field))
+        props
+    in
+    hoisted @ [ record ]
   | `Null, _ -> [ alias_decl ~tname ~attrs (map_type ~selected ~alias_tbl ~domain type_def) ]
   | _unexpected_shape -> failwith ("cdp-gen: unhandled named type shape: " ^ jstr "id" type_def)
 
@@ -161,9 +164,12 @@ let sealed_module ~mname ~prim ~attrs =
      end%s\n"
     mname conv ml_ty conv ml_ty ml_ty conv conv eq_mod eq_mod show_expr prim_fn prim_fn attrs
 
-(* primitive aliases of a domain, in protocol order *)
+(* primitive aliases of a domain with their primitive kind, in protocol order *)
 let domain_aliases ~alias_tbl (domain : domain) =
-  List.filter (fun type_def -> Hashtbl.mem alias_tbl (domain.name, jstr "id" type_def)) domain.types
+  List.filter_map
+    (fun type_def ->
+      Hashtbl.find_opt alias_tbl (domain.name, jstr "id" type_def) |> Option.map (fun prim -> type_def, prim))
+    domain.types
 
 let emit_base_file ~alias_tbl domains =
   let buf = Buffer.create 4096 in
@@ -180,8 +186,7 @@ let emit_base_file ~alias_tbl domains =
       | aliases ->
         Buffer.add_string buf (spf "module %s = struct\n" (module_of_domain domain.name));
         List.iter
-          (fun type_def ->
-            let prim = Hashtbl.find alias_tbl (domain.name, jstr "id" type_def) in
+          (fun (type_def, prim) ->
             let mname = submodule_of_name (jstr "id" type_def) in
             Buffer.add_string buf (sealed_module ~mname ~prim ~attrs:(item_attrs type_def));
             Buffer.add_string buf "\n")
@@ -196,7 +201,7 @@ let emit_types_file ~selected ~alias_tbl (domain : domain) =
   Buffer.add_string buf "open Jsonkit.Primitives\n\n";
   (* re-export sealed aliases so users write Cdp.Network.Request_id.t *)
   List.iter
-    (fun type_def ->
+    (fun (type_def, _prim) ->
       let mname = submodule_of_name (jstr "id" type_def) in
       Buffer.add_string buf
         (spf "module %s = %s%s\n" mname (sealed_path ~dom:domain.name ~id:(jstr "id" type_def)) (item_attrs type_def)))
@@ -217,17 +222,12 @@ let emit_item_module ~selected ~alias_tbl ~domain ~mname ~wire_name ~attrs ~para
   Buffer.add_string buf (spf "let name = %S\n\n" wire_name);
   let local_names = ref [] in
   let block ~tname ~make props =
-    let decls =
+    let hoisted, record =
       record_decl ~selected ~alias_tbl ~domain ~tname ~attrs:"" ~hoist_name:(fun field -> sanitize_lower field) props
     in
-    local_names := !local_names @ List.map (fun decl -> decl.name) decls;
+    local_names := !local_names @ List.map (fun decl -> decl.name) (hoisted @ [ record ]);
     (* hoisted enums first (own group: `make` cannot derive on variants),
        then the record with its own deriving list *)
-    let hoisted, record =
-      match List.rev decls with
-      | record :: rev_hoisted -> List.rev rev_hoisted, record
-      | [] -> assert false
-    in
     Buffer.add_string buf (render_chain ~deriving:"json, show, eq" hoisted);
     Buffer.add_string buf "\n";
     Buffer.add_string buf
@@ -274,7 +274,7 @@ let emit_item_module ~selected ~alias_tbl ~domain ~mname ~wire_name ~attrs ~para
    names; shared by the domain-file emitter and the roundtrip-test emitter *)
 let item_modules ~alias_tbl (domain : domain) =
   let used =
-    ref (List.map (fun type_def -> submodule_of_name (jstr "id" type_def)) (domain_aliases ~alias_tbl domain))
+    ref (List.map (fun (type_def, _prim) -> submodule_of_name (jstr "id" type_def)) (domain_aliases ~alias_tbl domain))
   in
   let claim ~fallback_suffix proposed =
     let name = if List.mem proposed !used then proposed ^ fallback_suffix else proposed in

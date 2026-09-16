@@ -183,7 +183,7 @@ let check_types_dag domains ~alias_tbl =
            (String.concat " -> " (List.rev (node :: path))))
     else begin
       Hashtbl.replace visiting node ();
-      List.iter (visit (node :: path)) (try List.assoc node graph with Not_found -> []);
+      List.iter (visit (node :: path)) (Option.value (List.assoc_opt node graph) ~default:[]);
       Hashtbl.remove visiting node;
       Hashtbl.replace finished node ()
     end
