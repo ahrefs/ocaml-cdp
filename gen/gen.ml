@@ -28,61 +28,62 @@
      cdp.ml                 -- the index: Cdp.Network = Cdp_network, ... *)
 
 open Cdp_gen
-open Naming
-open Protocol
-open Emit
 
 (* shared front half of generate and roundtrip: read REVISION, load and
    select domains, build the alias table, verify the type graph *)
 let load_protocol ~browser ~js ~domains_arg =
-  (revision :=
+  (Emit.revision :=
      let revision_file = Filename.concat (Filename.dirname browser) "REVISION" in
-     match read_file revision_file with
+     match Protocol.read_file revision_file with
      | contents ->
        (* the revision is stamped into every generated header comment; refuse
           anything that could not be a revision id *)
        let plain =
          String.length contents > 0
-         && String.for_all (fun ch -> is_letter ch || is_digit ch || ch = '.' || ch = '_' || ch = '-') contents
+         && String.for_all
+              (fun ch -> Protocol.is_letter ch || Protocol.is_digit ch || ch = '.' || ch = '_' || ch = '-')
+              contents
        in
        if plain then contents
-       else failwith (spf "cdp-gen: REVISION next to the protocol JSON holds %S, which is not a revision id" contents)
+       else
+         failwith
+           (Printf.sprintf "cdp-gen: REVISION next to the protocol JSON holds %S, which is not a revision id" contents)
      | exception Sys_error _no_revision_file -> "unknown");
-  let all = load_domains browser @ load_domains js in
-  check_unique_names all;
-  check_identifiers all;
+  let all = Protocol.load_domains browser @ Protocol.load_domains js in
+  Protocol.check_unique_names all;
+  Protocol.check_identifiers all;
   let selected =
     match domains_arg with
-    | "all" -> List.map (fun (domain : domain) -> domain.name) all
+    | "all" -> List.map (fun (domain : Protocol.domain) -> domain.name) all
     | names -> String.split_on_char ',' names
   in
-  let domains = List.filter (fun (domain : domain) -> List.mem domain.name selected) all in
+  let domains = List.filter (fun (domain : Protocol.domain) -> List.mem domain.name selected) all in
   (match
      List.filter
-       (fun requested -> not (List.exists (fun (domain : domain) -> String.equal domain.name requested) all))
+       (fun requested -> not (List.exists (fun (domain : Protocol.domain) -> String.equal domain.name requested) all))
        selected
    with
   | [] -> ()
   | missing -> failwith ("cdp-gen: unknown domains: " ^ String.concat "," missing));
-  check_refs_exist ~all ~selected:domains;
-  let alias_tbl = build_alias_table domains in
-  check_types_dag domains ~alias_tbl;
+  Protocol.check_refs_exist ~all ~selected:domains;
+  let alias_tbl = Protocol.build_alias_table domains in
+  Protocol.check_types_dag domains ~alias_tbl;
   selected, domains, alias_tbl
 
 let generate ~browser ~js ~outdir ~domains_arg =
   let selected, domains, alias_tbl = load_protocol ~browser ~js ~domains_arg in
   (* failure halfway through must not leave the output directory with a half-new, half-old mix *)
-  let base_file = emit_base_file ~alias_tbl domains in
+  let base_file = Emit.emit_base_file ~alias_tbl domains in
   let domain_files =
     List.map
-      (fun (domain : domain) ->
-        let base = Filename.concat outdir (file_of_domain domain.name) in
+      (fun (domain : Protocol.domain) ->
+        let base = Filename.concat outdir (Naming.file_of_domain domain.name) in
         ( domain,
-          (base ^ "_types.ml", emit_types_file ~selected ~alias_tbl domain),
-          (base ^ ".ml", emit_domain_file ~selected ~alias_tbl domain) ))
+          (base ^ "_types.ml", Emit.emit_types_file ~selected ~alias_tbl domain),
+          (base ^ ".ml", Emit.emit_domain_file ~selected ~alias_tbl domain) ))
       domains
   in
-  let index = emit_index domains in
+  let index = Emit.emit_index domains in
   let fresh =
     "cdp_base.ml"
     :: "cdp.ml"
@@ -91,23 +92,23 @@ let generate ~browser ~js ~outdir ~domains_arg =
            [ Filename.basename types_path; Filename.basename domain_path ])
          domain_files
   in
-  remove_stale_generated_files ~outdir ~fresh;
-  write_file (Filename.concat outdir "cdp_base.ml") base_file;
+  Protocol.remove_stale_generated_files ~outdir ~fresh;
+  Protocol.write_file (Filename.concat outdir "cdp_base.ml") base_file;
   Printf.printf "generated cdp_base.ml: %d sealed alias modules\n" (Hashtbl.length alias_tbl);
   List.iter
-    (fun ((domain : domain), (types_path, types_contents), (domain_path, domain_contents)) ->
-      write_file types_path types_contents;
-      write_file domain_path domain_contents;
-      Printf.printf "generated %s(_types).ml: %d types, %d commands, %d events\n" (file_of_domain domain.name)
+    (fun ((domain : Protocol.domain), (types_path, types_contents), (domain_path, domain_contents)) ->
+      Protocol.write_file types_path types_contents;
+      Protocol.write_file domain_path domain_contents;
+      Printf.printf "generated %s(_types).ml: %d types, %d commands, %d events\n" (Naming.file_of_domain domain.name)
         (List.length domain.types) (List.length domain.commands) (List.length domain.events))
     domain_files;
-  write_file (Filename.concat outdir "cdp.ml") index;
-  Printf.printf "generated cdp.ml index (%d domains, protocol %s)\n" (List.length domains) !revision
+  Protocol.write_file (Filename.concat outdir "cdp.ml") index;
+  Printf.printf "generated cdp.ml index (%d domains, protocol %s)\n" (List.length domains) !Emit.revision
 
 let roundtrip ~browser ~js ~outfile ~domains_arg =
   let _selected, domains, alias_tbl = load_protocol ~browser ~js ~domains_arg in
   let contents, emitted, skipped = Roundtrip.emit ~domains ~alias_tbl in
-  write_file outfile contents;
+  Protocol.write_file outfile contents;
   List.iter (fun (label, reason) -> Printf.eprintf "skipped %s: %s\n" label reason) skipped;
   Printf.printf "generated %s: %d roundtrip checks, %d skipped\n" outfile emitted (List.length skipped)
 
