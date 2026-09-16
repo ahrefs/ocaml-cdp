@@ -38,7 +38,7 @@ jobs:
 
       - name: Open or update the pull request
         if: steps.diff.outputs.changed != '0'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.PROTOCOL_BOT_TOKEN }}
           branch: bot/update-protocol
