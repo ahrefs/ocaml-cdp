@@ -98,7 +98,7 @@ jobs:
       - name: Cache the WebSocket-enabled libcurl (Ubuntu)
         if: runner.os == 'Linux'
         id: cache-curl
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.local/curl
           key: curl-8.16.0-${{ matrix.os }}
@@ -109,7 +109,7 @@ jobs:
           curl -LO https://curl.se/download/curl-8.16.0.tar.gz
           tar xf curl-8.16.0.tar.gz
           cd curl-8.16.0
-          ./configure --with-openssl --prefix=$HOME/.local/curl
+          ./configure --with-openssl --without-libpsl --prefix=$HOME/.local/curl
           make -j"$(nproc)"
           make install
 

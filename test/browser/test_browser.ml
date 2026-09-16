@@ -128,7 +128,7 @@ let () =
       let dirs_before = profile_dirs () in
       let%lwt () =
         try%lwt
-          let%lwt (_chrome : Cdp_lwt.Chrome.t) = Cdp_lwt.Chrome.launch ~executable:"/bin/false" () in
+          let%lwt (_chrome : Cdp_lwt.Chrome.t) = Cdp_lwt.Chrome.launch ~executable:"false" () in
           assert false
         with Cdp_lwt.Chrome.Launch_failed (Cdp_lwt.Chrome.Exited_early { stderr = [] }) -> Lwt.return_unit
       in
