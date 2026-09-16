@@ -60,14 +60,14 @@ let check_unique_names domains =
   List.iter
     (fun domain ->
       (match Hashtbl.mem seen_domains domain.name with
-      | false -> Hashtbl.add seen_domains domain.name ()
+      | false -> Hashtbl.replace seen_domains domain.name ()
       | true -> failwith (spf "cdp-gen: domain %s is defined twice" domain.name));
       let seen_types = Hashtbl.create 16 in
       List.iter
         (fun type_def ->
           let id = jstr "id" type_def in
           match Hashtbl.mem seen_types id with
-          | false -> Hashtbl.add seen_types id ()
+          | false -> Hashtbl.replace seen_types id ()
           | true -> failwith (spf "cdp-gen: type %s.%s is defined twice" domain.name id))
         domain.types)
     domains
@@ -179,10 +179,10 @@ let check_types_dag domains ~alias_tbl =
             domains in the cycle must be merged into one compilation unit."
            (String.concat " -> " (List.rev (node :: path))))
     else begin
-      Hashtbl.add visiting node ();
+      Hashtbl.replace visiting node ();
       List.iter (visit (node :: path)) (try List.assoc node graph with Not_found -> []);
       Hashtbl.remove visiting node;
-      Hashtbl.add finished node ()
+      Hashtbl.replace finished node ()
     end
   in
   List.iter (fun (domain : domain) -> visit [] domain.name) domains
@@ -194,7 +194,8 @@ let check_types_dag domains ~alias_tbl =
 let check_refs_exist ~all ~selected =
   let defined = Hashtbl.create 256 in
   List.iter
-    (fun domain -> List.iter (fun type_def -> Hashtbl.add defined (domain.name, jstr "id" type_def) ()) domain.types)
+    (fun domain ->
+      List.iter (fun type_def -> Hashtbl.replace defined (domain.name, jstr "id" type_def) ()) domain.types)
     all;
   List.iter
     (fun domain ->
@@ -240,10 +241,10 @@ let check_identifiers domains =
         | `String text ->
           let constructor = Naming.constructor_of_enum_value text in
           (match Hashtbl.find_opt seen constructor with
+          | None -> Hashtbl.replace seen constructor text
           | Some earlier ->
             failwith
-              (spf "cdp-gen: %s: enum values %S and %S both become the constructor %s" owner earlier text constructor)
-          | None -> Hashtbl.add seen constructor text)
+              (spf "cdp-gen: %s: enum values %S and %S both become the constructor %s" owner earlier text constructor))
         | _not_a_string -> failwith (spf "cdp-gen: %s: enum values must be strings" owner))
       values
   in
