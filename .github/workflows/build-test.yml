@@ -28,7 +28,6 @@ jobs:
         uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ matrix.ocaml-version }}
-          dune-cache: true
 
       - name: Install dependencies
         run: opam install ./cdp.opam ./cdp-gen.opam --deps-only --with-test
@@ -47,7 +46,6 @@ jobs:
         uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: "5.4"
-          dune-cache: true
 
       - name: Install ocamlformat
         run: opam install dune ocamlformat.0.29.0
@@ -66,7 +64,6 @@ jobs:
         uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: "5.4"
-          dune-cache: true
 
       - name: Install dependencies
         run: |
@@ -97,7 +94,6 @@ jobs:
         uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: "5.4"
-          dune-cache: true
 
       - name: Cache the WebSocket-enabled libcurl (Ubuntu)
         if: runner.os == 'Linux'
