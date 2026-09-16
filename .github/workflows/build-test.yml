@@ -1,0 +1,140 @@
+name: Build and Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+        ocaml-version:
+          - "4.14"
+          - "5.4"
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Use OCaml ${{ matrix.ocaml-version }}
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: ${{ matrix.ocaml-version }}
+
+      - name: Install dependencies
+        run: opam install ./cdp.opam ./cdp-gen.opam --deps-only --with-test
+
+      - name: Build and test cdp and cdp-gen
+        run: opam exec -- dune build -p cdp,cdp-gen @install @runtest
+
+  fmt-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Use OCaml 5.4
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5.4"
+
+      - name: Install ocamlformat
+        run: opam install dune ocamlformat.0.29.0
+
+      - name: Check formatting
+        run: opam exec -- make fmt-check
+
+  generator-guards:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Use OCaml 5.4
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5.4"
+
+      - name: Install dependencies
+        run: |
+          opam install ./cdp.opam ./cdp-gen.opam --deps-only --with-test
+          opam install ocamlformat.0.29.0
+
+      - name: Check generated code matches the generator
+        run: opam exec -- make check
+
+      - name: Generate and compile all 58 domains
+        run: opam exec -- make check-full
+
+  full-stack:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Use OCaml 5.4
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5.4"
+
+      - name: Cache the WebSocket-enabled libcurl (Ubuntu)
+        if: runner.os == 'Linux'
+        id: cache-curl
+        uses: actions/cache@v5
+        with:
+          path: ~/.local/curl
+          key: curl-8.16.0-${{ matrix.os }}
+
+      - name: Build a WebSocket-enabled libcurl (Ubuntu)
+        if: runner.os == 'Linux' && steps.cache-curl.outputs.cache-hit != 'true'
+        run: |
+          curl -LO https://curl.se/download/curl-8.16.0.tar.gz
+          tar xf curl-8.16.0.tar.gz
+          cd curl-8.16.0
+          ./configure --with-openssl --without-libpsl --prefix=$HOME/.local/curl
+          make -j"$(nproc)"
+          make install
+
+      - name: Use the WebSocket-enabled libcurl (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          echo "PKG_CONFIG_PATH=$HOME/.local/curl/lib/pkgconfig" >> "$GITHUB_ENV"
+          echo "LD_LIBRARY_PATH=$HOME/.local/curl/lib" >> "$GITHUB_ENV"
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - name: Use Homebrew's libcurl (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install curl pkgconf
+          echo "PKG_CONFIG_PATH=$(brew --prefix curl)/lib/pkgconfig" >> "$GITHUB_ENV"
+          echo "CDP_CHROME=/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" >> "$GITHUB_ENV"
+
+      - name: Pin the local packages
+        run: opam pin add -yn . --with-version dev
+
+      - name: Install dependencies
+        run: opam install . --deps-only --with-test
+
+      - name: Build and test the full stack
+        run: opam exec -- make build test
+
+      - name: Browser smoke tests
+        run: opam exec -- make test-browser
