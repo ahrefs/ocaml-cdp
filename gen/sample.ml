@@ -7,8 +7,6 @@
 
 open Protocol
 
-let spf = Printf.sprintf
-
 let rec of_type ~domains ~visiting ~domain (type_json : Json.t) : Json.t =
   match Util.member "$ref" type_json with
   | `String ref_string ->

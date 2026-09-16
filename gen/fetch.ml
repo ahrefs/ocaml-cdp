@@ -12,7 +12,6 @@
 
 open Protocol
 
-let spf = Printf.sprintf
 let protocol_files = [ "browser_protocol.json"; "js_protocol.json" ]
 
 (* the protocol JSONs are BSD-3-Clause (Chromium Authors); redistributing them
@@ -95,5 +94,5 @@ let fetch ~outdir ~rev =
       (* everything succeeded: move into place (same directory, so atomic) *)
       List.iter (fun (file, tmp) -> Sys.rename tmp (Filename.concat outdir file)) staged;
       Sys.rename license_tmp (Filename.concat outdir license_file);
-      write_file (Filename.concat outdir "REVISION") ("r" ^ revision ^ "\n"));
+      write_file (Filename.concat outdir "REVISION") (spf "r%s\n" revision));
   Printf.printf "fetched protocol r%s into %s/\n" revision outdir

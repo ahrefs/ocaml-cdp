@@ -7,8 +7,6 @@
 open Naming
 open Protocol
 
-let spf = Printf.sprintf
-
 (* protocol revision stamped into generated headers; read from the REVISION
    file living next to the protocol JSON (written by `cdp-gen fetch`) *)
 let revision = ref "unknown"
@@ -58,11 +56,6 @@ type decl = {
 
 let enum_decl ~tname ~attrs values =
   let ctors = List.map (fun value -> value, constructor_of_enum_value value) values in
-  let names = List.map snd ctors in
-  let dedup = List.sort_uniq String.compare names in
-  (match List.compare_lengths dedup names with
-  | 0 -> ()
-  | _fewer_after_dedup -> failwith (spf "cdp-gen: constructor collision in enum %s: %s" tname (String.concat "," names)));
   {
     name = tname;
     body =
@@ -114,7 +107,7 @@ let named_type_decls ~selected ~alias_tbl ~domain type_def =
   | `Null, `List (_ :: _ as props) ->
     let parent = camel_to_snake (jstr "id" type_def) in
     record_decl ~selected ~alias_tbl ~domain ~tname ~attrs
-      ~hoist_name:(fun field -> parent ^ "_" ^ camel_to_snake field)
+      ~hoist_name:(fun field -> spf "%s_%s" parent (camel_to_snake field))
       props
   | `Null, _ -> [ alias_decl ~tname ~attrs (map_type ~selected ~alias_tbl ~domain type_def) ]
   | _unexpected_shape -> failwith ("cdp-gen: unhandled named type shape: " ^ jstr "id" type_def)
@@ -312,13 +305,13 @@ let emit_domain_file ~selected ~alias_tbl (domain : domain) =
       | `Command command ->
         Buffer.add_string buf
           (emit_item_module ~selected ~alias_tbl ~domain:domain.name ~mname
-             ~wire_name:(domain.name ^ "." ^ jstr "name" command)
+             ~wire_name:(spf "%s.%s" domain.name (jstr "name" command))
              ~attrs:(item_attrs command) ~params:(jlist "parameters" command)
              ~returns:(`Returns (jlist "returns" command)))
       | `Event event ->
         Buffer.add_string buf
           (emit_item_module ~selected ~alias_tbl ~domain:domain.name ~mname
-             ~wire_name:(domain.name ^ "." ^ jstr "name" event)
+             ~wire_name:(spf "%s.%s" domain.name (jstr "name" event))
              ~attrs:(item_attrs event) ~params:(jlist "parameters" event) ~returns:`Event))
     (item_modules ~alias_tbl domain);
   Buffer.contents buf

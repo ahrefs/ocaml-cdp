@@ -7,8 +7,6 @@
 open Naming
 open Protocol
 
-let spf = Printf.sprintf
-
 type target = {
   label : string;
   of_json_path : string;
@@ -22,7 +20,7 @@ let named_type_targets ~domains ~alias_tbl (domain : domain) =
   List.map
     (fun type_def ->
       let id = jstr "id" type_def in
-      let label = domain.name ^ "." ^ id in
+      let label = spf "%s.%s" domain.name id in
       let sample () = Sample.of_named ~domains ~visiting:[] (domain.name, id) in
       match Hashtbl.mem alias_tbl (domain.name, id) with
       | true ->
