@@ -63,7 +63,7 @@ tail: ## Open a visible Chrome on URL= and print its page/network/console events
 
 .PHONY: fmt
 fmt: ## Format code with ocamlformat
-	$(DUNE) build @fmt --auto-promote
+	$(DUNE) build @fmt --auto-promote || $(DUNE) build @fmt
 
 .PHONY: fmt-check
 fmt-check: ## Check formatting without modifying files
