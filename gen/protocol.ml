@@ -18,6 +18,10 @@ let jlist field json =
   match Util.member field json with
   | `Null -> []
   | value -> Util.to_list value
+let has_field field json =
+  match Util.member field json with
+  | `Null -> false
+  | _present -> true
 let jbool field json =
   match Util.member field json with
   | `Bool value -> value
@@ -130,7 +134,7 @@ let rec collect_refs (json : Json.t) acc =
   | _scalar -> acc
 
 let is_primitive_alias type_def =
-  let has field = Util.member field type_def <> `Null in
+  let has field = has_field field type_def in
   if has "enum" || has "properties" || has "items" then None
   else (
     match Util.member "type" type_def with
@@ -158,7 +162,7 @@ let check_types_dag domains ~alias_tbl =
     List.concat_map (fun type_def -> collect_refs type_def []) domain.types
     |> List.filter_map (fun ref_string ->
       let dom, id = parse_ref ~current:domain.name ref_string in
-      match dom = domain.name with
+      match String.equal dom domain.name with
       | true -> None
       | false -> if Hashtbl.mem alias_tbl (dom, id) then None (* routed through Base *) else Some dom)
     |> List.sort_uniq String.compare

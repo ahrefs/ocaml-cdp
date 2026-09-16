@@ -37,7 +37,7 @@ let load_protocol ~browser ~js ~domains_arg =
        (* the revision is stamped into every generated header comment; refuse
           anything that could not be a revision id *)
        let plain =
-         contents <> ""
+         String.length contents > 0
          && String.for_all (fun ch -> is_letter ch || is_digit ch || ch = '.' || ch = '_' || ch = '-') contents
        in
        if plain then contents
@@ -53,7 +53,9 @@ let load_protocol ~browser ~js ~domains_arg =
   in
   let domains = List.filter (fun (domain : domain) -> List.mem domain.name selected) all in
   (match
-     List.filter (fun requested -> not (List.exists (fun (domain : domain) -> domain.name = requested) all)) selected
+     List.filter
+       (fun requested -> not (List.exists (fun (domain : domain) -> String.equal domain.name requested) all))
+       selected
    with
   | [] -> ()
   | missing -> failwith ("cdp-gen: unknown domains: " ^ String.concat "," missing));

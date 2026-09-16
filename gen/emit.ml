@@ -31,7 +31,7 @@ let rec map_type ~selected ~alias_tbl ~domain (type_json : Json.t) =
       sealed_path ~dom ~id ^ ".t"
     else (
       let type_name = sanitize_lower id in
-      match dom = domain with
+      match String.equal dom domain with
       | true -> type_name
       | false -> spf "%s.%s" (types_module_of_domain dom) type_name)
   | `Null ->
@@ -57,9 +57,9 @@ let enum_decl ~tname ~attrs values =
   let ctors = List.map (fun value -> value, constructor_of_enum_value value) values in
   let names = List.map snd ctors in
   let dedup = List.sort_uniq String.compare names in
-  (match List.length dedup = List.length names with
-  | true -> ()
-  | false -> failwith (spf "cdp-gen: constructor collision in enum %s: %s" tname (String.concat "," names)));
+  (match List.compare_lengths dedup names with
+  | 0 -> ()
+  | _fewer_after_dedup -> failwith (spf "cdp-gen: constructor collision in enum %s: %s" tname (String.concat "," names)));
   {
     name = tname;
     body =
@@ -89,7 +89,7 @@ let record_decl ~selected ~alias_tbl ~domain ~tname ~attrs ~hoist_name props =
           | `List _ as enum_json -> hoist orig enum_json
           | _no_inline_enum ->
           match Util.member "type" prop, Util.member "items" prop with
-          | `String "array", (`Assoc _ as items) when Util.member "enum" items <> `Null ->
+          | `String "array", (`Assoc _ as items) when has_field "enum" items ->
             spf "%s list" (hoist orig (Util.member "enum" items))
           | _not_an_enum_array -> map_type ~selected ~alias_tbl ~domain prop
         in
@@ -114,7 +114,7 @@ let named_type_decls ~selected ~alias_tbl ~domain type_def =
       ~hoist_name:(fun field -> parent ^ "_" ^ camel_to_snake field)
       props
   | `Null, _ -> [ alias_decl ~tname ~attrs (map_type ~selected ~alias_tbl ~domain type_def) ]
-  | _ -> failwith ("cdp-gen: unhandled named type shape: " ^ jstr "id" type_def)
+  | _unexpected_shape -> failwith ("cdp-gen: unhandled named type shape: " ^ jstr "id" type_def)
 
 (* "type a = .. and b = .." with ONE [@@deriving] for the whole group *)
 let render_chain ~deriving decls =
@@ -126,7 +126,7 @@ let render_chain ~deriving decls =
 let check_no_dup ~what names =
   let sorted = List.sort String.compare names in
   let rec go = function
-    | first :: second :: _ when first = second -> failwith (spf "cdp-gen: duplicate %s: %s" what first)
+    | first :: second :: _ when String.equal first second -> failwith (spf "cdp-gen: duplicate %s: %s" what first)
     | _ :: rest -> go rest
     | [] -> ()
   in
