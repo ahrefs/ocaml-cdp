@@ -76,6 +76,15 @@ let generate ~browser ~js ~outdir ~domains_arg =
       domains
   in
   let index = emit_index domains in
+  let fresh =
+    "cdp_base.ml"
+    :: "cdp.ml"
+    :: List.concat_map
+         (fun (_domain, (types_path, _types), (domain_path, _domain_contents)) ->
+           [ Filename.basename types_path; Filename.basename domain_path ])
+         domain_files
+  in
+  remove_stale_generated_files ~outdir ~fresh;
   write_file (Filename.concat outdir "cdp_base.ml") base_file;
   Printf.printf "generated cdp_base.ml: %d sealed alias modules\n" (Hashtbl.length alias_tbl);
   List.iter
