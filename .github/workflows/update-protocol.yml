@@ -1,0 +1,50 @@
+name: Update Protocol
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  update-protocol:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Use OCaml 5.4
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5.4"
+
+      - name: Install dependencies
+        run: |
+          opam install ./cdp.opam ./cdp-gen.opam --deps-only --with-test
+          opam install ocamlformat.0.29.0
+
+      - name: Fetch the latest protocol and regenerate
+        run: opam exec -- make update-protocol
+
+      - name: Detect changes
+        id: diff
+        run: |
+          echo "changed=$(git status --porcelain | wc -l)" >> "$GITHUB_OUTPUT"
+          echo "revision=$(cat protocol/REVISION)" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update the pull request
+        if: steps.diff.outputs.changed != '0'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.PROTOCOL_BOT_TOKEN }}
+          branch: bot/update-protocol
+          commit-message: update protocol to ${{ steps.diff.outputs.revision }}
+          title: update protocol to ${{ steps.diff.outputs.revision }}
+          body: |
+            Automated roll: `make update-protocol` fetched ${{ steps.diff.outputs.revision }}
+            and regenerated `lib/`, the roundtrip tests, and `protocol/LICENSE`.
+          delete-branch: true
