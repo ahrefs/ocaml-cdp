@@ -1,3 +1,10 @@
+# Unreleased
+
+- `cdp-gen`: `generate` removes generated `cdp_*.ml` files that the current
+  run does not produce, so a domain dropped from the selection no longer
+  leaves stale files that break the next build. Files without the generator
+  header are left alone.
+
 # 0.1.0 (2026-08-29)
 
 - Initial release
