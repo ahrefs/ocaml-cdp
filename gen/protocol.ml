@@ -1,5 +1,8 @@
-(* Reading the protocol JSON: the domain model, reference collection,
-   the primitive-alias table, and the cross-domain cycle check. *)
+(* Load and check the protocol JSON.
+   - domain model
+   - checks: unique names, plain identifiers, refs exist, no type cycle
+   - primitive-alias table
+   - file IO *)
 
 module Json = Yojson.Safe
 module Util = Yojson.Safe.Util

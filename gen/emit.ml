@@ -1,5 +1,8 @@
-(* Everything that prints OCaml: type declarations with their deriving
-   attributes, sealed alias modules, and the per-domain / base / index files. *)
+(* Print the library code.
+   - type declarations with deriving attributes
+   - sealed alias modules
+   - domain, base and index files
+   The roundtrip test is printed by Roundtrip. *)
 
 open Naming
 open Protocol

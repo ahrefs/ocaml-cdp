@@ -2,9 +2,14 @@
    definitions. JSON codecs come from the jsonkit ppx ([@@deriving json]
    plus wire attributes); equal/show/make come from ppx_deriving.
 
-   Modules: Naming (protocol names -> OCaml names), Protocol (JSON loading,
-   alias table, cycle check), Emit (printing OCaml), Fetch (downloading
-   protocol snapshots). This file is only the CLI.
+   Modules:
+     Naming     protocol names -> OCaml names
+     Protocol   load and check the JSON, alias table, file IO
+     Emit       print the library code
+     Sample     one JSON sample per protocol type
+     Roundtrip  print the roundtrip test
+     Fetch      download a protocol snapshot
+   This file is only the CLI.
 
    Output layout:
      cdp_base.ml            -- sealed modules for every primitive alias type

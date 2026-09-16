@@ -1,6 +1,7 @@
-(* Hand-written glue between generated code and the jsonkit runtime.
-   This is the only file that knows which JSON backend is in use
-   (native: Yojson.Basic.t via jsonkit). *)
+(* Hand-written JSON glue for the generated code.
+   - raw JSON type
+   - payload of the Other enum constructor
+   - message repairs: lone surrogates, big integers *)
 
 (** A raw JSON value. Used for protocol fields typed "any" or bare "object". *)
 type t = Jsonkit.t
