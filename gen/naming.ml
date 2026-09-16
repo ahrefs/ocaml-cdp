@@ -62,17 +62,21 @@ let keywords =
   ]
 
 let is_upper ch = ch >= 'A' && ch <= 'Z'
-let is_lower ch = (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9')
+let is_lower ch = ch >= 'a' && ch <= 'z'
+let is_digit ch = ch >= '0' && ch <= '9'
 
-(* FrameId -> frame_id, DOMSnapshot -> dom_snapshot, targetInfo -> target_info *)
+(* A capital starts a new word when:
+   - the char before it is lowercase or a digit
+   - the char after it is lowercase
+   FrameId -> frame_id, DOMSnapshot -> dom_snapshot, HTTP2Settings -> http2_settings *)
 let camel_to_snake name =
   let buf = Buffer.create (String.length name * 2) in
   String.iteri
     (fun pos ch ->
       if is_upper ch then begin
-        let prev_lower = pos > 0 && is_lower name.[pos - 1] in
-        let next_lower = pos < String.length name - 1 && is_lower name.[pos + 1] in
-        if pos > 0 && (prev_lower || next_lower) then Buffer.add_char buf '_';
+        let after_word_end = pos > 0 && (is_lower name.[pos - 1] || is_digit name.[pos - 1]) in
+        let before_lowercase = pos < String.length name - 1 && is_lower name.[pos + 1] in
+        if pos > 0 && (after_word_end || before_lowercase) then Buffer.add_char buf '_';
         Buffer.add_char buf (Char.lowercase_ascii ch)
       end
       else Buffer.add_char buf ch)
