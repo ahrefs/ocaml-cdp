@@ -34,8 +34,6 @@ let curl ~url ~out =
   run_cmd ~context:(spf "downloading %s" url)
     (spf "curl -sfL --connect-timeout 15 --max-time 300 %s -o %s" (Filename.quote url) (Filename.quote out))
 
-let remove_if_exists path = if Sys.file_exists path then Sys.remove path
-
 let resolve_latest_revision () =
   let tmp = Filename.temp_file "cdp_gen_registry" ".json" in
   Fun.protect

@@ -72,7 +72,7 @@ let load_protocol ~browser ~js ~domains_arg =
 
 let generate ~browser ~js ~outdir ~domains_arg =
   let selected, domains, alias_tbl = load_protocol ~browser ~js ~domains_arg in
-  (* failure halfway through must not leave the output directory with a half-new, half-old mix *)
+  (* render every file before writing any: a generator error leaves outdir untouched *)
   let base_file = Emit.emit_base_file ~alias_tbl domains in
   let domain_files =
     List.map
