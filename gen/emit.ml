@@ -67,34 +67,31 @@ let enum_decl ~tname ~attrs values =
 (* a record; fields with an inline enum get that enum hoisted to a named
    type (name chosen by ~hoist_name). Returns the hoisted decls and the record. *)
 let record_decl ~selected ~alias_tbl ~domain ~tname ~attrs ~hoist_name props =
-  let hoisted = ref [] in
   let hoist raw_name enum_json =
-    let hname = hoist_name raw_name in
     let values = List.map Util.to_string (Util.to_list enum_json) in
-    hoisted := !hoisted @ [ enum_decl ~tname:hname ~attrs:"" values ];
-    hname
+    enum_decl ~tname:(hoist_name raw_name) ~attrs:"" values
   in
-  let fields =
-    List.map
-      (fun prop ->
-        let orig = jstr "name" prop in
-        let fname = sanitize_lower orig in
-        let optional = jbool "optional" prop in
-        let field_type =
-          match Util.member "enum" prop with
-          | `List _ as enum_json -> hoist orig enum_json
-          | _no_inline_enum ->
-          match Util.member "type" prop, Util.member "items" prop with
-          | `String "array", (`Assoc _ as items) when has_field "enum" items ->
-            spf "%s list" (hoist orig (Util.member "enum" items))
-          | _not_an_enum_array -> map_type ~selected ~alias_tbl ~domain prop
-        in
-        let attrs = spf " [@key %S]%s" orig (if optional then " [@option] [@json.drop_default]" else "") in
-        spf "  %s : %s%s%s;" fname field_type (if optional then " option" else "") attrs)
-      props
+  let field prop =
+    let orig = jstr "name" prop in
+    let optional = jbool "optional" prop in
+    let field_type, hoisted =
+      match Util.member "enum" prop with
+      | `List _ as enum_json ->
+        let enum = hoist orig enum_json in
+        enum.name, Some enum
+      | _no_inline_enum ->
+      match Util.member "type" prop, Util.member "items" prop with
+      | `String "array", (`Assoc _ as items) when has_field "enum" items ->
+        let enum = hoist orig (Util.member "enum" items) in
+        spf "%s list" enum.name, Some enum
+      | _not_an_enum_array -> map_type ~selected ~alias_tbl ~domain prop, None
+    in
+    let field_attrs = spf " [@key %S]%s" orig (if optional then " [@option] [@json.drop_default]" else "") in
+    spf "  %s : %s%s%s;" (sanitize_lower orig) field_type (if optional then " option" else "") field_attrs, hoisted
   in
-  ( !hoisted,
-    { name = tname; body = spf "%s = {\n%s\n}\n[@@allow_extra_fields]%s" tname (String.concat "\n" fields) attrs } )
+  let lines, hoisted = List.split (List.map field props) in
+  ( List.filter_map Fun.id hoisted,
+    { name = tname; body = spf "%s = {\n%s\n}\n[@@allow_extra_fields]%s" tname (String.concat "\n" lines) attrs } )
 
 let alias_decl ~tname ~attrs type_expr = { name = tname; body = spf "%s = %s%s" tname type_expr attrs }
 
@@ -215,60 +212,63 @@ let emit_types_file ~selected ~alias_tbl (domain : domain) =
   Buffer.add_string buf (render_chain ~deriving:"json, show, eq" decls);
   Buffer.contents buf
 
+(* A params or result record inside a command / event module.
+   - hoisted enums first, in their own group: `make` cannot derive on variants
+   - then the record with its own deriving list
+   Returns the text and the type names it defines. *)
+let record_block ~selected ~alias_tbl ~domain ~tname ~make props =
+  let hoisted, record = record_decl ~selected ~alias_tbl ~domain ~tname ~attrs:"" ~hoist_name:sanitize_lower props in
+  let record_deriving = if make then "json, show, eq, make" else "json, show, eq" in
+  ( spf "%s\n%s\n" (render_chain ~deriving:"json, show, eq" hoisted) (render_chain ~deriving:record_deriving [ record ]),
+    List.map (fun decl -> decl.name) (hoisted @ [ record ]) )
+
+(* Unit payload with a hand-written decoder.
+   CDP answers {} for zero-return commands and params-less events,
+   while a derived unit codec expects null. *)
+let unit_block tname =
+  spf "type %s = unit [@@deriving show, eq]\n\nlet %s_of_json (_ignored_payload : Cdp_json.t) : %s = ()\n\n" tname tname
+    tname
+
+let params_block ~selected ~alias_tbl ~domain ~params ~returns =
+  match params, returns with
+  | [], `Event -> unit_block "params", [ "params" ]
+  | [], `Returns _ -> "", []
+  | props, _command_or_event -> record_block ~selected ~alias_tbl ~domain ~tname:"params" ~make:true props
+
+(* The typed seam a transport uses.
+   - event: the value it subscribes with
+   - command: a value when there are no params, a function of the params record otherwise *)
+let returns_block ~selected ~alias_tbl ~domain ~params ~returns =
+  match returns with
+  | `Event -> "let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }\n\n", []
+  | `Returns props ->
+    let result, names =
+      match props with
+      | [] -> unit_block "result", [ "result" ]
+      | _returned_fields -> record_block ~selected ~alias_tbl ~domain ~tname:"result" ~make:false props
+    in
+    let command =
+      match params with
+      | [] -> "let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }\n\n"
+      | _params_fields ->
+        "let command params : result Cdp_command.t =\n\
+        \  { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }\n\n"
+    in
+    result ^ command, names
+
 (* one submodule per command / event *)
 let emit_item_module ~selected ~alias_tbl ~domain ~mname ~wire_name ~attrs ~params ~returns =
-  let buf = Buffer.create 1024 in
-  Buffer.add_string buf (spf "module %s = struct\n" mname);
-  Buffer.add_string buf (spf "let name = %S\n\n" wire_name);
-  let local_names = ref [] in
-  let block ~tname ~make props =
-    let hoisted, record =
-      record_decl ~selected ~alias_tbl ~domain ~tname ~attrs:"" ~hoist_name:(fun field -> sanitize_lower field) props
-    in
-    local_names := !local_names @ List.map (fun decl -> decl.name) (hoisted @ [ record ]);
-    (* hoisted enums first (own group: `make` cannot derive on variants),
-       then the record with its own deriving list *)
-    Buffer.add_string buf (render_chain ~deriving:"json, show, eq" hoisted);
-    Buffer.add_string buf "\n";
-    Buffer.add_string buf
-      (render_chain ~deriving:(if make then "json, show, eq, make" else "json, show, eq") [ record ]);
-    Buffer.add_string buf "\n"
-  in
-  (match params, returns with
-  | [], `Event ->
-    (* params-less event: unit payload, mirroring zero-return commands *)
-    local_names := !local_names @ [ "params" ];
-    Buffer.add_string buf
-      "type params = unit [@@deriving show, eq]\n\nlet params_of_json (_ignored_payload : Cdp_json.t) : params = ()\n\n"
-  | [], `Returns _ -> ()
-  | props, _command_or_event -> block ~tname:"params" ~make:true props);
-  (match returns with
-  | `Event ->
-    (* the typed seam a transport subscribes with *)
-    Buffer.add_string buf "let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }\n\n"
-  | `Returns props ->
-    (match props with
-    | [] ->
-      (* zero-return command. CDP answers {} while derived unit codecs expect
-         null, so the json decoder stays hand-written. *)
-      local_names := !local_names @ [ "result" ];
-      Buffer.add_string buf
-        "type result = unit [@@deriving show, eq]\n\n\
-         let result_of_json (_ignored_payload : Cdp_json.t) : result = ()\n\n"
-    | _returned_fields -> block ~tname:"result" ~make:false props);
-    (* the typed seam a transport sends: a value when there are no params,
-       a function of the params record otherwise *)
-    (match params with
-    | [] ->
-      Buffer.add_string buf
-        "let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }\n\n"
-    | _params_fields ->
-      Buffer.add_string buf
-        "let command params : result Cdp_command.t =\n\
-        \  { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }\n\n"));
-  check_no_dup ~what:(spf "type name in %s.%s" domain mname) !local_names;
-  Buffer.add_string buf (spf "end%s\n\n" attrs);
-  Buffer.contents buf
+  let params_text, params_names = params_block ~selected ~alias_tbl ~domain ~params ~returns in
+  let returns_text, returns_names = returns_block ~selected ~alias_tbl ~domain ~params ~returns in
+  check_no_dup ~what:(spf "type name in %s.%s" domain mname) (params_names @ returns_names);
+  String.concat ""
+    [
+      spf "module %s = struct\n" mname;
+      spf "let name = %S\n\n" wire_name;
+      params_text;
+      returns_text;
+      spf "end%s\n\n" attrs;
+    ]
 
 (* command/event submodules of a domain with their collision-resolved module
    names; shared by the domain-file emitter and the roundtrip-test emitter *)
