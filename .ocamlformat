@@ -16,4 +16,5 @@ module-item-spacing=preserve # deprecated
 nested-match=align # deprecated
 parens-ite=true
 parens-tuple=multi-line-only
+parse-docstrings=false
 type-decl=sparse
