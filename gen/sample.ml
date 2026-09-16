@@ -32,12 +32,12 @@ let rec of_type ~domains ~visiting ~domain (type_json : Json.t) : Json.t =
 and of_named ~domains ~visiting (dom, id) : Json.t =
   if List.mem (dom, id) visiting then failwith (spf "cdp-gen: required-field cycle through %s.%s" dom id);
   let domain_def =
-    match List.find_opt (fun (candidate : domain) -> candidate.name = dom) domains with
+    match List.find_opt (fun (candidate : domain) -> String.equal candidate.name dom) domains with
     | Some found -> found
     | None -> failwith (spf "cdp-gen: sample synthesis: domain %s is not generated" dom)
   in
   let type_def =
-    match List.find_opt (fun type_def -> jstr "id" type_def = id) domain_def.types with
+    match List.find_opt (fun type_def -> String.equal (jstr "id" type_def) id) domain_def.types with
     | Some found -> found
     | None -> failwith (spf "cdp-gen: sample synthesis: unknown type %s.%s" dom id)
   in
