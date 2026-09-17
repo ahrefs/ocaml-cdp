@@ -1,9 +1,7 @@
-(* Synthesizes a sample JSON value for a protocol type, following the schema:
-   required record fields get sample values, optional fields are omitted.
-   Omitting optionals is also what terminates recursion — the protocol's
-   recursive types (DOM.Node, Runtime.StackTrace) always recurse through
-   optional fields. Re-entering a type through required fields cannot
-   produce a finite sample, so it fails loudly and the caller skips it. *)
+(* One sample JSON value per protocol type, following the schema.
+   - required fields get a sample value, optional fields are omitted
+   - an array gets one element, or [] when the element type is being built already
+   - re-entering a type through a required non-array field cannot end. it fails and the caller skips the type *)
 
 open Protocol
 
@@ -23,7 +21,11 @@ let rec of_type ~domains ~visiting ~domain (type_json : Json.t) : Json.t =
     | `String "boolean" -> `Bool true
     | `String "binary" -> `String "c2FtcGxl"
     | `String ("any" | "object") -> `Assoc []
-    | `String "array" -> `List [ of_type ~domains ~visiting ~domain (Util.member "items" type_json) ]
+    | `String "array" ->
+      let items = Util.member "items" type_json in
+      (match Util.member "$ref" items with
+      | `String ref_string when List.mem (parse_ref ~current:domain ref_string) visiting -> `List []
+      | _other_item_type -> `List [ of_type ~domains ~visiting ~domain items ])
     | unexpected -> failwith (spf "cdp-gen: cannot synthesize a sample for %s" (Json.to_string unexpected)))
   | unexpected -> failwith (spf "cdp-gen: bad $ref in sample synthesis: %s" (Json.to_string unexpected))
 

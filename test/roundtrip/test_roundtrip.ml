@@ -1621,6 +1621,12 @@ let () =
     Cdp.Page.equal_back_forward_cache_not_restored_explanation
     "{\"type\":\"SupportPending\",\"reason\":\"NotPrimaryMainFrame\"}"
 let () =
+  check "Page.BackForwardCacheNotRestoredExplanationTree"
+    Cdp.Page.back_forward_cache_not_restored_explanation_tree_of_json
+    Cdp.Page.back_forward_cache_not_restored_explanation_tree_to_json
+    Cdp.Page.equal_back_forward_cache_not_restored_explanation_tree
+    "{\"url\":\"sample\",\"explanations\":[{\"type\":\"SupportPending\",\"reason\":\"NotPrimaryMainFrame\"}],\"children\":[]}"
+let () =
   check "Page.Add_script_to_evaluate_on_load.params" Cdp.Page.Add_script_to_evaluate_on_load.params_of_json
     Cdp.Page.Add_script_to_evaluate_on_load.params_to_json Cdp.Page.Add_script_to_evaluate_on_load.equal_params
     "{\"scriptSource\":\"sample\"}"

@@ -40,8 +40,8 @@ encode/decode checks for every generated type.
     | 0 -> print_endline "all roundtrip tests passed"
     | count -> failwith (Printf.sprintf "%d roundtrip failures" count)
 
-A type whose required fields cycle back to itself has no finite sample; it
-is skipped loudly instead of looping forever, and no check is emitted.
+A type with a required array of itself gets an empty list as its sample, so
+the recursion ends and the type is still checked.
 
   $ cat > browser.json << 'EOF2'
   > {"domains":[{"domain":"Demo","types":[
@@ -51,7 +51,22 @@ is skipped loudly instead of looping forever, and no check is emitted.
   > ]}]}
   > EOF2
   $ cdp-gen roundtrip browser.json js.json tree_out.ml Demo
-  generated tree_out.ml: 0 roundtrip checks, 1 skipped
-  skipped Demo.Tree: cdp-gen: required-field cycle through Demo.Tree
+  generated tree_out.ml: 1 roundtrip checks, 0 skipped
   $ grep "let () = check" tree_out.ml
+  let () = check "Demo.Tree" Cdp.Demo.tree_of_json Cdp.Demo.tree_to_json Cdp.Demo.equal_tree "{\"children\":[]}"
+
+A type whose required non-array field cycles back to itself has no finite
+sample; it is skipped loudly instead of looping forever, and no check is emitted.
+
+  $ cat > browser.json << 'EOF3'
+  > {"domains":[{"domain":"Demo","types":[
+  >   {"id":"Chain","type":"object","properties":[
+  >     {"name":"next","$ref":"Chain"}
+  >   ]}
+  > ]}]}
+  > EOF3
+  $ cdp-gen roundtrip browser.json js.json chain_out.ml Demo
+  generated chain_out.ml: 0 roundtrip checks, 1 skipped
+  skipped Demo.Chain: cdp-gen: required-field cycle through Demo.Chain
+  $ grep "let () = check" chain_out.ml
   [1]
