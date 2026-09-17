@@ -74,23 +74,25 @@ let load_domains path =
       flags = flags_of_json domain_json;
     })
 
-(* a domain name or type id defined twice would silently overwrite its
-   sibling in the output; refuse instead of generating wrong code *)
+(* A name defined twice would silently overwrite its sibling in the output,
+   or, for a command, hide behind the _command fallback module name. *)
 let check_unique_names domains =
-  let seen_domains = Hashtbl.create 16 in
+  let check_unique ~what names =
+    let seen = Hashtbl.create 16 in
+    List.iter
+      (fun name ->
+        match Hashtbl.mem seen name with
+        | false -> Hashtbl.replace seen name ()
+        | true -> failwith (spf "cdp-gen: %s %s is defined twice" what name))
+      names
+  in
+  check_unique ~what:"domain" (List.map (fun domain -> domain.name) domains);
   List.iter
     (fun domain ->
-      (match Hashtbl.mem seen_domains domain.name with
-      | false -> Hashtbl.replace seen_domains domain.name ()
-      | true -> failwith (spf "cdp-gen: domain %s is defined twice" domain.name));
-      let seen_types = Hashtbl.create 16 in
-      List.iter
-        (fun type_def ->
-          let id = get_string "id" type_def in
-          match Hashtbl.mem seen_types id with
-          | false -> Hashtbl.replace seen_types id ()
-          | true -> failwith (spf "cdp-gen: type %s.%s is defined twice" domain.name id))
-        domain.types)
+      let qualify key item = spf "%s.%s" domain.name (get_string key item) in
+      check_unique ~what:"type" (List.map (qualify "id") domain.types);
+      check_unique ~what:"command" (List.map (qualify "name") domain.commands);
+      check_unique ~what:"event" (List.map (qualify "name") domain.events))
     domains
 
 let read_file path =
