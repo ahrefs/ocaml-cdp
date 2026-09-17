@@ -1,5 +1,5 @@
 (* One sample JSON value per protocol type, following the schema.
-   - required fields get a sample value, optional fields are omitted
+   - every field gets a sample value; an optional one is omitted when that would not end
    - an array gets one element, or [] when the element type is being built already
    - re-entering a type through a required non-array field cannot end. it fails and the caller skips the type *)
 
@@ -49,9 +49,17 @@ and of_def ~domains ~visiting ~domain type_def : Json.t =
   | _no_properties -> of_type ~domains ~visiting ~domain type_def
 
 and of_props ~domains ~visiting ~domain props : Json.t =
-  `Assoc
-    (props
-    |> List.filter_map (fun prop ->
-      match jbool "optional" prop with
-      | true -> None
-      | false -> Some (jstr "name" prop, of_type ~domains ~visiting ~domain prop)))
+  `Assoc (List.filter_map (of_prop ~domains ~visiting ~domain) props)
+
+(* An optional field is filled too, unless that cannot end:
+   - its type is being built already (recursion through the option)
+   - its type has no finite sample of its own
+   A required field in that position fails loudly instead. *)
+and of_prop ~domains ~visiting ~domain prop =
+  let name = jstr "name" prop in
+  match jbool "optional" prop with
+  | false -> Some (name, of_type ~domains ~visiting ~domain prop)
+  | true ->
+  match of_type ~domains ~visiting ~domain prop with
+  | value -> Some (name, value)
+  | exception Failure _no_finite_sample -> None

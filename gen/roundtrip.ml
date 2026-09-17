@@ -95,18 +95,32 @@ let emit ~revision ~domains ~alias_tbl =
   Buffer.add_string buf (Emit.header ~revision);
   Buffer.add_string buf
     "(* Roundtrip tests over every generated type: decode a sample synthesized\n\
-    \   from the protocol schema, encode it back, decode again, and compare. *)\n\n\
+    \   from the protocol schema, encode it back, decode again, and compare.\n\
+    \   The encoded JSON must also equal the input, keys sorted. *)\n\n\
      let failures = ref 0\n\n\
+     let fail name what =\n\
+    \  incr failures;\n\
+    \  Printf.printf \"FAIL %s: %s\\n\" name what\n\n\
+     let rec sort_keys (json : Yojson.Basic.t) : Yojson.Basic.t =\n\
+    \  match json with\n\
+    \  | `Assoc fields ->\n\
+    \    `Assoc\n\
+    \      (fields\n\
+    \      |> List.sort (fun (left, _) (right, _) -> String.compare left right)\n\
+    \      |> List.map (fun (key, value) -> key, sort_keys value))\n\
+    \  | `List items -> `List (List.map sort_keys items)\n\
+    \  | scalar -> scalar\n\n\
      let check name of_json to_json equal raw =\n\
     \  let json = Yojson.Basic.from_string raw in\n\
     \  let decoded = of_json json in\n\
     \  let encoded = to_json decoded in\n\
+    \  (match Yojson.Basic.equal (sort_keys encoded) (sort_keys json) with\n\
+    \  | true -> ()\n\
+    \  | false -> fail name (\"encoded JSON differs from the input: \" ^ Yojson.Basic.to_string encoded));\n\
     \  let redecoded = of_json encoded in\n\
     \  match equal decoded redecoded with\n\
     \  | true -> ()\n\
-    \  | false ->\n\
-    \    incr failures;\n\
-    \    Printf.printf \"FAIL %s: value changed after an encode/decode roundtrip\\n\" name\n\n";
+    \  | false -> fail name \"value changed after an encode/decode roundtrip\"\n\n";
   let emitted = ref 0 in
   let skipped = ref [] in
   List.iter
