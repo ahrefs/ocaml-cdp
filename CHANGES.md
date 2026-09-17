@@ -1,5 +1,10 @@
 # Unreleased
 
+- `cdp-gen`: when the selected domains point at domains outside the
+  selection, one message now lists all of them, for example
+  `Fetch also needs Network,IO,Page,Runtime,Debugger,Emulation,DOM,Security`,
+  instead of one missing domain per run.
+
 - `cdp`, `cdp-gen`: protocol descriptions are now doc comments on every
   domain, type, record field, command and event, so Merlin hover and odoc
   show the Chrome text.

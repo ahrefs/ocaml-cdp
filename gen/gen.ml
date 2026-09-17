@@ -8,6 +8,7 @@
      Inline_enum  an enum written on a property, hoisted to a named type
      Hoisted_name the type name such an enum gets
      Attributes   doc comments and alerts a generated item carries
+     Dependencies which domains a selection needs through $ref
      Emit         print the library code
      Sample       one JSON sample per protocol type
      Roundtrip    print the roundtrip test
@@ -79,6 +80,15 @@ let load_protocol ~browser ~js ~domains_arg =
   | [] -> ()
   | missing -> failwith ("cdp-gen: unknown domains: " ^ String.concat "," missing));
   Protocol.check_refs_exist ~all ~selected:domains;
+  (match Dependencies.find_missing ~all ~selected:domains with
+  | [] -> ()
+  | needed ->
+    let who_needs =
+      match selected with
+      | [ only ] -> only ^ " also needs"
+      | _several -> "the selected domains also need"
+    in
+    failwith (Printf.sprintf "cdp-gen: %s %s; add them to the domain list" who_needs (String.concat "," needed)));
   let alias_tbl = Protocol.build_alias_table domains in
   Protocol.check_types_dag domains ~alias_tbl;
   { revision; selected; domains; alias_tbl }

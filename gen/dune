@@ -8,6 +8,7 @@
   inline_enum
   hoisted_name
   attributes
+  dependencies
   emit
   fetch
   sample
