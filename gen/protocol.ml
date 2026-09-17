@@ -283,6 +283,19 @@ let check_identifiers domains =
         | _not_a_string -> failwith (spf "cdp-gen: %s: enum values must be strings" owner))
       values
   in
+  let check_fields ~owner props =
+    let seen = Hashtbl.create 8 in
+    List.iter
+      (fun prop ->
+        match Util.member "name" prop with
+        | `String text ->
+          let label = Naming.sanitize_lower text in
+          (match Hashtbl.find_opt seen label with
+          | None -> Hashtbl.replace seen label text
+          | Some earlier -> failwith (spf "cdp-gen: %s: fields %S and %S both become %s" owner earlier text label))
+        | _no_name -> ())
+      props
+  in
   let rec walk ~owner json =
     match json with
     | `List items -> List.iter (walk ~owner) items
@@ -292,14 +305,17 @@ let check_identifiers domains =
           match key, value with
           | ("name" | "id"), `String text -> check_name ~owner text
           | "enum", `List values -> check_enum ~owner values
+          | ("properties" | "parameters" | "returns"), `List props ->
+            check_fields ~owner props;
+            List.iter (walk ~owner) props
           | _other_field -> walk ~owner value)
         fields
     | _scalar -> ()
   in
   List.iter
     (fun domain ->
-      let owner = spf "domain %s" domain.name in
-      List.iter (walk ~owner) domain.types;
-      List.iter (walk ~owner) domain.commands;
-      List.iter (walk ~owner) domain.events)
+      let owned_by key item = spf "%s.%s" domain.name (get_string key item) in
+      List.iter (fun type_def -> walk ~owner:(owned_by "id" type_def) type_def) domain.types;
+      List.iter (fun command -> walk ~owner:(owned_by "name" command) command) domain.commands;
+      List.iter (fun event -> walk ~owner:(owned_by "name" event) event) domain.events)
     domains
