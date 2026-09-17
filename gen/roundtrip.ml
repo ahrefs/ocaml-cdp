@@ -1,30 +1,27 @@
 (* Emits the roundtrip test file: every generated type decodes a sample JSON
    synthesized from the protocol schema, encodes it back, decodes again, and
-   compares the two values with the derived equal function. Types whose
-   sample cannot be synthesized (required-field cycles) are skipped and
-   reported to the caller. *)
-
-open Naming
-open Protocol
+   compares the two values with the derived equal function.
+   Types whose sample cannot be synthesized (required-field cycles) are 
+   skipped and reported to the caller. *)
 
 type target = {
   label : string;
   of_json_path : string;
   to_json_path : string;
   equal_path : string;
-  sample : unit -> Json.t;
+  sample : unit -> Yojson.Safe.t;
 }
 
-let named_type_targets ~domains ~alias_tbl (domain : domain) =
-  let index_module = module_of_domain domain.name in
+let collect_named_type_targets ~domains ~alias_tbl (domain : Protocol.domain) =
+  let index_module = Naming.module_of_domain domain.name in
   List.map
     (fun type_def ->
-      let id = jstr "id" type_def in
-      let label = spf "%s.%s" domain.name id in
+      let id = Protocol.get_string "id" type_def in
+      let label = Printf.sprintf "%s.%s" domain.name id in
       let sample () = Sample.of_named ~domains ~visiting:[] (domain.name, id) in
       match Hashtbl.mem alias_tbl (domain.name, id) with
       | true ->
-        let sealed = spf "Cdp.Base.%s.%s" index_module (submodule_of_name id) in
+        let sealed = Printf.sprintf "Cdp.Base.%s.%s" index_module (Naming.submodule_of_name id) in
         {
           label;
           of_json_path = sealed ^ ".of_json";
@@ -33,56 +30,56 @@ let named_type_targets ~domains ~alias_tbl (domain : domain) =
           sample;
         }
       | false ->
-        let type_name = sanitize_lower id in
+        let type_name = Naming.sanitize_lower id in
         {
           label;
-          of_json_path = spf "Cdp.%s.%s_of_json" index_module type_name;
-          to_json_path = spf "Cdp.%s.%s_to_json" index_module type_name;
-          equal_path = spf "Cdp.%s.equal_%s" index_module type_name;
+          of_json_path = Printf.sprintf "Cdp.%s.%s_of_json" index_module type_name;
+          to_json_path = Printf.sprintf "Cdp.%s.%s_to_json" index_module type_name;
+          equal_path = Printf.sprintf "Cdp.%s.equal_%s" index_module type_name;
           sample;
         })
     domain.types
 
-let record_target ~domains ~domain_name ~submodule_path ~label ~record_name props =
+let make_record_target ~domains ~domain_name ~submodule_path ~label ~record_name props =
   {
     label;
-    of_json_path = spf "%s.%s_of_json" submodule_path record_name;
-    to_json_path = spf "%s.%s_to_json" submodule_path record_name;
-    equal_path = spf "%s.equal_%s" submodule_path record_name;
+    of_json_path = Printf.sprintf "%s.%s_of_json" submodule_path record_name;
+    to_json_path = Printf.sprintf "%s.%s_to_json" submodule_path record_name;
+    equal_path = Printf.sprintf "%s.equal_%s" submodule_path record_name;
     sample = (fun () -> Sample.of_props ~domains ~visiting:[] ~domain:domain_name props);
   }
 
-let item_targets ~domains ~alias_tbl (domain : domain) =
-  let index_module = module_of_domain domain.name in
-  Emit.item_modules ~alias_tbl domain
-  |> List.concat_map (fun (mname, item) ->
-    let submodule_path = spf "Cdp.%s.%s" index_module mname in
-    let label = spf "%s.%s" domain.name mname in
-    let params_target props =
-      record_target ~domains ~domain_name:domain.name ~submodule_path ~label:(label ^ ".params") ~record_name:"params"
-        props
+let collect_item_targets ~domains ~alias_tbl (domain : Protocol.domain) =
+  let index_module = Naming.module_of_domain domain.name in
+  Emit.collect_item_modules ~alias_tbl domain
+  |> List.concat_map (fun (module_name, item) ->
+    let submodule_path = Printf.sprintf "Cdp.%s.%s" index_module module_name in
+    let label = Printf.sprintf "%s.%s" domain.name module_name in
+    let make_params_target props =
+      make_record_target ~domains ~domain_name:domain.name ~submodule_path ~label:(label ^ ".params")
+        ~record_name:"params" props
     in
     match item with
     | `Command command ->
       let params =
-        match jlist "parameters" command with
+        match Protocol.get_list "parameters" command with
         | [] -> []
-        | props -> [ params_target props ]
+        | props -> [ make_params_target props ]
       in
       let result =
-        match jlist "returns" command with
+        match Protocol.get_list "returns" command with
         | [] -> [] (* zero-return commands decode to unit; nothing to roundtrip *)
         | props ->
           [
-            record_target ~domains ~domain_name:domain.name ~submodule_path ~label:(label ^ ".result")
+            make_record_target ~domains ~domain_name:domain.name ~submodule_path ~label:(label ^ ".result")
               ~record_name:"result" props;
           ]
       in
       params @ result
     | `Event event ->
-    match jlist "parameters" event with
+    match Protocol.get_list "parameters" event with
     | [] -> []
-    | props -> [ params_target props ])
+    | props -> [ make_params_target props ])
 
 (* Every enum of a domain with its wire values: named enums, enums hoisted
    from a named type, enums hoisted from a command or event module. *)
@@ -93,55 +90,59 @@ type enum_target = {
   values : string list;
 }
 
-let enum_targets ~alias_tbl (domain : domain) =
-  let index_module = module_of_domain domain.name in
-  let domain_path = spf "Cdp.%s" index_module in
-  let hoisted_in ~enum_path ~owner ~hoist_name props =
+let collect_enum_targets ~alias_tbl (domain : Protocol.domain) =
+  let index_module = Naming.module_of_domain domain.name in
+  let domain_path = Printf.sprintf "Cdp.%s" index_module in
+  let collect_hoisted_enums ~enum_path ~owner ~hoist_name props =
     List.filter_map
       (fun prop ->
-        let field = jstr "name" prop in
+        let field = Protocol.get_string "name" prop in
         Inline_enum.of_prop prop
         |> Option.map (fun inline_enum ->
           {
-            enum_label = spf "%s.%s" owner field;
+            enum_label = Printf.sprintf "%s.%s" owner field;
             enum_path;
             enum_type = hoist_name field;
             values = Inline_enum.values inline_enum;
           }))
       props
   in
-  let named =
+  let enums_of_types =
     List.concat_map
       (fun type_def ->
-        let id = jstr "id" type_def in
-        let owner = spf "%s.%s" domain.name id in
-        match Util.member "enum" type_def with
+        let id = Protocol.get_string "id" type_def in
+        let owner = Printf.sprintf "%s.%s" domain.name id in
+        match Yojson.Safe.Util.member "enum" type_def with
         | `List values ->
           [
             {
               enum_label = owner;
               enum_path = domain_path;
-              enum_type = sanitize_lower id;
-              values = List.map Util.to_string values;
+              enum_type = Naming.sanitize_lower id;
+              values = List.map Yojson.Safe.Util.to_string values;
             };
           ]
         | _not_an_enum ->
-          hoisted_in ~enum_path:domain_path ~owner ~hoist_name:(hoisted_in_type ~type_id:id)
-            (jlist "properties" type_def))
+          let hoist_name = Hoisted_name.name_for_type_field ~type_id:id in
+          collect_hoisted_enums ~enum_path:domain_path ~owner ~hoist_name (Protocol.get_list "properties" type_def))
       domain.types
   in
-  let items =
-    Emit.item_modules ~alias_tbl domain
-    |> List.concat_map (fun (mname, item) ->
+  let domain_type_names = Hoisted_name.collect_domain_type_names domain in
+  let enums_of_commands_and_events =
+    Emit.collect_item_modules ~alias_tbl domain
+    |> List.concat_map (fun (module_name, item) ->
       let props =
         match item with
-        | `Command command -> jlist "parameters" command @ jlist "returns" command
-        | `Event event -> jlist "parameters" event
+        | `Command command -> Protocol.get_list "parameters" command @ Protocol.get_list "returns" command
+        | `Event event -> Protocol.get_list "parameters" event
       in
-      hoisted_in ~enum_path:(spf "%s.%s" domain_path mname) ~owner:(spf "%s.%s" domain.name mname)
-        ~hoist_name:hoisted_in_item props)
+      let hoist_name = Hoisted_name.name_for_item_field ~domain_type_names ~item_name:module_name in
+      collect_hoisted_enums
+        ~enum_path:(Printf.sprintf "%s.%s" domain_path module_name)
+        ~owner:(Printf.sprintf "%s.%s" domain.name module_name)
+        ~hoist_name props)
   in
-  named @ items
+  enums_of_types @ enums_of_commands_and_events
 
 type output = {
   contents : string;
@@ -152,7 +153,7 @@ type output = {
 
 let emit ~revision ~domains ~alias_tbl =
   let buf = Buffer.create 65536 in
-  Buffer.add_string buf (Emit.header ~revision);
+  Buffer.add_string buf (Emit.render_header ~revision);
   Buffer.add_string buf
     "(* Roundtrip tests over every generated type: decode a sample synthesized\n\
     \   from the protocol schema, encode it back, decode again, and compare.\n\
@@ -198,32 +199,34 @@ let emit ~revision ~domains ~alias_tbl =
   let enum_checks = ref 0 in
   let skipped = ref [] in
   List.iter
-    (fun (domain : domain) ->
+    (fun (domain : Protocol.domain) ->
       List.iter
         (fun target ->
           incr enum_checks;
           Buffer.add_string buf
-            (spf
+            (Printf.sprintf
                "let () =\n\
                \  check_enum %S %s.%s_of_json %s.%s_to_json\n\
                \    (fun (value : %s.%s) -> match value with %s.Other _ -> true | _known -> false)\n\
                \    [ %s ]\n"
                target.enum_label target.enum_path target.enum_type target.enum_path target.enum_type target.enum_path
                target.enum_type target.enum_path
-               (String.concat "; " (List.map (spf "%S") target.values))))
-        (enum_targets ~alias_tbl domain))
+               (String.concat "; " (List.map (Printf.sprintf "%S") target.values))))
+        (collect_enum_targets ~alias_tbl domain))
     domains;
   List.iter
-    (fun (domain : domain) ->
-      let targets = named_type_targets ~domains ~alias_tbl domain @ item_targets ~domains ~alias_tbl domain in
+    (fun (domain : Protocol.domain) ->
+      let targets =
+        collect_named_type_targets ~domains ~alias_tbl domain @ collect_item_targets ~domains ~alias_tbl domain
+      in
       List.iter
         (fun target ->
           match target.sample () with
           | sample ->
             incr emitted;
             Buffer.add_string buf
-              (spf "let () = check %S %s %s %s %S\n" target.label target.of_json_path target.to_json_path
-                 target.equal_path (Json.to_string sample))
+              (Printf.sprintf "let () = check %S %s %s %s %S\n" target.label target.of_json_path target.to_json_path
+                 target.equal_path (Yojson.Safe.to_string sample))
           | exception Failure reason -> skipped := (target.label, reason) :: !skipped)
         targets)
     domains;

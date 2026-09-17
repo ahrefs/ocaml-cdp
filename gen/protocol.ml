@@ -23,9 +23,9 @@ type domain = {
   flags : flags;
 }
 
-let jstr field json = Util.member field json |> Util.to_string
+let get_string field json = Util.member field json |> Util.to_string
 
-let jlist field json =
+let get_list field json =
   match Util.member field json with
   | `Null -> []
   | value -> Util.to_list value
@@ -35,7 +35,7 @@ let has_field field json =
   | `Null -> false
   | _present -> true
 
-let jbool field json =
+let get_bool field json =
   match Util.member field json with
   | `Null -> false
   | `Bool value -> value
@@ -43,8 +43,8 @@ let jbool field json =
 
 let flags_of_json json =
   {
-    deprecated = jbool "deprecated" json;
-    experimental = jbool "experimental" json;
+    deprecated = get_bool "deprecated" json;
+    experimental = get_bool "experimental" json;
     redirect = Util.member "redirect" json |> Util.to_string_option;
   }
 
@@ -54,7 +54,7 @@ let is_digit = Naming.is_digit
 (* a domain name becomes output file names and module names in generated
    code, so anything beyond a plain identifier (a path separator, a comment
    opener) must be rejected before it reaches the filesystem *)
-let checked_domain_name name =
+let check_domain_name name =
   let plain =
     String.length name > 0 && is_letter name.[0] && String.for_all (fun ch -> is_letter ch || is_digit ch) name
   in
@@ -67,10 +67,10 @@ let load_domains path =
   |> Util.to_list
   |> List.map (fun domain_json ->
     {
-      name = checked_domain_name (jstr "domain" domain_json);
-      types = jlist "types" domain_json;
-      commands = jlist "commands" domain_json;
-      events = jlist "events" domain_json;
+      name = check_domain_name (get_string "domain" domain_json);
+      types = get_list "types" domain_json;
+      commands = get_list "commands" domain_json;
+      events = get_list "events" domain_json;
       flags = flags_of_json domain_json;
     })
 
@@ -86,7 +86,7 @@ let check_unique_names domains =
       let seen_types = Hashtbl.create 16 in
       List.iter
         (fun type_def ->
-          let id = jstr "id" type_def in
+          let id = get_string "id" type_def in
           match Hashtbl.mem seen_types id with
           | false -> Hashtbl.replace seen_types id ()
           | true -> failwith (spf "cdp-gen: type %s.%s is defined twice" domain.name id))
@@ -182,7 +182,7 @@ let build_alias_table domains =
       List.iter
         (fun type_def ->
           match is_primitive_alias type_def with
-          | Some prim -> Hashtbl.replace table (domain.name, jstr "id" type_def) prim
+          | Some prim -> Hashtbl.replace table (domain.name, get_string "id" type_def) prim
           | None -> ())
         domain.types)
     domains;
@@ -228,7 +228,7 @@ let check_refs_exist ~all ~selected =
   let defined = Hashtbl.create 256 in
   List.iter
     (fun domain ->
-      List.iter (fun type_def -> Hashtbl.replace defined (domain.name, jstr "id" type_def) ()) domain.types)
+      List.iter (fun type_def -> Hashtbl.replace defined (domain.name, get_string "id" type_def) ()) domain.types)
     all;
   List.iter
     (fun domain ->
@@ -242,12 +242,14 @@ let check_refs_exist ~all ~selected =
           (collect_refs fragment [])
       in
       List.iter
-        (fun type_def -> check_fragment ~owner:(spf "%s.%s" domain.name (jstr "id" type_def)) type_def)
+        (fun type_def -> check_fragment ~owner:(spf "%s.%s" domain.name (get_string "id" type_def)) type_def)
         domain.types;
       List.iter
-        (fun command -> check_fragment ~owner:(spf "%s.%s" domain.name (jstr "name" command)) command)
+        (fun command -> check_fragment ~owner:(spf "%s.%s" domain.name (get_string "name" command)) command)
         domain.commands;
-      List.iter (fun event -> check_fragment ~owner:(spf "%s.%s" domain.name (jstr "name" event)) event) domain.events)
+      List.iter
+        (fun event -> check_fragment ~owner:(spf "%s.%s" domain.name (get_string "name" event)) event)
+        domain.events)
     selected
 
 (* every name from the protocol becomes OCaml code — record fields, module
@@ -283,6 +285,7 @@ let check_identifiers domains =
   in
   let rec walk ~owner json =
     match json with
+    | `List items -> List.iter (walk ~owner) items
     | `Assoc fields ->
       List.iter
         (fun (key, value) ->
@@ -291,7 +294,6 @@ let check_identifiers domains =
           | "enum", `List values -> check_enum ~owner values
           | _other_field -> walk ~owner value)
         fields
-    | `List items -> List.iter (walk ~owner) items
     | _scalar -> ()
   in
   List.iter

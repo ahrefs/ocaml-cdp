@@ -1215,7 +1215,7 @@ end
 module Frame_started_navigating = struct
   let name = "Page.frameStartedNavigating"
 
-  type navigation_type =
+  type frame_started_navigating_navigation_type =
     | Reload [@json.name "reload"]
     | ReloadBypassingCache [@json.name "reloadBypassingCache"]
     | Restore [@json.name "restore"]
@@ -1231,7 +1231,7 @@ module Frame_started_navigating = struct
     frame_id : Cdp_base.Page.Frame_id.t; [@key "frameId"]
     url : string; [@key "url"]
     loader_id : Cdp_base.Network.Loader_id.t; [@key "loaderId"]
-    navigation_type : navigation_type; [@key "navigationType"]
+    navigation_type : frame_started_navigating_navigation_type; [@key "navigationType"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -1419,7 +1419,7 @@ end
 module Navigated_within_document = struct
   let name = "Page.navigatedWithinDocument"
 
-  type navigation_type =
+  type navigated_within_document_navigation_type =
     | Fragment [@json.name "fragment"]
     | HistoryApi [@json.name "historyApi"]
     | Other_ [@json.name "other"]
@@ -1429,7 +1429,7 @@ module Navigated_within_document = struct
   type params = {
     frame_id : Cdp_base.Page.Frame_id.t; [@key "frameId"]
     url : string; [@key "url"]
-    navigation_type : navigation_type; [@key "navigationType"]
+    navigation_type : navigated_within_document_navigation_type; [@key "navigationType"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 

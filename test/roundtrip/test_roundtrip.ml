@@ -1457,9 +1457,10 @@ let () =
       | _known -> false)
     [ "remove"; "swap" ]
 let () =
-  check_enum "Page.Frame_started_navigating.navigationType" Cdp.Page.Frame_started_navigating.navigation_type_of_json
-    Cdp.Page.Frame_started_navigating.navigation_type_to_json
-    (fun (value : Cdp.Page.Frame_started_navigating.navigation_type) ->
+  check_enum "Page.Frame_started_navigating.navigationType"
+    Cdp.Page.Frame_started_navigating.frame_started_navigating_navigation_type_of_json
+    Cdp.Page.Frame_started_navigating.frame_started_navigating_navigation_type_to_json
+    (fun (value : Cdp.Page.Frame_started_navigating.frame_started_navigating_navigation_type) ->
       match value with
       | Cdp.Page.Frame_started_navigating.Other _ -> true
       | _known -> false)
@@ -1482,9 +1483,10 @@ let () =
       | _known -> false)
     [ "inProgress"; "completed"; "canceled" ]
 let () =
-  check_enum "Page.Navigated_within_document.navigationType" Cdp.Page.Navigated_within_document.navigation_type_of_json
-    Cdp.Page.Navigated_within_document.navigation_type_to_json
-    (fun (value : Cdp.Page.Navigated_within_document.navigation_type) ->
+  check_enum "Page.Navigated_within_document.navigationType"
+    Cdp.Page.Navigated_within_document.navigated_within_document_navigation_type_of_json
+    Cdp.Page.Navigated_within_document.navigated_within_document_navigation_type_to_json
+    (fun (value : Cdp.Page.Navigated_within_document.navigated_within_document_navigation_type) ->
       match value with
       | Cdp.Page.Navigated_within_document.Other _ -> true
       | _known -> false)

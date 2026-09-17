@@ -1,5 +1,11 @@
 # Unreleased
 
+- `cdp`: two enum types are renamed because they shared a name with
+  `Page.navigation_type`: `Page.Frame_started_navigating.navigation_type` is
+  now `frame_started_navigating_navigation_type`, and
+  `Page.Navigated_within_document.navigation_type` is now
+  `navigated_within_document_navigation_type`. Field names are unchanged.
+
 - `cdp`, `cdp-gen`: deprecated and experimental flags now also reach record
   fields (`[@ocaml.deprecated]`, `[@alert experimental]` on the field) and
   whole domains (`[@@@...]` at the top of the domain files and on the `Cdp`
