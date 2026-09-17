@@ -21,6 +21,7 @@ type domain = {
   commands : Json.t list;
   events : Json.t list;
   flags : flags;
+  description : string option;
 }
 
 let get_string field json = Util.member field json |> Util.to_string
@@ -48,6 +49,8 @@ let flags_of_json json =
     redirect = Util.member "redirect" json |> Util.to_string_option;
   }
 
+let description_of_json json = Util.member "description" json |> Util.to_string_option
+
 let is_letter ch = Naming.is_upper ch || Naming.is_lower ch
 let is_digit = Naming.is_digit
 
@@ -72,6 +75,7 @@ let load_domains path =
       commands = get_list "commands" domain_json;
       events = get_list "events" domain_json;
       flags = flags_of_json domain_json;
+      description = description_of_json domain_json;
     })
 
 (* A name defined twice would silently overwrite its sibling in the output,

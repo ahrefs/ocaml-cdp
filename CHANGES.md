@@ -1,5 +1,9 @@
 # Unreleased
 
+- `cdp`, `cdp-gen`: protocol descriptions are now doc comments on every
+  domain, type, record field, command and event, so Merlin hover and odoc
+  show the Chrome text.
+
 - `cdp`: a protocol `number` field is now `Cdp_json.number`, an alias of
   `float`. Chrome writes NaN and Infinity as `null`; such a value decodes as
   `nan` instead of failing the whole message, and encodes back as `null`.

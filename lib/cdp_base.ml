@@ -72,6 +72,7 @@ module Dom = struct
     let of_json = Jsonkit.Primitives.int_of_json
     let to_json = Jsonkit.Primitives.int_to_json
   end
+  [@@ocaml.doc "Unique DOM node identifier."]
 
   module Backend_node_id : sig
     type t
@@ -94,6 +95,7 @@ module Dom = struct
     let of_json = Jsonkit.Primitives.int_of_json
     let to_json = Jsonkit.Primitives.int_to_json
   end
+  [@@ocaml.doc "Unique DOM node identifier used to reference a node that may not have been pushed to the\nfront-end."]
 
   module Style_sheet_id : sig
     type t
@@ -116,6 +118,7 @@ module Dom = struct
     let of_json = Jsonkit.Primitives.string_of_json
     let to_json = Jsonkit.Primitives.string_to_json
   end
+  [@@ocaml.doc "Unique identifier for a CSS stylesheet."]
 end
 
 module Emulation = struct
@@ -165,6 +168,8 @@ module Io = struct
     let of_json = Jsonkit.Primitives.string_of_json
     let to_json = Jsonkit.Primitives.string_to_json
   end
+  [@@ocaml.doc
+    "This is either obtained from another method or specified as `blob:<uuid>` where\n`<uuid>` is an UUID of a Blob."]
 end
 
 module Network = struct
@@ -189,6 +194,7 @@ module Network = struct
     let of_json = Jsonkit.Primitives.string_of_json
     let to_json = Jsonkit.Primitives.string_to_json
   end
+  [@@ocaml.doc "Unique loader identifier."]
 
   module Request_id : sig
     type t
@@ -211,6 +217,10 @@ module Network = struct
     let of_json = Jsonkit.Primitives.string_of_json
     let to_json = Jsonkit.Primitives.string_to_json
   end
+  [@@ocaml.doc
+    "Unique network request identifier.\n\
+     Note that this does not identify individual HTTP requests that are part of\n\
+     a network request."]
 
   module Time_since_epoch : sig
     type t
@@ -233,6 +243,7 @@ module Network = struct
     let of_json = Cdp_json.number_of_json
     let to_json = Cdp_json.number_to_json
   end
+  [@@ocaml.doc "UTC time in seconds, counted from January 1, 1970."]
 
   module Monotonic_time : sig
     type t
@@ -255,6 +266,7 @@ module Network = struct
     let of_json = Cdp_json.number_of_json
     let to_json = Cdp_json.number_to_json
   end
+  [@@ocaml.doc "Monotonically increasing time in seconds since an arbitrary point in the past."]
 
   module Report_id : sig
     type t
@@ -300,6 +312,7 @@ module Network = struct
     let of_json = Jsonkit.Primitives.string_of_json
     let to_json = Jsonkit.Primitives.string_to_json
   end
+  [@@ocaml.doc "A unique identifier for a device bound session event."]
   [@@alert experimental "experimental in CDP, may change with Chrome"]
 end
 
@@ -325,6 +338,7 @@ module Page = struct
     let of_json = Jsonkit.Primitives.string_of_json
     let to_json = Jsonkit.Primitives.string_to_json
   end
+  [@@ocaml.doc "Unique frame identifier."]
 
   module Script_identifier : sig
     type t
@@ -347,6 +361,7 @@ module Page = struct
     let of_json = Jsonkit.Primitives.string_of_json
     let to_json = Jsonkit.Primitives.string_to_json
   end
+  [@@ocaml.doc "Unique script identifier."]
 end
 
 module Security = struct
@@ -371,6 +386,7 @@ module Security = struct
     let of_json = Jsonkit.Primitives.int_of_json
     let to_json = Jsonkit.Primitives.int_to_json
   end
+  [@@ocaml.doc "An internal certificate ID value."]
 end
 
 module Target = struct
@@ -417,6 +433,7 @@ module Target = struct
     let of_json = Jsonkit.Primitives.string_of_json
     let to_json = Jsonkit.Primitives.string_to_json
   end
+  [@@ocaml.doc "Unique identifier of attached debugging session."]
 end
 
 module Debugger = struct
@@ -441,6 +458,7 @@ module Debugger = struct
     let of_json = Jsonkit.Primitives.string_of_json
     let to_json = Jsonkit.Primitives.string_to_json
   end
+  [@@ocaml.doc "Breakpoint identifier."]
 
   module Call_frame_id : sig
     type t
@@ -463,6 +481,7 @@ module Debugger = struct
     let of_json = Jsonkit.Primitives.string_of_json
     let to_json = Jsonkit.Primitives.string_to_json
   end
+  [@@ocaml.doc "Call frame identifier."]
 end
 
 module Runtime = struct
@@ -487,6 +506,7 @@ module Runtime = struct
     let of_json = Jsonkit.Primitives.string_of_json
     let to_json = Jsonkit.Primitives.string_to_json
   end
+  [@@ocaml.doc "Unique script identifier."]
 
   module Remote_object_id : sig
     type t
@@ -509,6 +529,7 @@ module Runtime = struct
     let of_json = Jsonkit.Primitives.string_of_json
     let to_json = Jsonkit.Primitives.string_to_json
   end
+  [@@ocaml.doc "Unique object identifier."]
 
   module Unserializable_value : sig
     type t
@@ -531,6 +552,9 @@ module Runtime = struct
     let of_json = Jsonkit.Primitives.string_of_json
     let to_json = Jsonkit.Primitives.string_to_json
   end
+  [@@ocaml.doc
+    "Primitive value which cannot be JSON-stringified. Includes values `-0`, `NaN`, `Infinity`,\n\
+     `-Infinity`, and bigint literals."]
 
   module Execution_context_id : sig
     type t
@@ -553,6 +577,7 @@ module Runtime = struct
     let of_json = Jsonkit.Primitives.int_of_json
     let to_json = Jsonkit.Primitives.int_to_json
   end
+  [@@ocaml.doc "Id of an execution context."]
 
   module Timestamp : sig
     type t
@@ -575,6 +600,7 @@ module Runtime = struct
     let of_json = Cdp_json.number_of_json
     let to_json = Cdp_json.number_to_json
   end
+  [@@ocaml.doc "Number of milliseconds since epoch."]
 
   module Time_delta : sig
     type t
@@ -597,6 +623,7 @@ module Runtime = struct
     let of_json = Cdp_json.number_of_json
     let to_json = Cdp_json.number_to_json
   end
+  [@@ocaml.doc "Number of milliseconds."]
 
   module Unique_debugger_id : sig
     type t
@@ -619,5 +646,6 @@ module Runtime = struct
     let of_json = Jsonkit.Primitives.string_of_json
     let to_json = Jsonkit.Primitives.string_to_json
   end
+  [@@ocaml.doc "Unique identifier of current debugger."]
   [@@alert experimental "experimental in CDP, may change with Chrome"]
 end

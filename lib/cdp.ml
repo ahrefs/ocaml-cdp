@@ -7,23 +7,85 @@ module Command = Cdp_command
 module Event = Cdp_event
 module Envelope = Cdp_envelope
 module Base = Cdp_base
-module Browser = Cdp_browser
+
+module Browser = Cdp_browser [@@ocaml.doc "The Browser domain defines methods and events for browser managing."]
+
 module Browser_types = Cdp_browser_types
+[@@ocaml.doc "The Browser domain defines methods and events for browser managing."]
+
 module Dom = Cdp_dom
+[@@ocaml.doc
+  "This domain exposes DOM read/write operations. Each DOM Node is represented with its mirror object\n\
+   that has an `id`. This `id` can be used to get additional information on the Node, resolve it into\n\
+   the JavaScript object wrapper, etc. It is important that client receives DOM events only for the\n\
+   nodes that are known to the client. Backend keeps track of the nodes that were sent to the client\n\
+   and never sends the same node twice. It is client's responsibility to collect information about\n\
+   the nodes that were sent to the client. Note that `iframe` owner elements will return\n\
+   corresponding document elements as their child nodes."]
+
 module Dom_types = Cdp_dom_types
-module Emulation = Cdp_emulation
-module Emulation_types = Cdp_emulation_types
-module Io = Cdp_io
-module Io_types = Cdp_io_types
+[@@ocaml.doc
+  "This domain exposes DOM read/write operations. Each DOM Node is represented with its mirror object\n\
+   that has an `id`. This `id` can be used to get additional information on the Node, resolve it into\n\
+   the JavaScript object wrapper, etc. It is important that client receives DOM events only for the\n\
+   nodes that are known to the client. Backend keeps track of the nodes that were sent to the client\n\
+   and never sends the same node twice. It is client's responsibility to collect information about\n\
+   the nodes that were sent to the client. Note that `iframe` owner elements will return\n\
+   corresponding document elements as their child nodes."]
+
+module Emulation = Cdp_emulation [@@ocaml.doc "This domain emulates different environments for the page."]
+
+module Emulation_types = Cdp_emulation_types [@@ocaml.doc "This domain emulates different environments for the page."]
+
+module Io = Cdp_io [@@ocaml.doc "Input/Output operations for streams produced by DevTools."]
+
+module Io_types = Cdp_io_types [@@ocaml.doc "Input/Output operations for streams produced by DevTools."]
+
 module Network = Cdp_network
+[@@ocaml.doc
+  "Network domain allows tracking network activities of the page. It exposes information about http,\n\
+   file, data and other requests and responses, their headers, bodies, timing, etc."]
+
 module Network_types = Cdp_network_types
-module Page = Cdp_page
+[@@ocaml.doc
+  "Network domain allows tracking network activities of the page. It exposes information about http,\n\
+   file, data and other requests and responses, their headers, bodies, timing, etc."]
+
+module Page = Cdp_page [@@ocaml.doc "Actions and events related to the inspected page belong to the page domain."]
+
 module Page_types = Cdp_page_types
+[@@ocaml.doc "Actions and events related to the inspected page belong to the page domain."]
+
 module Security = Cdp_security
 module Security_types = Cdp_security_types
-module Target = Cdp_target
+
+module Target = Cdp_target [@@ocaml.doc "Supports additional targets discovery and allows to attach to them."]
+
 module Target_types = Cdp_target_types
+[@@ocaml.doc "Supports additional targets discovery and allows to attach to them."]
+
 module Debugger = Cdp_debugger
+[@@ocaml.doc
+  "Debugger domain exposes JavaScript debugging capabilities. It allows setting and removing\n\
+   breakpoints, stepping through execution, exploring stack traces, etc."]
+
 module Debugger_types = Cdp_debugger_types
+[@@ocaml.doc
+  "Debugger domain exposes JavaScript debugging capabilities. It allows setting and removing\n\
+   breakpoints, stepping through execution, exploring stack traces, etc."]
+
 module Runtime = Cdp_runtime
+[@@ocaml.doc
+  "Runtime domain exposes JavaScript runtime by means of remote evaluation and mirror objects.\n\
+   Evaluation results are returned as mirror object that expose object type, string representation\n\
+   and unique identifier that can be used for further object reference. Original objects are\n\
+   maintained in memory unless they are either explicitly released or are released along with the\n\
+   other objects in their object group."]
+
 module Runtime_types = Cdp_runtime_types
+[@@ocaml.doc
+  "Runtime domain exposes JavaScript runtime by means of remote evaluation and mirror objects.\n\
+   Evaluation results are returned as mirror object that expose object type, string representation\n\
+   and unique identifier that can be used for further object reference. Original objects are\n\
+   maintained in memory unless they are either explicitly released or are released along with the\n\
+   other objects in their object group."]

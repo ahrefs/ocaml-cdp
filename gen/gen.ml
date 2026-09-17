@@ -7,6 +7,7 @@
      Protocol     load and check the JSON, alias table, file IO
      Inline_enum  an enum written on a property, hoisted to a named type
      Hoisted_name the type name such an enum gets
+     Attributes   doc comments and alerts a generated item carries
      Emit         print the library code
      Sample       one JSON sample per protocol type
      Roundtrip    print the roundtrip test

@@ -12,6 +12,7 @@ module Disable = struct
 
   let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
+[@@ocaml.doc "Disables tracking security state changes."]
 
 module Enable = struct
   let name = "Security.enable"
@@ -22,11 +23,13 @@ module Enable = struct
 
   let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
+[@@ocaml.doc "Enables tracking security state changes."]
 
 module Set_ignore_certificate_errors = struct
   let name = "Security.setIgnoreCertificateErrors"
 
-  type params = { ignore : bool [@key "ignore"] } [@@allow_extra_fields] [@@deriving json, show, eq, make]
+  type params = { ignore : bool [@key "ignore"] [@ocaml.doc "If true, all certificate errors will be ignored."] }
+  [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = unit [@@deriving show, eq]
 
@@ -35,13 +38,14 @@ module Set_ignore_certificate_errors = struct
   let command params : result Cdp_command.t =
     { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
+[@@ocaml.doc "Enable/disable whether all certificate errors should be ignored."]
 
 module Handle_certificate_error = struct
   let name = "Security.handleCertificateError"
 
   type params = {
-    event_id : int; [@key "eventId"]
-    action : certificate_error_action; [@key "action"]
+    event_id : int; [@key "eventId"] [@ocaml.doc "The ID of the event."]
+    action : certificate_error_action; [@key "action"] [@ocaml.doc "The action to take on the certificate error."]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -52,12 +56,14 @@ module Handle_certificate_error = struct
   let command params : result Cdp_command.t =
     { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
+[@@ocaml.doc "Handles a certificate error that fired a certificateError event."]
 [@@ocaml.deprecated "deprecated in CDP"]
 
 module Set_override_certificate_errors = struct
   let name = "Security.setOverrideCertificateErrors"
 
-  type params = { override : bool [@key "override"] } [@@allow_extra_fields] [@@deriving json, show, eq, make]
+  type params = { override : bool [@key "override"] [@ocaml.doc "If true, certificate errors will be overridden."] }
+  [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = unit [@@deriving show, eq]
 
@@ -66,45 +72,70 @@ module Set_override_certificate_errors = struct
   let command params : result Cdp_command.t =
     { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
+[@@ocaml.doc
+  "Enable/disable overriding certificate errors. If enabled, all certificate error events need to\n\
+   be handled by the DevTools client and should be answered with `handleCertificateError` commands."]
 [@@ocaml.deprecated "deprecated in CDP"]
 
 module Certificate_error = struct
   let name = "Security.certificateError"
 
   type params = {
-    event_id : int; [@key "eventId"]
-    error_type : string; [@key "errorType"]
-    request_url : string; [@key "requestURL"]
+    event_id : int; [@key "eventId"] [@ocaml.doc "The ID of the event."]
+    error_type : string; [@key "errorType"] [@ocaml.doc "The type of the error."]
+    request_url : string; [@key "requestURL"] [@ocaml.doc "The url that was requested."]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
+[@@ocaml.doc
+  "There is a certificate error. If overriding certificate errors is enabled, then it should be\n\
+   handled with the `handleCertificateError` command. Note: this event does not fire if the\n\
+   certificate error has been allowed internally. Only one client per target should override\n\
+   certificate errors at the same time."]
 [@@ocaml.deprecated "deprecated in CDP"]
 
 module Visible_security_state_changed = struct
   let name = "Security.visibleSecurityStateChanged"
 
-  type params = { visible_security_state : visible_security_state [@key "visibleSecurityState"] }
+  type params = {
+    visible_security_state : visible_security_state;
+       [@key "visibleSecurityState"] [@ocaml.doc "Security state information about the page."]
+  }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
+[@@ocaml.doc "The security state of the page changed."]
 [@@alert experimental "experimental in CDP, may change with Chrome"]
 
 module Security_state_changed = struct
   let name = "Security.securityStateChanged"
 
   type params = {
-    security_state : security_state; [@key "securityState"]
-    scheme_is_cryptographic : bool; [@key "schemeIsCryptographic"] [@ocaml.deprecated "deprecated in CDP"]
-    explanations : security_state_explanation list; [@key "explanations"] [@ocaml.deprecated "deprecated in CDP"]
+    security_state : security_state; [@key "securityState"] [@ocaml.doc "Security state."]
+    scheme_is_cryptographic : bool;
+       [@key "schemeIsCryptographic"]
+       [@ocaml.deprecated "deprecated in CDP"]
+       [@ocaml.doc "True if the page was loaded over cryptographic transport such as HTTPS."]
+    explanations : security_state_explanation list;
+       [@key "explanations"]
+       [@ocaml.deprecated "deprecated in CDP"]
+       [@ocaml.doc "Previously a list of explanations for the security state. Now always\nempty."]
     insecure_content_status : insecure_content_status;
-       [@key "insecureContentStatus"] [@ocaml.deprecated "deprecated in CDP"]
-    summary : string option; [@key "summary"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
+       [@key "insecureContentStatus"]
+       [@ocaml.deprecated "deprecated in CDP"]
+       [@ocaml.doc "Information about insecure content on the page."]
+    summary : string option;
+       [@key "summary"]
+       [@option]
+       [@json.drop_default]
+       [@ocaml.deprecated "deprecated in CDP"]
+       [@ocaml.doc "Overrides user-visible description of the state. Always omitted."]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }
 end
-[@@ocaml.deprecated "deprecated in CDP"]
+[@@ocaml.doc "The security state of the page changed. No longer being sent."] [@@ocaml.deprecated "deprecated in CDP"]

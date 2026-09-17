@@ -2,7 +2,7 @@
 
 open Jsonkit.Primitives
 
-module Certificate_id = Cdp_base.Security.Certificate_id
+module Certificate_id = Cdp_base.Security.Certificate_id [@@ocaml.doc "An internal certificate ID value."]
 
 type mixed_content_type =
   | Blockable [@json.name "blockable"]
@@ -10,6 +10,9 @@ type mixed_content_type =
   | None_ [@json.name "none"]
   | Other of Cdp_json.unknown [@json.catch_all]
 [@@compact_variants]
+[@@ocaml.doc
+  "A description of mixed content (HTTP resources on HTTPS pages), as defined by\n\
+   https://www.w3.org/TR/mixed-content/#categories"]
 
 and security_state =
   | Unknown [@json.name "unknown"]
@@ -19,29 +22,50 @@ and security_state =
   | Info [@json.name "info"]
   | Insecure_broken [@json.name "insecure-broken"]
   | Other of Cdp_json.unknown [@json.catch_all]
-[@@compact_variants]
+[@@compact_variants] [@@ocaml.doc "The security level of a page or resource."]
 
 and certificate_security_state = {
-  protocol : string; [@key "protocol"]
-  key_exchange : string; [@key "keyExchange"]
-  key_exchange_group : string option; [@key "keyExchangeGroup"] [@option] [@json.drop_default]
-  cipher : string; [@key "cipher"]
-  mac : string option; [@key "mac"] [@option] [@json.drop_default]
-  certificate : string list; [@key "certificate"]
-  subject_name : string; [@key "subjectName"]
-  issuer : string; [@key "issuer"]
-  valid_from : Cdp_base.Network.Time_since_epoch.t; [@key "validFrom"]
-  valid_to : Cdp_base.Network.Time_since_epoch.t; [@key "validTo"]
-  certificate_network_error : string option; [@key "certificateNetworkError"] [@option] [@json.drop_default]
-  certificate_has_weak_signature : bool; [@key "certificateHasWeakSignature"]
-  certificate_has_sha1_signature : bool; [@key "certificateHasSha1Signature"]
-  modern_ssl : bool; [@key "modernSSL"]
-  obsolete_ssl_protocol : bool; [@key "obsoleteSslProtocol"]
-  obsolete_ssl_key_exchange : bool; [@key "obsoleteSslKeyExchange"]
-  obsolete_ssl_cipher : bool; [@key "obsoleteSslCipher"]
-  obsolete_ssl_signature : bool; [@key "obsoleteSslSignature"]
+  protocol : string; [@key "protocol"] [@ocaml.doc "Protocol name (e.g. \"TLS 1.2\" or \"QUIC\")."]
+  key_exchange : string;
+     [@key "keyExchange"] [@ocaml.doc "Key Exchange used by the connection, or the empty string if not applicable."]
+  key_exchange_group : string option;
+     [@key "keyExchangeGroup"]
+     [@option]
+     [@json.drop_default]
+     [@ocaml.doc "(EC)DH group used by the connection, if applicable."]
+  cipher : string; [@key "cipher"] [@ocaml.doc "Cipher name."]
+  mac : string option;
+     [@key "mac"]
+     [@option]
+     [@json.drop_default]
+     [@ocaml.doc "TLS MAC. Note that AEAD ciphers do not have separate MACs."]
+  certificate : string list; [@key "certificate"] [@ocaml.doc "Page certificate."]
+  subject_name : string; [@key "subjectName"] [@ocaml.doc "Certificate subject name."]
+  issuer : string; [@key "issuer"] [@ocaml.doc "Name of the issuing CA."]
+  valid_from : Cdp_base.Network.Time_since_epoch.t; [@key "validFrom"] [@ocaml.doc "Certificate valid from date."]
+  valid_to : Cdp_base.Network.Time_since_epoch.t; [@key "validTo"] [@ocaml.doc "Certificate valid to (expiration) date"]
+  certificate_network_error : string option;
+     [@key "certificateNetworkError"]
+     [@option]
+     [@json.drop_default]
+     [@ocaml.doc "The highest priority network error code, if the certificate has an error."]
+  certificate_has_weak_signature : bool;
+     [@key "certificateHasWeakSignature"] [@ocaml.doc "True if the certificate uses a weak signature algorithm."]
+  certificate_has_sha1_signature : bool;
+     [@key "certificateHasSha1Signature"] [@ocaml.doc "True if the certificate has a SHA1 signature in the chain."]
+  modern_ssl : bool; [@key "modernSSL"] [@ocaml.doc "True if modern SSL"]
+  obsolete_ssl_protocol : bool;
+     [@key "obsoleteSslProtocol"] [@ocaml.doc "True if the connection is using an obsolete SSL protocol."]
+  obsolete_ssl_key_exchange : bool;
+     [@key "obsoleteSslKeyExchange"] [@ocaml.doc "True if the connection is using an obsolete SSL key exchange."]
+  obsolete_ssl_cipher : bool;
+     [@key "obsoleteSslCipher"] [@ocaml.doc "True if the connection is using an obsolete SSL cipher."]
+  obsolete_ssl_signature : bool;
+     [@key "obsoleteSslSignature"] [@ocaml.doc "True if the connection is using an obsolete SSL signature."]
 }
-[@@allow_extra_fields] [@@alert experimental "experimental in CDP, may change with Chrome"]
+[@@allow_extra_fields]
+[@@ocaml.doc "Details about the security state of the page certificate."]
+[@@alert experimental "experimental in CDP, may change with Chrome"]
 
 and safety_tip_status =
   | BadReputation [@json.name "badReputation"]
@@ -50,44 +74,72 @@ and safety_tip_status =
 [@@compact_variants] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
 and safety_tip_info = {
-  safety_tip_status : safety_tip_status; [@key "safetyTipStatus"]
-  safe_url : string option; [@key "safeUrl"] [@option] [@json.drop_default]
+  safety_tip_status : safety_tip_status;
+     [@key "safetyTipStatus"]
+     [@ocaml.doc "Describes whether the page triggers any safety tips or reputation warnings. Default is unknown."]
+  safe_url : string option;
+     [@key "safeUrl"]
+     [@option]
+     [@json.drop_default]
+     [@ocaml.doc "The URL the safety tip suggested (\"Did you mean?\"). Only filled in for lookalike matches."]
 }
 [@@allow_extra_fields] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
 and visible_security_state = {
-  security_state : security_state; [@key "securityState"]
+  security_state : security_state; [@key "securityState"] [@ocaml.doc "The security level of the page."]
   certificate_security_state : certificate_security_state option;
-     [@key "certificateSecurityState"] [@option] [@json.drop_default]
-  safety_tip_info : safety_tip_info option; [@key "safetyTipInfo"] [@option] [@json.drop_default]
-  security_state_issue_ids : string list; [@key "securityStateIssueIds"]
-}
-[@@allow_extra_fields] [@@alert experimental "experimental in CDP, may change with Chrome"]
-
-and security_state_explanation = {
-  security_state : security_state; [@key "securityState"]
-  title : string; [@key "title"]
-  summary : string; [@key "summary"]
-  description : string; [@key "description"]
-  mixed_content_type : mixed_content_type; [@key "mixedContentType"]
-  certificate : string list; [@key "certificate"]
-  recommendations : string list option; [@key "recommendations"] [@option] [@json.drop_default]
+     [@key "certificateSecurityState"]
+     [@option]
+     [@json.drop_default]
+     [@ocaml.doc "Security state details about the page certificate."]
+  safety_tip_info : safety_tip_info option;
+     [@key "safetyTipInfo"]
+     [@option]
+     [@json.drop_default]
+     [@ocaml.doc
+       "The type of Safety Tip triggered on the page. Note that this field will be set even if the Safety Tip UI was \
+        not actually shown."]
+  security_state_issue_ids : string list;
+     [@key "securityStateIssueIds"] [@ocaml.doc "Array of security state issues ids."]
 }
 [@@allow_extra_fields]
+[@@ocaml.doc "Security state information about the page."]
+[@@alert experimental "experimental in CDP, may change with Chrome"]
+
+and security_state_explanation = {
+  security_state : security_state;
+     [@key "securityState"] [@ocaml.doc "Security state representing the severity of the factor being explained."]
+  title : string; [@key "title"] [@ocaml.doc "Title describing the type of factor."]
+  summary : string; [@key "summary"] [@ocaml.doc "Short phrase describing the type of factor."]
+  description : string; [@key "description"] [@ocaml.doc "Full text explanation of the factor."]
+  mixed_content_type : mixed_content_type;
+     [@key "mixedContentType"] [@ocaml.doc "The type of mixed content described by the explanation."]
+  certificate : string list; [@key "certificate"] [@ocaml.doc "Page certificate."]
+  recommendations : string list option;
+     [@key "recommendations"] [@option] [@json.drop_default] [@ocaml.doc "Recommendations to fix any issues."]
+}
+[@@allow_extra_fields] [@@ocaml.doc "An explanation of an factor contributing to the security state."]
 
 and insecure_content_status = {
-  ran_mixed_content : bool; [@key "ranMixedContent"]
-  displayed_mixed_content : bool; [@key "displayedMixedContent"]
-  contained_mixed_form : bool; [@key "containedMixedForm"]
-  ran_content_with_cert_errors : bool; [@key "ranContentWithCertErrors"]
-  displayed_content_with_cert_errors : bool; [@key "displayedContentWithCertErrors"]
-  ran_insecure_content_style : security_state; [@key "ranInsecureContentStyle"]
-  displayed_insecure_content_style : security_state; [@key "displayedInsecureContentStyle"]
+  ran_mixed_content : bool; [@key "ranMixedContent"] [@ocaml.doc "Always false."]
+  displayed_mixed_content : bool; [@key "displayedMixedContent"] [@ocaml.doc "Always false."]
+  contained_mixed_form : bool; [@key "containedMixedForm"] [@ocaml.doc "Always false."]
+  ran_content_with_cert_errors : bool; [@key "ranContentWithCertErrors"] [@ocaml.doc "Always false."]
+  displayed_content_with_cert_errors : bool; [@key "displayedContentWithCertErrors"] [@ocaml.doc "Always false."]
+  ran_insecure_content_style : security_state; [@key "ranInsecureContentStyle"] [@ocaml.doc "Always set to unknown."]
+  displayed_insecure_content_style : security_state;
+     [@key "displayedInsecureContentStyle"] [@ocaml.doc "Always set to unknown."]
 }
-[@@allow_extra_fields] [@@ocaml.deprecated "deprecated in CDP"]
+[@@allow_extra_fields]
+[@@ocaml.doc "Information about insecure content on the page."]
+[@@ocaml.deprecated "deprecated in CDP"]
 
 and certificate_error_action =
   | Continue [@json.name "continue"]
   | Cancel [@json.name "cancel"]
   | Other of Cdp_json.unknown [@json.catch_all]
-[@@compact_variants] [@@deriving json, show, eq]
+[@@compact_variants]
+[@@ocaml.doc
+  "The action to take when a certificate error occurs. continue will continue processing the\n\
+   request and cancel will cancel the request."]
+[@@deriving json, show, eq]

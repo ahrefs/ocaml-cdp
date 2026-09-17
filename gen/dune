@@ -7,6 +7,7 @@
   protocol
   inline_enum
   hoisted_name
+  attributes
   emit
   fetch
   sample
