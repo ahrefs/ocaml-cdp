@@ -1,3 +1,5 @@
+; every .ml here is written by `make generate`; the glue sources are gen/glue/
+
 (library
  (name cdp)
  (public_name cdp)

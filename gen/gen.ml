@@ -9,7 +9,7 @@
      Hoisted_name the type name such an enum gets
      Attributes   doc comments and alerts a generated item carries
      Dependencies which domains a selection needs through $ref
-     Glue         the four hand-written lib/ modules, embedded at build time
+     Glue         the four hand-written modules from gen/glue/, embedded at build time
      Emit         print the library code
      Sample       one JSON sample per protocol type
      Roundtrip    print the roundtrip test
@@ -32,8 +32,8 @@
                                and Cdp_base, so they can never cycle.
      cdp.ml                 -- the index: Cdp.Network = Cdp_network, ...
      cdp_json.ml, cdp_command.ml, cdp_event.ml, cdp_envelope.ml
-                            -- copies of the hand-written glue from lib/, so
-                               the output compiles on its own *)
+                            -- copies of the hand-written glue in gen/glue/,
+                               so the output compiles on its own *)
 
 open Cdp_gen
 
@@ -204,5 +204,6 @@ let fetch_command =
 
 let () =
   let doc = "Generate typed OCaml modules from the Chrome DevTools Protocol JSON." in
-  let info = Cmdliner.Cmd.info "cdp-gen" ~doc in
+  (* dune subst fills the version in at release time *)
+  let info = Cmdliner.Cmd.info "cdp-gen" ~version:"%%VERSION%%" ~doc in
   exit (Cmdliner.Cmd.eval (Cmdliner.Cmd.group info [ generate_command; roundtrip_command; fetch_command ]))

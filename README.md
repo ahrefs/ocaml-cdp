@@ -134,7 +134,9 @@ protocol/*.json  --(cdp-gen)-->  lib/cdp_*.ml  --(dune + ppx)-->  the cdp librar
 ```
 
 The generated code is committed; users never run the generator. The vendored
-protocol snapshot is pinned in `protocol/REVISION`.
+protocol snapshot is pinned in `protocol/REVISION`. Everything in `lib/` is
+written by `make generate`, including the four glue modules, whose sources
+live in [gen/glue/](gen/glue/).
 
 ```sh
 make generate                 # regenerate lib/ after changing gen/gen.ml
