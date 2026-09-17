@@ -357,6 +357,7 @@ module Set_async_call_stack_depth = struct
   let command params : result Cdp_command.t =
     { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
+[@@alert redirected "redirected to the Debugger domain in CDP"]
 
 module Set_custom_object_formatter_enabled = struct
   let name = "Runtime.setCustomObjectFormatterEnabled"

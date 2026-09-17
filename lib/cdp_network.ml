@@ -462,6 +462,7 @@ module Set_user_agent_override = struct
   let command params : result Cdp_command.t =
     { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
+[@@alert redirected "redirected to the Emulation domain in CDP"]
 
 module Stream_resource_content = struct
   let name = "Network.streamResourceContent"

@@ -7,6 +7,12 @@
   Reading a deprecated field such as `Network.Response.headers_text` now warns.
   Two call sites of the deprecated `Network.setCookie` `success` field were removed from the examples and the browser test.
 
+- `cdp`, `cdp-gen`: a command with a protocol `redirect` names the domain that
+  now handles it. Deprecated ones say `deprecated in CDP, redirected to the
+  Emulation domain`; the five that are not deprecated (for example
+  `DOM.hideHighlight`) get `[@@alert redirected "..."]`. Silence it with
+  `-alert -redirected` if you rely on them.
+
 - `cdp-gen`: `generate` removes generated `cdp_*.ml` files that the current
   run does not produce, so a domain dropped from the selection no longer
   leaves stale files that break the next build. Files without the generator

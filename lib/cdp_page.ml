@@ -122,7 +122,8 @@ module Clear_device_metrics_override = struct
 
   let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
-[@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
+[@@ocaml.deprecated "deprecated in CDP, redirected to the Emulation domain"]
+[@@alert experimental "experimental in CDP, may change with Chrome"]
 
 module Clear_device_orientation_override = struct
   let name = "Page.clearDeviceOrientationOverride"
@@ -133,7 +134,8 @@ module Clear_device_orientation_override = struct
 
   let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
-[@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
+[@@ocaml.deprecated "deprecated in CDP, redirected to the DeviceOrientation domain"]
+[@@alert experimental "experimental in CDP, may change with Chrome"]
 
 module Clear_geolocation_override = struct
   let name = "Page.clearGeolocationOverride"
@@ -144,7 +146,7 @@ module Clear_geolocation_override = struct
 
   let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
-[@@ocaml.deprecated "deprecated in CDP"]
+[@@ocaml.deprecated "deprecated in CDP, redirected to the Emulation domain"]
 
 module Create_isolated_world = struct
   let name = "Page.createIsolatedWorld"
@@ -180,7 +182,8 @@ module Delete_cookie = struct
   let command params : result Cdp_command.t =
     { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
-[@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
+[@@ocaml.deprecated "deprecated in CDP, redirected to the Network domain"]
+[@@alert experimental "experimental in CDP, may change with Chrome"]
 
 module Disable = struct
   let name = "Page.disable"
@@ -646,7 +649,8 @@ module Set_device_metrics_override = struct
   let command params : result Cdp_command.t =
     { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
-[@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
+[@@ocaml.deprecated "deprecated in CDP, redirected to the Emulation domain"]
+[@@alert experimental "experimental in CDP, may change with Chrome"]
 
 module Set_device_orientation_override = struct
   let name = "Page.setDeviceOrientationOverride"
@@ -665,7 +669,8 @@ module Set_device_orientation_override = struct
   let command params : result Cdp_command.t =
     { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
-[@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
+[@@ocaml.deprecated "deprecated in CDP, redirected to the DeviceOrientation domain"]
+[@@alert experimental "experimental in CDP, may change with Chrome"]
 
 module Set_font_families = struct
   let name = "Page.setFontFamilies"
@@ -758,7 +763,7 @@ module Set_geolocation_override = struct
   let command params : result Cdp_command.t =
     { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
-[@@ocaml.deprecated "deprecated in CDP"]
+[@@ocaml.deprecated "deprecated in CDP, redirected to the Emulation domain"]
 
 module Set_lifecycle_events_enabled = struct
   let name = "Page.setLifecycleEventsEnabled"
@@ -795,7 +800,8 @@ module Set_touch_emulation_enabled = struct
   let command params : result Cdp_command.t =
     { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
 end
-[@@ocaml.deprecated "deprecated in CDP"] [@@alert experimental "experimental in CDP, may change with Chrome"]
+[@@ocaml.deprecated "deprecated in CDP, redirected to the Emulation domain"]
+[@@alert experimental "experimental in CDP, may change with Chrome"]
 
 module Start_screencast = struct
   let name = "Page.startScreencast"

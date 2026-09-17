@@ -12,6 +12,7 @@ let spf = Printf.sprintf
 type flags = {
   deprecated : bool;
   experimental : bool;
+  redirect : string option; (* the domain that now handles this command *)
 }
 
 type domain = {
@@ -40,7 +41,12 @@ let jbool field json =
   | `Bool value -> value
   | wrong_type -> failwith (spf "cdp-gen: field %S must be a boolean, got %s" field (Json.to_string wrong_type))
 
-let flags_of_json json = { deprecated = jbool "deprecated" json; experimental = jbool "experimental" json }
+let flags_of_json json =
+  {
+    deprecated = jbool "deprecated" json;
+    experimental = jbool "experimental" json;
+    redirect = Util.member "redirect" json |> Util.to_string_option;
+  }
 
 let is_letter ch = Naming.is_upper ch || Naming.is_lower ch
 let is_digit = Naming.is_digit

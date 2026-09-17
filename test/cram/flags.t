@@ -12,7 +12,11 @@ and on whole domains, not only on types, commands and events.
   >   ]},
   >   {"domain":"Legacy","deprecated":true,"experimental":true,"types":[
   >     {"id":"Marker","type":"string"}
-  >   ],"commands":[{"name":"poke"}]}
+  >   ],"commands":[
+  >     {"name":"poke"},
+  >     {"name":"moved","redirect":"Modern"},
+  >     {"name":"gone","deprecated":true,"redirect":"Modern"}
+  >   ]}
   > ]}
   > EOF
   $ echo '{"domains":[]}' > js.json
@@ -51,6 +55,16 @@ A flagged domain marks both of its files at the top and its index aliases.
   module Legacy_types = Cdp_legacy_types
   [@@ocaml.deprecated "deprecated in CDP"]
   [@@alert experimental "experimental in CDP, may change with Chrome"]
+
+A redirected command names the domain that now handles it. Without a
+deprecated flag it gets its own alert; with one, the target joins the message.
+
+  $ grep -B1 'redirected' out/cdp_legacy.ml
+  end
+  [@@alert redirected "redirected to the Modern domain in CDP"]
+  --
+  end
+  [@@ocaml.deprecated "deprecated in CDP, redirected to the Modern domain"]
 
 An unflagged domain has none of this.
 

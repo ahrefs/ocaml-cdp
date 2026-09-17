@@ -315,6 +315,7 @@ module Hide_highlight = struct
 
   let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
+[@@alert redirected "redirected to the Overlay domain in CDP"]
 
 module Highlight_node = struct
   let name = "DOM.highlightNode"
@@ -325,6 +326,7 @@ module Highlight_node = struct
 
   let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
+[@@alert redirected "redirected to the Overlay domain in CDP"]
 
 module Highlight_rect = struct
   let name = "DOM.highlightRect"
@@ -335,6 +337,7 @@ module Highlight_rect = struct
 
   let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
 end
+[@@alert redirected "redirected to the Overlay domain in CDP"]
 
 module Mark_undoable_state = struct
   let name = "DOM.markUndoableState"
