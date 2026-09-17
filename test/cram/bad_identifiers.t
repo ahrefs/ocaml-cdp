@@ -63,4 +63,45 @@ parameters and returns are checked the same way.
   $ cdp-gen generate browser.json js.json out all
   cdp-gen: Demo.fetch: fields "fooBar" and "foo_bar" both become foo_bar
   [1]
+
+A property says one thing: a $ref, or a type. Two at once, or none, is refused
+with the field's name instead of being resolved by an unwritten precedence.
+
+  $ cat > browser.json << 'EOF'
+  > {"domains":[{"domain":"Demo","types":[
+  >   {"id":"Frame","type":"string"},
+  >   {"id":"Thing","type":"object","properties":[{"name":"a","$ref":"Frame","type":"integer"}]}
+  > ]}]}
+  > EOF
+  $ cdp-gen generate browser.json js.json out all
+  cdp-gen: Demo.Thing: field "a" has both $ref and type
+  [1]
+
+  $ cat > browser.json << 'EOF'
+  > {"domains":[{"domain":"Demo","types":[
+  >   {"id":"Frame","type":"string"},
+  >   {"id":"Thing","type":"object","properties":[{"name":"b","$ref":"Frame","enum":["x","y"]}]}
+  > ]}]}
+  > EOF
+  $ cdp-gen generate browser.json js.json out all
+  cdp-gen: Demo.Thing: field "b" has both $ref and enum
+  [1]
+
+  $ cat > browser.json << 'EOF'
+  > {"domains":[{"domain":"Demo","types":[
+  >   {"id":"Thing","type":"object","properties":[{"name":"c","optional":true}]}
+  > ]}]}
+  > EOF
+  $ cdp-gen generate browser.json js.json out all
+  cdp-gen: Demo.Thing: field "c" has neither type nor $ref
+  [1]
+
+  $ cat > browser.json << 'EOF'
+  > {"domains":[{"domain":"Demo","types":[
+  >   {"id":"Thing","type":"object","properties":[{"name":"d","type":"array"}]}
+  > ]}]}
+  > EOF
+  $ cdp-gen generate browser.json js.json out all
+  cdp-gen: Demo.Thing: field "d" is an array without items
+  [1]
   $ ls out

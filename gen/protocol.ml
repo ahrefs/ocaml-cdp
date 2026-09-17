@@ -296,16 +296,29 @@ let check_identifiers domains =
         | _not_a_string -> failwith (spf "cdp-gen: %s: enum values must be strings" owner))
       values
   in
+  let check_field_shape ~owner ~field prop =
+    let has key = has_field key prop in
+    match has "$ref", has "type", has "enum" with
+    | true, true, _ -> failwith (spf "cdp-gen: %s: field %S has both $ref and type" owner field)
+    | true, _, true -> failwith (spf "cdp-gen: %s: field %S has both $ref and enum" owner field)
+    | false, false, _ -> failwith (spf "cdp-gen: %s: field %S has neither type nor $ref" owner field)
+    | false, true, _ ->
+      (match Util.member "type" prop, has "items" with
+      | `String "array", false -> failwith (spf "cdp-gen: %s: field %S is an array without items" owner field)
+      | _typed -> ())
+    | true, false, false -> ()
+  in
   let check_fields ~owner props =
     let seen = Hashtbl.create 8 in
     List.iter
       (fun prop ->
         match Util.member "name" prop with
-        | `String text ->
-          let label = Naming.sanitize_lower text in
+        | `String field ->
+          check_field_shape ~owner ~field prop;
+          let label = Naming.sanitize_lower field in
           (match Hashtbl.find_opt seen label with
-          | None -> Hashtbl.replace seen label text
-          | Some earlier -> failwith (spf "cdp-gen: %s: fields %S and %S both become %s" owner earlier text label))
+          | None -> Hashtbl.replace seen label field
+          | Some earlier -> failwith (spf "cdp-gen: %s: fields %S and %S both become %s" owner earlier field label))
         | _no_name -> ())
       props
   in
