@@ -123,6 +123,17 @@ let collect_enum_targets ~alias_tbl (domain : Protocol.domain) =
             };
           ]
         | _not_an_enum ->
+        match Inline_enum.of_prop type_def with
+        | Some (Inline_enum.Array values) ->
+          [
+            {
+              enum_label = owner;
+              enum_path = domain_path;
+              enum_type = Hoisted_name.name_for_array_item ~type_id:id;
+              values;
+            };
+          ]
+        | _record_or_alias ->
           let hoist_name = Hoisted_name.name_for_type_field ~type_id:id in
           collect_hoisted_enums ~enum_path:domain_path ~owner ~hoist_name (Protocol.get_list "properties" type_def))
       domain.types

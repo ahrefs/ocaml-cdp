@@ -65,3 +65,26 @@ In a named type: parent_field naming. In a command submodule: field name only.
   
   end
   
+
+
+A named type that is an array of an inline enum keeps the enum: the items get
+their own <type>_item variant and the type is a list of it.
+
+  $ cat > browser.json << 'EOF'
+  > {"domains":[{"domain":"Demo","types":[
+  >   {"id":"Moods","type":"array","items":{"type":"string","enum":["happy","sad"]}}
+  > ]}]}
+  > EOF
+  $ cdp-gen generate browser.json js.json out Demo > /dev/null
+  $ grep -A7 'type moods_item' out/cdp_demo_types.ml
+  type moods_item =
+    | Happy [@json.name "happy"]
+    | Sad [@json.name "sad"]
+    | Other of Cdp_json.unknown [@json.catch_all]
+  [@@compact_variants]
+  
+  and moods = moods_item list
+  [@@deriving json, show, eq]
+
+  $ cdp-gen roundtrip browser.json js.json roundtrip_out.ml Demo
+  generated roundtrip_out.ml: 1 roundtrip checks, 1 enum checks, 0 skipped

@@ -124,7 +124,14 @@ let collect_named_type_decls ~selected ~alias_tbl ~domain type_def =
     let hoist_name = Hoisted_name.name_for_type_field ~type_id:(get_string "id" type_def) in
     let hoisted, record = make_record_decl ~selected ~alias_tbl ~domain ~type_name ~attrs ~hoist_name props in
     hoisted @ [ record ]
-  | `Null, _ -> [ make_alias_decl ~type_name ~attrs (map_type ~selected ~alias_tbl ~domain type_def) ]
+  | `Null, _ ->
+    (match Inline_enum.of_prop type_def with
+    | Some (Inline_enum.Array values as item_enum) ->
+      let item_type_name = Hoisted_name.name_for_array_item ~type_id:(get_string "id" type_def) in
+      let item_decl = make_enum_decl ~type_name:item_type_name ~attrs:"" values in
+      let list_type = Inline_enum.field_type item_enum ~enum_name:item_type_name in
+      [ item_decl; make_alias_decl ~type_name ~attrs list_type ]
+    | _plain_alias -> [ make_alias_decl ~type_name ~attrs (map_type ~selected ~alias_tbl ~domain type_def) ])
   | _unexpected_shape -> failwith ("cdp-gen: unhandled named type shape: " ^ get_string "id" type_def)
 
 (* "type a = .. and b = .." with ONE [@@deriving] for the whole group *)

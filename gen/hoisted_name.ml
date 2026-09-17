@@ -13,6 +13,9 @@
 let name_for_type_field ~type_id field =
   Printf.sprintf "%s_%s" (Naming.camel_to_snake type_id) (Naming.camel_to_snake field)
 
+(* <type>_item: a named type that is itself an array of an inline enum *)
+let name_for_array_item ~type_id = Printf.sprintf "%s_item" (Naming.camel_to_snake type_id)
+
 let collect_domain_type_names (domain : Protocol.domain) =
   List.map (fun type_def -> Naming.sanitize_lower (Protocol.get_string "id" type_def)) domain.types
 
