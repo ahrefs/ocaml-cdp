@@ -62,8 +62,8 @@ A string alias gets of_string/to_string; a number alias gets of_float/to_float.
     let compare = Float.compare
     let show (value : t) = string_of_float value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Jsonkit.Primitives.float_of_json
-    let to_json = Jsonkit.Primitives.float_to_json
+    let of_json = Cdp_json.number_of_json
+    let to_json = Cdp_json.number_to_json
   end
   
   end

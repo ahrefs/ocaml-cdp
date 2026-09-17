@@ -88,38 +88,40 @@ and cookie_source_scheme =
 [@@compact_variants] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
 and resource_timing = {
-  request_time : float; [@key "requestTime"]
-  proxy_start : float; [@key "proxyStart"]
-  proxy_end : float; [@key "proxyEnd"]
-  dns_start : float; [@key "dnsStart"]
-  dns_end : float; [@key "dnsEnd"]
-  connect_start : float; [@key "connectStart"]
-  connect_end : float; [@key "connectEnd"]
-  ssl_start : float; [@key "sslStart"]
-  ssl_end : float; [@key "sslEnd"]
-  worker_start : float; [@key "workerStart"] [@alert experimental "experimental in CDP, may change with Chrome"]
-  worker_ready : float; [@key "workerReady"] [@alert experimental "experimental in CDP, may change with Chrome"]
-  worker_fetch_start : float;
+  request_time : Cdp_json.number; [@key "requestTime"]
+  proxy_start : Cdp_json.number; [@key "proxyStart"]
+  proxy_end : Cdp_json.number; [@key "proxyEnd"]
+  dns_start : Cdp_json.number; [@key "dnsStart"]
+  dns_end : Cdp_json.number; [@key "dnsEnd"]
+  connect_start : Cdp_json.number; [@key "connectStart"]
+  connect_end : Cdp_json.number; [@key "connectEnd"]
+  ssl_start : Cdp_json.number; [@key "sslStart"]
+  ssl_end : Cdp_json.number; [@key "sslEnd"]
+  worker_start : Cdp_json.number;
+     [@key "workerStart"] [@alert experimental "experimental in CDP, may change with Chrome"]
+  worker_ready : Cdp_json.number;
+     [@key "workerReady"] [@alert experimental "experimental in CDP, may change with Chrome"]
+  worker_fetch_start : Cdp_json.number;
      [@key "workerFetchStart"] [@alert experimental "experimental in CDP, may change with Chrome"]
-  worker_respond_with_settled : float;
+  worker_respond_with_settled : Cdp_json.number;
      [@key "workerRespondWithSettled"] [@alert experimental "experimental in CDP, may change with Chrome"]
-  worker_router_evaluation_start : float option;
+  worker_router_evaluation_start : Cdp_json.number option;
      [@key "workerRouterEvaluationStart"]
      [@option]
      [@json.drop_default]
      [@alert experimental "experimental in CDP, may change with Chrome"]
-  worker_cache_lookup_start : float option;
+  worker_cache_lookup_start : Cdp_json.number option;
      [@key "workerCacheLookupStart"]
      [@option]
      [@json.drop_default]
      [@alert experimental "experimental in CDP, may change with Chrome"]
-  send_start : float; [@key "sendStart"]
-  send_end : float; [@key "sendEnd"]
-  push_start : float; [@key "pushStart"] [@alert experimental "experimental in CDP, may change with Chrome"]
-  push_end : float; [@key "pushEnd"] [@alert experimental "experimental in CDP, may change with Chrome"]
-  receive_headers_start : float;
+  send_start : Cdp_json.number; [@key "sendStart"]
+  send_end : Cdp_json.number; [@key "sendEnd"]
+  push_start : Cdp_json.number; [@key "pushStart"] [@alert experimental "experimental in CDP, may change with Chrome"]
+  push_end : Cdp_json.number; [@key "pushEnd"] [@alert experimental "experimental in CDP, may change with Chrome"]
+  receive_headers_start : Cdp_json.number;
      [@key "receiveHeadersStart"] [@alert experimental "experimental in CDP, may change with Chrome"]
-  receive_headers_end : float; [@key "receiveHeadersEnd"]
+  receive_headers_end : Cdp_json.number; [@key "receiveHeadersEnd"]
 }
 [@@allow_extra_fields]
 
@@ -195,7 +197,7 @@ and signed_certificate_timestamp = {
   origin : string; [@key "origin"]
   log_description : string; [@key "logDescription"]
   log_id : string; [@key "logId"]
-  timestamp : float; [@key "timestamp"]
+  timestamp : Cdp_json.number; [@key "timestamp"]
   hash_algorithm : string; [@key "hashAlgorithm"]
   signature_algorithm : string; [@key "signatureAlgorithm"]
   signature_data : string; [@key "signatureData"]
@@ -358,7 +360,7 @@ and response = {
   request_headers_text : string option;
      [@key "requestHeadersText"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
   connection_reused : bool; [@key "connectionReused"]
-  connection_id : float; [@key "connectionId"]
+  connection_id : Cdp_json.number; [@key "connectionId"]
   remote_ip_address : string option; [@key "remoteIPAddress"] [@option] [@json.drop_default]
   remote_port : int option; [@key "remotePort"] [@option] [@json.drop_default]
   from_disk_cache : bool option; [@key "fromDiskCache"] [@option] [@json.drop_default]
@@ -370,7 +372,7 @@ and response = {
      [@option]
      [@json.drop_default]
      [@alert experimental "experimental in CDP, may change with Chrome"]
-  encoded_data_length : float; [@key "encodedDataLength"]
+  encoded_data_length : Cdp_json.number; [@key "encodedDataLength"]
   timing : resource_timing option; [@key "timing"] [@option] [@json.drop_default]
   service_worker_response_source : service_worker_response_source option;
      [@key "serviceWorkerResponseSource"] [@option] [@json.drop_default]
@@ -400,7 +402,7 @@ and web_socket_response = {
 [@@allow_extra_fields]
 
 and web_socket_frame = {
-  opcode : float; [@key "opcode"]
+  opcode : Cdp_json.number; [@key "opcode"]
   mask : bool; [@key "mask"]
   payload_data : string; [@key "payloadData"]
 }
@@ -410,7 +412,7 @@ and cached_resource = {
   url : string; [@key "url"]
   type_ : resource_type; [@key "type"]
   response : response option; [@key "response"] [@option] [@json.drop_default]
-  body_size : float; [@key "bodySize"]
+  body_size : Cdp_json.number; [@key "bodySize"]
 }
 [@@allow_extra_fields]
 
@@ -429,8 +431,8 @@ and initiator = {
   type_ : initiator_type; [@key "type"]
   stack : Cdp_runtime_types.stack_trace option; [@key "stack"] [@option] [@json.drop_default]
   url : string option; [@key "url"] [@option] [@json.drop_default]
-  line_number : float option; [@key "lineNumber"] [@option] [@json.drop_default]
-  column_number : float option; [@key "columnNumber"] [@option] [@json.drop_default]
+  line_number : Cdp_json.number option; [@key "lineNumber"] [@option] [@json.drop_default]
+  column_number : Cdp_json.number option; [@key "columnNumber"] [@option] [@json.drop_default]
   request_id : Cdp_base.Network.Request_id.t option; [@key "requestId"] [@option] [@json.drop_default]
 }
 [@@allow_extra_fields]
@@ -446,7 +448,7 @@ and cookie = {
   value : string; [@key "value"]
   domain : string; [@key "domain"]
   path : string; [@key "path"]
-  expires : float; [@key "expires"]
+  expires : Cdp_json.number; [@key "expires"]
   size : int; [@key "size"]
   http_only : bool; [@key "httpOnly"]
   secure : bool; [@key "secure"]
@@ -658,11 +660,11 @@ and signed_exchange_info = {
 
 and network_conditions = {
   url_pattern : string; [@key "urlPattern"]
-  latency : float; [@key "latency"]
-  download_throughput : float; [@key "downloadThroughput"]
-  upload_throughput : float; [@key "uploadThroughput"]
+  latency : Cdp_json.number; [@key "latency"]
+  download_throughput : Cdp_json.number; [@key "downloadThroughput"]
+  upload_throughput : Cdp_json.number; [@key "uploadThroughput"]
   connection_type : connection_type option; [@key "connectionType"] [@option] [@json.drop_default]
-  packet_loss : float option; [@key "packetLoss"] [@option] [@json.drop_default]
+  packet_loss : Cdp_json.number option; [@key "packetLoss"] [@option] [@json.drop_default]
   packet_queue_length : int option; [@key "packetQueueLength"] [@option] [@json.drop_default]
   packet_reordering : bool option; [@key "packetReordering"] [@option] [@json.drop_default]
   offline : bool option; [@key "offline"] [@option] [@json.drop_default]
@@ -683,9 +685,9 @@ and direct_socket_dns_query_type =
 
 and direct_tcp_socket_options = {
   no_delay : bool; [@key "noDelay"]
-  keep_alive_delay : float option; [@key "keepAliveDelay"] [@option] [@json.drop_default]
-  send_buffer_size : float option; [@key "sendBufferSize"] [@option] [@json.drop_default]
-  receive_buffer_size : float option; [@key "receiveBufferSize"] [@option] [@json.drop_default]
+  keep_alive_delay : Cdp_json.number option; [@key "keepAliveDelay"] [@option] [@json.drop_default]
+  send_buffer_size : Cdp_json.number option; [@key "sendBufferSize"] [@option] [@json.drop_default]
+  receive_buffer_size : Cdp_json.number option; [@key "receiveBufferSize"] [@option] [@json.drop_default]
   dns_query_type : direct_socket_dns_query_type option; [@key "dnsQueryType"] [@option] [@json.drop_default]
 }
 [@@allow_extra_fields] [@@alert experimental "experimental in CDP, may change with Chrome"]
@@ -696,8 +698,8 @@ and direct_udp_socket_options = {
   local_addr : string option; [@key "localAddr"] [@option] [@json.drop_default]
   local_port : int option; [@key "localPort"] [@option] [@json.drop_default]
   dns_query_type : direct_socket_dns_query_type option; [@key "dnsQueryType"] [@option] [@json.drop_default]
-  send_buffer_size : float option; [@key "sendBufferSize"] [@option] [@json.drop_default]
-  receive_buffer_size : float option; [@key "receiveBufferSize"] [@option] [@json.drop_default]
+  send_buffer_size : Cdp_json.number option; [@key "sendBufferSize"] [@option] [@json.drop_default]
+  receive_buffer_size : Cdp_json.number option; [@key "receiveBufferSize"] [@option] [@json.drop_default]
   multicast_loopback : bool option; [@key "multicastLoopback"] [@option] [@json.drop_default]
   multicast_time_to_live : int option; [@key "multicastTimeToLive"] [@option] [@json.drop_default]
   multicast_allow_address_sharing : bool option; [@key "multicastAllowAddressSharing"] [@option] [@json.drop_default]
@@ -728,7 +730,7 @@ and ip_address_space =
   | Other of Cdp_json.unknown [@json.catch_all]
 [@@compact_variants] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
-and connect_timing = { request_time : float [@key "requestTime"] }
+and connect_timing = { request_time : Cdp_json.number [@key "requestTime"] }
 [@@allow_extra_fields] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
 and client_security_state = {
@@ -1051,9 +1053,9 @@ and challenge_event_details = {
 
 and load_network_resource_page_result = {
   success : bool; [@key "success"]
-  net_error : float option; [@key "netError"] [@option] [@json.drop_default]
+  net_error : Cdp_json.number option; [@key "netError"] [@option] [@json.drop_default]
   net_error_name : string option; [@key "netErrorName"] [@option] [@json.drop_default]
-  http_status_code : float option; [@key "httpStatusCode"] [@option] [@json.drop_default]
+  http_status_code : Cdp_json.number option; [@key "httpStatusCode"] [@option] [@json.drop_default]
   stream : Cdp_base.Io.Stream_handle.t option; [@key "stream"] [@option] [@json.drop_default]
   headers : headers option; [@key "headers"] [@option] [@json.drop_default]
 }

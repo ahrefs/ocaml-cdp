@@ -230,8 +230,8 @@ module Network = struct
     let compare = Float.compare
     let show (value : t) = string_of_float value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Jsonkit.Primitives.float_of_json
-    let to_json = Jsonkit.Primitives.float_to_json
+    let of_json = Cdp_json.number_of_json
+    let to_json = Cdp_json.number_to_json
   end
 
   module Monotonic_time : sig
@@ -252,8 +252,8 @@ module Network = struct
     let compare = Float.compare
     let show (value : t) = string_of_float value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Jsonkit.Primitives.float_of_json
-    let to_json = Jsonkit.Primitives.float_to_json
+    let of_json = Cdp_json.number_of_json
+    let to_json = Cdp_json.number_to_json
   end
 
   module Report_id : sig
@@ -572,8 +572,8 @@ module Runtime = struct
     let compare = Float.compare
     let show (value : t) = string_of_float value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Jsonkit.Primitives.float_of_json
-    let to_json = Jsonkit.Primitives.float_to_json
+    let of_json = Cdp_json.number_of_json
+    let to_json = Cdp_json.number_to_json
   end
 
   module Time_delta : sig
@@ -594,8 +594,8 @@ module Runtime = struct
     let compare = Float.compare
     let show (value : t) = string_of_float value
     let pp fmt value = Format.pp_print_string fmt (show value)
-    let of_json = Jsonkit.Primitives.float_of_json
-    let to_json = Jsonkit.Primitives.float_to_json
+    let of_json = Cdp_json.number_of_json
+    let to_json = Cdp_json.number_to_json
   end
 
   module Unique_debugger_id : sig

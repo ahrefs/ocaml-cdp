@@ -161,11 +161,11 @@ and rgba = {
   r : int; [@key "r"]
   g : int; [@key "g"]
   b : int; [@key "b"]
-  a : float option; [@key "a"] [@option] [@json.drop_default]
+  a : Cdp_json.number option; [@key "a"] [@option] [@json.drop_default]
 }
 [@@allow_extra_fields]
 
-and quad = float list
+and quad = Cdp_json.number list
 
 and box_model = {
   content : quad; [@key "content"]
@@ -186,10 +186,10 @@ and shape_outside_info = {
 [@@allow_extra_fields]
 
 and rect = {
-  x : float; [@key "x"]
-  y : float; [@key "y"]
-  width : float; [@key "width"]
-  height : float; [@key "height"]
+  x : Cdp_json.number; [@key "x"]
+  y : Cdp_json.number; [@key "y"]
+  width : Cdp_json.number; [@key "width"]
+  height : Cdp_json.number; [@key "height"]
 }
 [@@allow_extra_fields]
 

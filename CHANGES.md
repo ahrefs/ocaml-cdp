@@ -1,5 +1,10 @@
 # Unreleased
 
+- `cdp`: a protocol `number` field is now `Cdp_json.number`, an alias of
+  `float`. Chrome writes NaN and Infinity as `null`; such a value decodes as
+  `nan` instead of failing the whole message, and encodes back as `null`.
+  Sealed number ids such as `Network.Monotonic_time` do the same.
+
 - `cdp`: two enum types are renamed because they shared a name with
   `Page.navigation_type`: `Page.Frame_started_navigating.navigation_type` is
   now `frame_started_navigating_navigation_type`, and

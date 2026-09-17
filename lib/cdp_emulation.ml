@@ -75,7 +75,7 @@ end
 module Set_cpu_throttling_rate = struct
   let name = "Emulation.setCPUThrottlingRate"
 
-  type params = { rate : float [@key "rate"] } [@@allow_extra_fields] [@@deriving json, show, eq, make]
+  type params = { rate : Cdp_json.number [@key "rate"] } [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = unit [@@deriving show, eq]
 
@@ -146,9 +146,9 @@ module Set_device_metrics_override = struct
   type params = {
     width : int; [@key "width"]
     height : int; [@key "height"]
-    device_scale_factor : float; [@key "deviceScaleFactor"]
+    device_scale_factor : Cdp_json.number; [@key "deviceScaleFactor"]
     mobile : bool; [@key "mobile"]
-    scale : float option;
+    scale : Cdp_json.number option;
        [@key "scale"] [@option] [@json.drop_default] [@alert experimental "experimental in CDP, may change with Chrome"]
     screen_width : int option;
        [@key "screenWidth"]
@@ -366,7 +366,7 @@ end
 module Set_emulated_os_text_scale = struct
   let name = "Emulation.setEmulatedOSTextScale"
 
-  type params = { scale : float option [@key "scale"] [@option] [@json.drop_default] }
+  type params = { scale : Cdp_json.number option [@key "scale"] [@option] [@json.drop_default] }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = unit [@@deriving show, eq]
@@ -381,13 +381,13 @@ module Set_geolocation_override = struct
   let name = "Emulation.setGeolocationOverride"
 
   type params = {
-    latitude : float option; [@key "latitude"] [@option] [@json.drop_default]
-    longitude : float option; [@key "longitude"] [@option] [@json.drop_default]
-    accuracy : float option; [@key "accuracy"] [@option] [@json.drop_default]
-    altitude : float option; [@key "altitude"] [@option] [@json.drop_default]
-    altitude_accuracy : float option; [@key "altitudeAccuracy"] [@option] [@json.drop_default]
-    heading : float option; [@key "heading"] [@option] [@json.drop_default]
-    speed : float option; [@key "speed"] [@option] [@json.drop_default]
+    latitude : Cdp_json.number option; [@key "latitude"] [@option] [@json.drop_default]
+    longitude : Cdp_json.number option; [@key "longitude"] [@option] [@json.drop_default]
+    accuracy : Cdp_json.number option; [@key "accuracy"] [@option] [@json.drop_default]
+    altitude : Cdp_json.number option; [@key "altitude"] [@option] [@json.drop_default]
+    altitude_accuracy : Cdp_json.number option; [@key "altitudeAccuracy"] [@option] [@json.drop_default]
+    heading : Cdp_json.number option; [@key "heading"] [@option] [@json.drop_default]
+    speed : Cdp_json.number option; [@key "speed"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -404,7 +404,7 @@ module Get_overridden_sensor_information = struct
 
   type params = { type_ : sensor_type [@key "type"] } [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
-  type result = { requested_sampling_frequency : float [@key "requestedSamplingFrequency"] }
+  type result = { requested_sampling_frequency : Cdp_json.number [@key "requestedSamplingFrequency"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
 
   let command params : result Cdp_command.t =
@@ -530,7 +530,7 @@ end
 module Set_page_scale_factor = struct
   let name = "Emulation.setPageScaleFactor"
 
-  type params = { page_scale_factor : float [@key "pageScaleFactor"] }
+  type params = { page_scale_factor : Cdp_json.number [@key "pageScaleFactor"] }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = unit [@@deriving show, eq]
@@ -577,7 +577,7 @@ module Set_virtual_time_policy = struct
 
   type params = {
     policy : virtual_time_policy; [@key "policy"]
-    budget : float option; [@key "budget"] [@option] [@json.drop_default]
+    budget : Cdp_json.number option; [@key "budget"] [@option] [@json.drop_default]
     max_virtual_time_task_starvation_count : int option;
        [@key "maxVirtualTimeTaskStarvationCount"] [@option] [@json.drop_default]
     initial_virtual_time : Cdp_base.Network.Time_since_epoch.t option;
@@ -585,7 +585,7 @@ module Set_virtual_time_policy = struct
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
-  type result = { virtual_time_ticks_base : float [@key "virtualTimeTicksBase"] }
+  type result = { virtual_time_ticks_base : Cdp_json.number [@key "virtualTimeTicksBase"] }
   [@@allow_extra_fields] [@@deriving json, show, eq]
 
   let command params : result Cdp_command.t =
@@ -778,7 +778,7 @@ module Add_screen = struct
     width : int; [@key "width"]
     height : int; [@key "height"]
     work_area_insets : work_area_insets option; [@key "workAreaInsets"] [@option] [@json.drop_default]
-    device_pixel_ratio : float option; [@key "devicePixelRatio"] [@option] [@json.drop_default]
+    device_pixel_ratio : Cdp_json.number option; [@key "devicePixelRatio"] [@option] [@json.drop_default]
     rotation : int option; [@key "rotation"] [@option] [@json.drop_default]
     color_depth : int option; [@key "colorDepth"] [@option] [@json.drop_default]
     label : string option; [@key "label"] [@option] [@json.drop_default]
@@ -803,7 +803,7 @@ module Update_screen = struct
     width : int option; [@key "width"] [@option] [@json.drop_default]
     height : int option; [@key "height"] [@option] [@json.drop_default]
     work_area_insets : work_area_insets option; [@key "workAreaInsets"] [@option] [@json.drop_default]
-    device_pixel_ratio : float option; [@key "devicePixelRatio"] [@option] [@json.drop_default]
+    device_pixel_ratio : Cdp_json.number option; [@key "devicePixelRatio"] [@option] [@json.drop_default]
     rotation : int option; [@key "rotation"] [@option] [@json.drop_default]
     color_depth : int option; [@key "colorDepth"] [@option] [@json.drop_default]
     label : string option; [@key "label"] [@option] [@json.drop_default]

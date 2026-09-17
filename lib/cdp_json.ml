@@ -15,6 +15,24 @@ let equal : t -> t -> bool = Yojson.Basic.equal
 let show (value : t) : string = Yojson.Basic.to_string value
 let pp fmt (value : t) = Format.pp_print_string fmt (show value)
 
+(** A protocol [number]. JavaScript has NaN and the infinities, JSON does not, so Chrome writes them as [null].
+    Decoding [null] gives [nan] instead of failing the whole message; encoding a non-finite float gives [null] back. *)
+type number = float
+
+let number_of_json (json : t) : number =
+  match json with
+  | `Null -> Float.nan
+  | finite -> Jsonkit.Primitives.float_of_json finite
+
+let number_to_json (value : number) : t =
+  match Float.is_finite value with
+  | true -> Jsonkit.Primitives.float_to_json value
+  | false -> `Null
+
+let equal_number : number -> number -> bool = Float.equal
+let pp_number fmt (value : number) = Format.pp_print_float fmt value
+let show_number (value : number) : string = Float.to_string value
+
 (** Payload of catch-all [Other] constructors: an enum value this protocol revision does not know. [tag] is the raw wire
     string. Same type as [Jsonkit.unknown_variant_case], re-exported under a name the derive layer can find helpers for.
 *)

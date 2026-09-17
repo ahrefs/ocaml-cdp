@@ -63,7 +63,7 @@ let rec map_type ~selected ~alias_tbl ~domain (type_json : Json.t) =
     (match Util.member "type" type_json with
     | `String "string" -> "string"
     | `String "integer" -> "int"
-    | `String "number" -> "float"
+    | `String "number" -> "Cdp_json.number"
     | `String "boolean" -> "bool"
     | `String "binary" -> "string" (* base64 on the wire *)
     | `String ("any" | "object") -> "Cdp_json.t"
@@ -151,12 +151,12 @@ let check_no_dup ~what names =
   go sorted
 
 let render_sealed_module ~module_name ~prim ~attrs =
-  let ml_ty, conv, eq_mod, prim_fn, show_expr =
+  let ml_ty, conv, eq_mod, codec, show_expr =
     match prim with
-    | "string" -> "string", "string", "String", "string", "Printf.sprintf \"%S\" value"
-    | "integer" -> "int", "int", "Int", "int", "string_of_int value"
-    | "number" -> "float", "float", "Float", "float", "string_of_float value"
-    | "boolean" -> "bool", "bool", "Bool", "bool", "string_of_bool value"
+    | "string" -> "string", "string", "String", "Jsonkit.Primitives.string", "Printf.sprintf \"%S\" value"
+    | "integer" -> "int", "int", "Int", "Jsonkit.Primitives.int", "string_of_int value"
+    | "number" -> "float", "float", "Float", "Cdp_json.number", "string_of_float value"
+    | "boolean" -> "bool", "bool", "Bool", "Jsonkit.Primitives.bool", "string_of_bool value"
     | unknown_prim -> failwith ("cdp-gen: unknown primitive: " ^ unknown_prim)
   in
   spf
@@ -178,10 +178,10 @@ let render_sealed_module ~module_name ~prim ~attrs =
     \  let compare = %s.compare\n\
     \  let show (value : t) = %s\n\
     \  let pp fmt value = Format.pp_print_string fmt (show value)\n\
-    \  let of_json = Jsonkit.Primitives.%s_of_json\n\
-    \  let to_json = Jsonkit.Primitives.%s_to_json\n\
+    \  let of_json = %s_of_json\n\
+    \  let to_json = %s_to_json\n\
      end%s\n"
-    module_name conv ml_ty conv ml_ty ml_ty conv conv eq_mod eq_mod show_expr prim_fn prim_fn attrs
+    module_name conv ml_ty conv ml_ty ml_ty conv conv eq_mod eq_mod show_expr codec codec attrs
 
 (* primitive aliases of a domain with their primitive kind, in protocol order *)
 let collect_domain_aliases ~alias_tbl (domain : domain) =

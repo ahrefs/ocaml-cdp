@@ -89,11 +89,11 @@ module Emulate_network_conditions = struct
 
   type params = {
     offline : bool; [@key "offline"]
-    latency : float; [@key "latency"]
-    download_throughput : float; [@key "downloadThroughput"]
-    upload_throughput : float; [@key "uploadThroughput"]
+    latency : Cdp_json.number; [@key "latency"]
+    download_throughput : Cdp_json.number; [@key "downloadThroughput"]
+    upload_throughput : Cdp_json.number; [@key "uploadThroughput"]
     connection_type : connection_type option; [@key "connectionType"] [@option] [@json.drop_default]
-    packet_loss : float option;
+    packet_loss : Cdp_json.number option;
        [@key "packetLoss"]
        [@option]
        [@json.drop_default]
@@ -142,9 +142,9 @@ module Override_network_state = struct
 
   type params = {
     offline : bool; [@key "offline"]
-    latency : float; [@key "latency"]
-    download_throughput : float; [@key "downloadThroughput"]
-    upload_throughput : float; [@key "uploadThroughput"]
+    latency : Cdp_json.number; [@key "latency"]
+    download_throughput : Cdp_json.number; [@key "downloadThroughput"]
+    upload_throughput : Cdp_json.number; [@key "uploadThroughput"]
     connection_type : connection_type option; [@key "connectionType"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
@@ -632,7 +632,7 @@ module Loading_finished = struct
   type params = {
     request_id : Cdp_base.Network.Request_id.t; [@key "requestId"]
     timestamp : Cdp_base.Network.Monotonic_time.t; [@key "timestamp"]
-    encoded_data_length : float; [@key "encodedDataLength"]
+    encoded_data_length : Cdp_json.number; [@key "encodedDataLength"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 

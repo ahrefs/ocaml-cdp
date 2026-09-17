@@ -26,7 +26,7 @@ Optionals become option; on encode None fields are omitted.
     item_id : string [@key "itemId"];
     type_ : string [@key "type"];
     byte_size : int option [@key "byteSize"] [@option] [@json.drop_default];
-    score : float option [@key "score"] [@option] [@json.drop_default];
+    score : Cdp_json.number option [@key "score"] [@option] [@json.drop_default];
   }
   [@@allow_extra_fields]
   [@@deriving json, show, eq]

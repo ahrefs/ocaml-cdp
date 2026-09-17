@@ -439,13 +439,13 @@ module Print_to_pdf = struct
     landscape : bool option; [@key "landscape"] [@option] [@json.drop_default]
     display_header_footer : bool option; [@key "displayHeaderFooter"] [@option] [@json.drop_default]
     print_background : bool option; [@key "printBackground"] [@option] [@json.drop_default]
-    scale : float option; [@key "scale"] [@option] [@json.drop_default]
-    paper_width : float option; [@key "paperWidth"] [@option] [@json.drop_default]
-    paper_height : float option; [@key "paperHeight"] [@option] [@json.drop_default]
-    margin_top : float option; [@key "marginTop"] [@option] [@json.drop_default]
-    margin_bottom : float option; [@key "marginBottom"] [@option] [@json.drop_default]
-    margin_left : float option; [@key "marginLeft"] [@option] [@json.drop_default]
-    margin_right : float option; [@key "marginRight"] [@option] [@json.drop_default]
+    scale : Cdp_json.number option; [@key "scale"] [@option] [@json.drop_default]
+    paper_width : Cdp_json.number option; [@key "paperWidth"] [@option] [@json.drop_default]
+    paper_height : Cdp_json.number option; [@key "paperHeight"] [@option] [@json.drop_default]
+    margin_top : Cdp_json.number option; [@key "marginTop"] [@option] [@json.drop_default]
+    margin_bottom : Cdp_json.number option; [@key "marginBottom"] [@option] [@json.drop_default]
+    margin_left : Cdp_json.number option; [@key "marginLeft"] [@option] [@json.drop_default]
+    margin_right : Cdp_json.number option; [@key "marginRight"] [@option] [@json.drop_default]
     page_ranges : string option; [@key "pageRanges"] [@option] [@json.drop_default]
     header_template : string option; [@key "headerTemplate"] [@option] [@json.drop_default]
     footer_template : string option; [@key "footerTemplate"] [@option] [@json.drop_default]
@@ -628,9 +628,9 @@ module Set_device_metrics_override = struct
   type params = {
     width : int; [@key "width"]
     height : int; [@key "height"]
-    device_scale_factor : float; [@key "deviceScaleFactor"]
+    device_scale_factor : Cdp_json.number; [@key "deviceScaleFactor"]
     mobile : bool; [@key "mobile"]
-    scale : float option; [@key "scale"] [@option] [@json.drop_default]
+    scale : Cdp_json.number option; [@key "scale"] [@option] [@json.drop_default]
     screen_width : int option; [@key "screenWidth"] [@option] [@json.drop_default]
     screen_height : int option; [@key "screenHeight"] [@option] [@json.drop_default]
     position_x : int option; [@key "positionX"] [@option] [@json.drop_default]
@@ -656,9 +656,9 @@ module Set_device_orientation_override = struct
   let name = "Page.setDeviceOrientationOverride"
 
   type params = {
-    alpha : float; [@key "alpha"]
-    beta : float; [@key "beta"]
-    gamma : float; [@key "gamma"]
+    alpha : Cdp_json.number; [@key "alpha"]
+    beta : Cdp_json.number; [@key "beta"]
+    gamma : Cdp_json.number; [@key "gamma"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -750,9 +750,9 @@ module Set_geolocation_override = struct
   let name = "Page.setGeolocationOverride"
 
   type params = {
-    latitude : float option; [@key "latitude"] [@option] [@json.drop_default]
-    longitude : float option; [@key "longitude"] [@option] [@json.drop_default]
-    accuracy : float option; [@key "accuracy"] [@option] [@json.drop_default]
+    latitude : Cdp_json.number option; [@key "latitude"] [@option] [@json.drop_default]
+    longitude : Cdp_json.number option; [@key "longitude"] [@option] [@json.drop_default]
+    accuracy : Cdp_json.number option; [@key "accuracy"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -1259,7 +1259,7 @@ module Frame_scheduled_navigation = struct
 
   type params = {
     frame_id : Cdp_base.Page.Frame_id.t; [@key "frameId"]
-    delay : float; [@key "delay"]
+    delay : Cdp_json.number; [@key "delay"]
     reason : client_navigation_reason; [@key "reason"]
     url : string; [@key "url"]
   }
@@ -1316,8 +1316,8 @@ module Download_progress = struct
 
   type params = {
     guid : string; [@key "guid"]
-    total_bytes : float; [@key "totalBytes"]
-    received_bytes : float; [@key "receivedBytes"]
+    total_bytes : Cdp_json.number; [@key "totalBytes"]
+    received_bytes : Cdp_json.number; [@key "receivedBytes"]
     state : state; [@key "state"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]

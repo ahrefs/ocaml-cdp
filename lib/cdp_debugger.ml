@@ -40,7 +40,7 @@ module Enable = struct
   let name = "Debugger.enable"
 
   type params = {
-    max_scripts_cache_size : float option;
+    max_scripts_cache_size : Cdp_json.number option;
        [@key "maxScriptsCacheSize"]
        [@option]
        [@json.drop_default]

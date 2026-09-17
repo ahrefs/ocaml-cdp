@@ -100,26 +100,26 @@ and sensor_type =
 
 and sensor_metadata = {
   available : bool option; [@key "available"] [@option] [@json.drop_default]
-  minimum_frequency : float option; [@key "minimumFrequency"] [@option] [@json.drop_default]
-  maximum_frequency : float option; [@key "maximumFrequency"] [@option] [@json.drop_default]
+  minimum_frequency : Cdp_json.number option; [@key "minimumFrequency"] [@option] [@json.drop_default]
+  maximum_frequency : Cdp_json.number option; [@key "maximumFrequency"] [@option] [@json.drop_default]
 }
 [@@allow_extra_fields] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
-and sensor_reading_single = { value : float [@key "value"] }
+and sensor_reading_single = { value : Cdp_json.number [@key "value"] }
 [@@allow_extra_fields] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
 and sensor_reading_xyz = {
-  x : float; [@key "x"]
-  y : float; [@key "y"]
-  z : float; [@key "z"]
+  x : Cdp_json.number; [@key "x"]
+  y : Cdp_json.number; [@key "y"]
+  z : Cdp_json.number; [@key "z"]
 }
 [@@allow_extra_fields] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
 and sensor_reading_quaternion = {
-  x : float; [@key "x"]
-  y : float; [@key "y"]
-  z : float; [@key "z"]
-  w : float; [@key "w"]
+  x : Cdp_json.number; [@key "x"]
+  y : Cdp_json.number; [@key "y"]
+  z : Cdp_json.number; [@key "z"]
+  w : Cdp_json.number; [@key "w"]
 }
 [@@allow_extra_fields] [@@alert experimental "experimental in CDP, may change with Chrome"]
 
@@ -163,7 +163,7 @@ and screen_info = {
   avail_top : int; [@key "availTop"]
   avail_width : int; [@key "availWidth"]
   avail_height : int; [@key "availHeight"]
-  device_pixel_ratio : float; [@key "devicePixelRatio"]
+  device_pixel_ratio : Cdp_json.number; [@key "devicePixelRatio"]
   orientation : screen_orientation; [@key "orientation"]
   color_depth : int; [@key "colorDepth"]
   is_extended : bool; [@key "isExtended"]

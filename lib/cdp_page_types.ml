@@ -280,7 +280,7 @@ and frame_resource = {
   type_ : Cdp_network_types.resource_type; [@key "type"]
   mime_type : string; [@key "mimeType"]
   last_modified : Cdp_base.Network.Time_since_epoch.t option; [@key "lastModified"] [@option] [@json.drop_default]
-  content_size : float option; [@key "contentSize"] [@option] [@json.drop_default]
+  content_size : Cdp_json.number option; [@key "contentSize"] [@option] [@json.drop_default]
   failed : bool option; [@key "failed"] [@option] [@json.drop_default]
   canceled : bool option; [@key "canceled"] [@option] [@json.drop_default]
 }
@@ -326,12 +326,12 @@ and navigation_entry = {
 [@@allow_extra_fields]
 
 and screencast_frame_metadata = {
-  offset_top : float; [@key "offsetTop"]
-  page_scale_factor : float; [@key "pageScaleFactor"]
-  device_width : float; [@key "deviceWidth"]
-  device_height : float; [@key "deviceHeight"]
-  scroll_offset_x : float; [@key "scrollOffsetX"]
-  scroll_offset_y : float; [@key "scrollOffsetY"]
+  offset_top : Cdp_json.number; [@key "offsetTop"]
+  page_scale_factor : Cdp_json.number; [@key "pageScaleFactor"]
+  device_width : Cdp_json.number; [@key "deviceWidth"]
+  device_height : Cdp_json.number; [@key "deviceHeight"]
+  scroll_offset_x : Cdp_json.number; [@key "scrollOffsetX"]
+  scroll_offset_y : Cdp_json.number; [@key "scrollOffsetY"]
   timestamp : Cdp_base.Network.Time_since_epoch.t option; [@key "timestamp"] [@option] [@json.drop_default]
 }
 [@@allow_extra_fields] [@@alert experimental "experimental in CDP, may change with Chrome"]
@@ -364,23 +364,23 @@ and layout_viewport = {
 [@@allow_extra_fields]
 
 and visual_viewport = {
-  offset_x : float; [@key "offsetX"]
-  offset_y : float; [@key "offsetY"]
-  page_x : float; [@key "pageX"]
-  page_y : float; [@key "pageY"]
-  client_width : float; [@key "clientWidth"]
-  client_height : float; [@key "clientHeight"]
-  scale : float; [@key "scale"]
-  zoom : float option; [@key "zoom"] [@option] [@json.drop_default]
+  offset_x : Cdp_json.number; [@key "offsetX"]
+  offset_y : Cdp_json.number; [@key "offsetY"]
+  page_x : Cdp_json.number; [@key "pageX"]
+  page_y : Cdp_json.number; [@key "pageY"]
+  client_width : Cdp_json.number; [@key "clientWidth"]
+  client_height : Cdp_json.number; [@key "clientHeight"]
+  scale : Cdp_json.number; [@key "scale"]
+  zoom : Cdp_json.number option; [@key "zoom"] [@option] [@json.drop_default]
 }
 [@@allow_extra_fields]
 
 and viewport = {
-  x : float; [@key "x"]
-  y : float; [@key "y"]
-  width : float; [@key "width"]
-  height : float; [@key "height"]
-  scale : float; [@key "scale"]
+  x : Cdp_json.number; [@key "x"]
+  y : Cdp_json.number; [@key "y"]
+  width : Cdp_json.number; [@key "width"]
+  height : Cdp_json.number; [@key "height"]
+  scale : Cdp_json.number; [@key "scale"]
 }
 [@@allow_extra_fields]
 

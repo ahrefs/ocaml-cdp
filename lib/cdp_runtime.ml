@@ -200,10 +200,10 @@ module Get_heap_usage = struct
   let name = "Runtime.getHeapUsage"
 
   type result = {
-    used_size : float; [@key "usedSize"]
-    total_size : float; [@key "totalSize"]
-    embedder_heap_used_size : float; [@key "embedderHeapUsedSize"]
-    backing_storage_size : float; [@key "backingStorageSize"]
+    used_size : Cdp_json.number; [@key "usedSize"]
+    total_size : Cdp_json.number; [@key "totalSize"]
+    embedder_heap_used_size : Cdp_json.number; [@key "embedderHeapUsedSize"]
+    backing_storage_size : Cdp_json.number; [@key "backingStorageSize"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
 

@@ -22,7 +22,7 @@ let map raw = Cdp_gen.Emit.map_type ~selected ~alias_tbl ~domain:"Demo" (Yojson.
 let () =
   assert (map {|{"type":"string"}|} = "string");
   assert (map {|{"type":"integer"}|} = "int");
-  assert (map {|{"type":"number"}|} = "float");
+  assert (map {|{"type":"number"}|} = "Cdp_json.number");
   assert (map {|{"type":"boolean"}|} = "bool");
   assert (map {|{"type":"binary"}|} = "string");
   pass "primitives"

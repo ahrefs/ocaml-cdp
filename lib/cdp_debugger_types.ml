@@ -68,7 +68,7 @@ and scope = {
 [@@allow_extra_fields]
 
 and search_match = {
-  line_number : float; [@key "lineNumber"]
+  line_number : Cdp_json.number; [@key "lineNumber"]
   line_content : string; [@key "lineContent"]
 }
 [@@allow_extra_fields]

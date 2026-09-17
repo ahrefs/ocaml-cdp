@@ -154,4 +154,16 @@ let () =
   assert (Cdp.Network.Monotonic_time.to_float params.timestamp = 1.5);
   pass "unknown JSON keys are skipped on types and event params"
 
+(* 13. Chrome writes NaN and Infinity as null; a required number field
+       decodes it as nan instead of failing the message, and encodes it back *)
+let () =
+  assert (Float.is_nan (Cdp_json.number_of_json `Null));
+  assert (Cdp_json.number_to_json Float.nan = `Null);
+  assert (Cdp_json.number_to_json Float.infinity = `Null);
+  assert (Cdp_json.number_to_json 1.5 = `Float 1.5);
+  let event = Cdp.Page.Load_event_fired.event in
+  let params = event.Cdp.Event.parse (Yojson.Basic.from_string {|{"timestamp":null}|}) in
+  assert (Float.is_nan (Cdp.Network.Monotonic_time.to_float params.timestamp));
+  pass "null in a number field decodes as nan"
+
 let () = print_endline "all tests passed"

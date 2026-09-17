@@ -373,8 +373,8 @@ module Download_progress = struct
 
   type params = {
     guid : string; [@key "guid"]
-    total_bytes : float; [@key "totalBytes"]
-    received_bytes : float; [@key "receivedBytes"]
+    total_bytes : Cdp_json.number; [@key "totalBytes"]
+    received_bytes : Cdp_json.number; [@key "receivedBytes"]
     state : state; [@key "state"]
     file_path : string option;
        [@key "filePath"]
