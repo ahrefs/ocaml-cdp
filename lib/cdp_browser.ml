@@ -376,7 +376,11 @@ module Download_progress = struct
     total_bytes : float; [@key "totalBytes"]
     received_bytes : float; [@key "receivedBytes"]
     state : state; [@key "state"]
-    file_path : string option; [@key "filePath"] [@option] [@json.drop_default]
+    file_path : string option;
+       [@key "filePath"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 

@@ -1,5 +1,12 @@
 # Unreleased
 
+- `cdp`, `cdp-gen`: deprecated and experimental flags now also reach record
+  fields (`[@ocaml.deprecated]`, `[@alert experimental]` on the field) and
+  whole domains (`[@@@...]` at the top of the domain files and on the `Cdp`
+  index aliases).
+  Reading a deprecated field such as `Network.Response.headers_text` now warns.
+  Two call sites of the deprecated `Network.setCookie` `success` field were removed from the examples and the browser test.
+
 - `cdp-gen`: `generate` removes generated `cdp_*.ml` files that the current
   run does not produce, so a domain dropped from the selection no longer
   leaves stale files that break the next build. Files without the generator

@@ -242,17 +242,36 @@ and frame = {
   loader_id : Cdp_base.Network.Loader_id.t; [@key "loaderId"]
   name : string option; [@key "name"] [@option] [@json.drop_default]
   url : string; [@key "url"]
-  url_fragment : string option; [@key "urlFragment"] [@option] [@json.drop_default]
-  domain_and_registry : string; [@key "domainAndRegistry"]
+  url_fragment : string option;
+     [@key "urlFragment"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
+  domain_and_registry : string;
+     [@key "domainAndRegistry"] [@alert experimental "experimental in CDP, may change with Chrome"]
   security_origin : string; [@key "securityOrigin"]
   security_origin_details : security_origin_details option;
-     [@key "securityOriginDetails"] [@option] [@json.drop_default]
+     [@key "securityOriginDetails"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
   mime_type : string; [@key "mimeType"]
-  unreachable_url : string option; [@key "unreachableUrl"] [@option] [@json.drop_default]
-  ad_frame_status : ad_frame_status option; [@key "adFrameStatus"] [@option] [@json.drop_default]
-  secure_context_type : secure_context_type; [@key "secureContextType"]
-  cross_origin_isolated_context_type : cross_origin_isolated_context_type; [@key "crossOriginIsolatedContextType"]
-  gated_api_features : gated_api_features list; [@key "gatedAPIFeatures"]
+  unreachable_url : string option;
+     [@key "unreachableUrl"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
+  ad_frame_status : ad_frame_status option;
+     [@key "adFrameStatus"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
+  secure_context_type : secure_context_type;
+     [@key "secureContextType"] [@alert experimental "experimental in CDP, may change with Chrome"]
+  cross_origin_isolated_context_type : cross_origin_isolated_context_type;
+     [@key "crossOriginIsolatedContextType"] [@alert experimental "experimental in CDP, may change with Chrome"]
+  gated_api_features : gated_api_features list;
+     [@key "gatedAPIFeatures"] [@alert experimental "experimental in CDP, may change with Chrome"]
 }
 [@@allow_extra_fields]
 

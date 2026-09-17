@@ -122,16 +122,32 @@ and node = {
   shadow_roots : node list option; [@key "shadowRoots"] [@option] [@json.drop_default]
   template_content : node option; [@key "templateContent"] [@option] [@json.drop_default]
   pseudo_elements : node list option; [@key "pseudoElements"] [@option] [@json.drop_default]
-  imported_document : node option; [@key "importedDocument"] [@option] [@json.drop_default]
+  imported_document : node option;
+     [@key "importedDocument"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
   distributed_nodes : backend_node list option; [@key "distributedNodes"] [@option] [@json.drop_default]
   is_svg : bool option; [@key "isSVG"] [@option] [@json.drop_default]
   compatibility_mode : compatibility_mode option; [@key "compatibilityMode"] [@option] [@json.drop_default]
   assigned_slot : backend_node option; [@key "assignedSlot"] [@option] [@json.drop_default]
-  is_scrollable : bool option; [@key "isScrollable"] [@option] [@json.drop_default]
-  affected_by_starting_styles : bool option; [@key "affectedByStartingStyles"] [@option] [@json.drop_default]
+  is_scrollable : bool option;
+     [@key "isScrollable"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
+  affected_by_starting_styles : bool option;
+     [@key "affectedByStartingStyles"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
   adopted_style_sheets : Cdp_base.Dom.Style_sheet_id.t list option;
-     [@key "adoptedStyleSheets"] [@option] [@json.drop_default]
-  ad_provenance : Cdp_network_types.ad_provenance option; [@key "adProvenance"] [@option] [@json.drop_default]
+     [@key "adoptedStyleSheets"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
+  ad_provenance : Cdp_network_types.ad_provenance option;
+     [@key "adProvenance"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
 }
 [@@allow_extra_fields]
 

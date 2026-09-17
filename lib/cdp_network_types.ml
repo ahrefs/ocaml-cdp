@@ -97,17 +97,28 @@ and resource_timing = {
   connect_end : float; [@key "connectEnd"]
   ssl_start : float; [@key "sslStart"]
   ssl_end : float; [@key "sslEnd"]
-  worker_start : float; [@key "workerStart"]
-  worker_ready : float; [@key "workerReady"]
-  worker_fetch_start : float; [@key "workerFetchStart"]
-  worker_respond_with_settled : float; [@key "workerRespondWithSettled"]
-  worker_router_evaluation_start : float option; [@key "workerRouterEvaluationStart"] [@option] [@json.drop_default]
-  worker_cache_lookup_start : float option; [@key "workerCacheLookupStart"] [@option] [@json.drop_default]
+  worker_start : float; [@key "workerStart"] [@alert experimental "experimental in CDP, may change with Chrome"]
+  worker_ready : float; [@key "workerReady"] [@alert experimental "experimental in CDP, may change with Chrome"]
+  worker_fetch_start : float;
+     [@key "workerFetchStart"] [@alert experimental "experimental in CDP, may change with Chrome"]
+  worker_respond_with_settled : float;
+     [@key "workerRespondWithSettled"] [@alert experimental "experimental in CDP, may change with Chrome"]
+  worker_router_evaluation_start : float option;
+     [@key "workerRouterEvaluationStart"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
+  worker_cache_lookup_start : float option;
+     [@key "workerCacheLookupStart"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
   send_start : float; [@key "sendStart"]
   send_end : float; [@key "sendEnd"]
-  push_start : float; [@key "pushStart"]
-  push_end : float; [@key "pushEnd"]
-  receive_headers_start : float; [@key "receiveHeadersStart"]
+  push_start : float; [@key "pushStart"] [@alert experimental "experimental in CDP, may change with Chrome"]
+  push_end : float; [@key "pushEnd"] [@alert experimental "experimental in CDP, may change with Chrome"]
+  receive_headers_start : float;
+     [@key "receiveHeadersStart"] [@alert experimental "experimental in CDP, may change with Chrome"]
   receive_headers_end : float; [@key "receiveHeadersEnd"]
 }
 [@@allow_extra_fields]
@@ -149,17 +160,33 @@ and request = {
   url_fragment : string option; [@key "urlFragment"] [@option] [@json.drop_default]
   method_ : string; [@key "method"]
   headers : headers; [@key "headers"]
-  post_data : string option; [@key "postData"] [@option] [@json.drop_default]
+  post_data : string option; [@key "postData"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
   has_post_data : bool option; [@key "hasPostData"] [@option] [@json.drop_default]
-  post_data_entries : post_data_entry list option; [@key "postDataEntries"] [@option] [@json.drop_default]
+  post_data_entries : post_data_entry list option;
+     [@key "postDataEntries"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
   mixed_content_type : Cdp_security_types.mixed_content_type option;
      [@key "mixedContentType"] [@option] [@json.drop_default]
   initial_priority : resource_priority; [@key "initialPriority"]
   referrer_policy : request_referrer_policy; [@key "referrerPolicy"]
   is_link_preload : bool option; [@key "isLinkPreload"] [@option] [@json.drop_default]
-  trust_token_params : trust_token_params option; [@key "trustTokenParams"] [@option] [@json.drop_default]
-  is_same_site : bool option; [@key "isSameSite"] [@option] [@json.drop_default]
-  is_ad_related : bool option; [@key "isAdRelated"] [@option] [@json.drop_default]
+  trust_token_params : trust_token_params option;
+     [@key "trustTokenParams"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
+  is_same_site : bool option;
+     [@key "isSameSite"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
+  is_ad_related : bool option;
+     [@key "isAdRelated"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
 }
 [@@allow_extra_fields]
 
@@ -323,11 +350,13 @@ and response = {
   status : int; [@key "status"]
   status_text : string; [@key "statusText"]
   headers : headers; [@key "headers"]
-  headers_text : string option; [@key "headersText"] [@option] [@json.drop_default]
+  headers_text : string option;
+     [@key "headersText"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
   mime_type : string; [@key "mimeType"]
   charset : string; [@key "charset"]
   request_headers : headers option; [@key "requestHeaders"] [@option] [@json.drop_default]
-  request_headers_text : string option; [@key "requestHeadersText"] [@option] [@json.drop_default]
+  request_headers_text : string option;
+     [@key "requestHeadersText"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
   connection_reused : bool; [@key "connectionReused"]
   connection_id : float; [@key "connectionId"]
   remote_ip_address : string option; [@key "remoteIPAddress"] [@option] [@json.drop_default]
@@ -337,7 +366,10 @@ and response = {
   from_prefetch_cache : bool option; [@key "fromPrefetchCache"] [@option] [@json.drop_default]
   from_early_hints : bool option; [@key "fromEarlyHints"] [@option] [@json.drop_default]
   service_worker_router_info : service_worker_router_info option;
-     [@key "serviceWorkerRouterInfo"] [@option] [@json.drop_default]
+     [@key "serviceWorkerRouterInfo"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
   encoded_data_length : float; [@key "encodedDataLength"]
   timing : resource_timing option; [@key "timing"] [@option] [@json.drop_default]
   service_worker_response_source : service_worker_response_source option;
@@ -346,7 +378,10 @@ and response = {
   cache_storage_cache_name : string option; [@key "cacheStorageCacheName"] [@option] [@json.drop_default]
   protocol : string option; [@key "protocol"] [@option] [@json.drop_default]
   alternate_protocol_usage : alternate_protocol_usage option;
-     [@key "alternateProtocolUsage"] [@option] [@json.drop_default]
+     [@key "alternateProtocolUsage"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
   security_state : Cdp_security_types.security_state; [@key "securityState"]
   security_details : security_details option; [@key "securityDetails"] [@option] [@json.drop_default]
 }
@@ -417,11 +452,20 @@ and cookie = {
   secure : bool; [@key "secure"]
   session : bool; [@key "session"]
   same_site : cookie_same_site option; [@key "sameSite"] [@option] [@json.drop_default]
-  priority : cookie_priority; [@key "priority"]
-  source_scheme : cookie_source_scheme; [@key "sourceScheme"]
-  source_port : int; [@key "sourcePort"]
-  partition_key : cookie_partition_key option; [@key "partitionKey"] [@option] [@json.drop_default]
-  partition_key_opaque : bool option; [@key "partitionKeyOpaque"] [@option] [@json.drop_default]
+  priority : cookie_priority; [@key "priority"] [@alert experimental "experimental in CDP, may change with Chrome"]
+  source_scheme : cookie_source_scheme;
+     [@key "sourceScheme"] [@alert experimental "experimental in CDP, may change with Chrome"]
+  source_port : int; [@key "sourcePort"] [@alert experimental "experimental in CDP, may change with Chrome"]
+  partition_key : cookie_partition_key option;
+     [@key "partitionKey"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
+  partition_key_opaque : bool option;
+     [@key "partitionKeyOpaque"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
 }
 [@@allow_extra_fields]
 
@@ -513,10 +557,26 @@ and cookie_param = {
   http_only : bool option; [@key "httpOnly"] [@option] [@json.drop_default]
   same_site : cookie_same_site option; [@key "sameSite"] [@option] [@json.drop_default]
   expires : Cdp_base.Network.Time_since_epoch.t option; [@key "expires"] [@option] [@json.drop_default]
-  priority : cookie_priority option; [@key "priority"] [@option] [@json.drop_default]
-  source_scheme : cookie_source_scheme option; [@key "sourceScheme"] [@option] [@json.drop_default]
-  source_port : int option; [@key "sourcePort"] [@option] [@json.drop_default]
-  partition_key : cookie_partition_key option; [@key "partitionKey"] [@option] [@json.drop_default]
+  priority : cookie_priority option;
+     [@key "priority"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
+  source_scheme : cookie_source_scheme option;
+     [@key "sourceScheme"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
+  source_port : int option;
+     [@key "sourcePort"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
+  partition_key : cookie_partition_key option;
+     [@key "partitionKey"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
 }
 [@@allow_extra_fields]
 

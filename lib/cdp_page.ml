@@ -22,9 +22,21 @@ module Add_script_to_evaluate_on_new_document = struct
 
   type params = {
     source : string; [@key "source"]
-    world_name : string option; [@key "worldName"] [@option] [@json.drop_default]
-    include_command_line_api : bool option; [@key "includeCommandLineAPI"] [@option] [@json.drop_default]
-    run_immediately : bool option; [@key "runImmediately"] [@option] [@json.drop_default]
+    world_name : string option;
+       [@key "worldName"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    include_command_line_api : bool option;
+       [@key "includeCommandLineAPI"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    run_immediately : bool option;
+       [@key "runImmediately"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -59,9 +71,21 @@ module Capture_screenshot = struct
     format : format option; [@key "format"] [@option] [@json.drop_default]
     quality : int option; [@key "quality"] [@option] [@json.drop_default]
     clip : viewport option; [@key "clip"] [@option] [@json.drop_default]
-    from_surface : bool option; [@key "fromSurface"] [@option] [@json.drop_default]
-    capture_beyond_viewport : bool option; [@key "captureBeyondViewport"] [@option] [@json.drop_default]
-    optimize_for_speed : bool option; [@key "optimizeForSpeed"] [@option] [@json.drop_default]
+    from_surface : bool option;
+       [@key "fromSurface"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    capture_beyond_viewport : bool option;
+       [@key "captureBeyondViewport"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    optimize_for_speed : bool option;
+       [@key "optimizeForSpeed"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -172,7 +196,11 @@ module Enable = struct
   let name = "Page.enable"
 
   type params = {
-    enable_file_chooser_opened_event : bool option; [@key "enableFileChooserOpenedEvent"] [@option] [@json.drop_default]
+    enable_file_chooser_opened_event : bool option;
+       [@key "enableFileChooserOpenedEvent"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -194,8 +222,13 @@ module Get_app_manifest = struct
     url : string; [@key "url"]
     errors : app_manifest_error list; [@key "errors"]
     data : string option; [@key "data"] [@option] [@json.drop_default]
-    parsed : app_manifest_parsed_properties option; [@key "parsed"] [@option] [@json.drop_default]
-    manifest : web_app_manifest; [@key "manifest"]
+    parsed : app_manifest_parsed_properties option;
+       [@key "parsed"]
+       [@option]
+       [@json.drop_default]
+       [@ocaml.deprecated "deprecated in CDP"]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    manifest : web_app_manifest; [@key "manifest"] [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
 
@@ -264,9 +297,9 @@ module Get_layout_metrics = struct
   let name = "Page.getLayoutMetrics"
 
   type result = {
-    layout_viewport : layout_viewport; [@key "layoutViewport"]
-    visual_viewport : visual_viewport; [@key "visualViewport"]
-    content_size : Cdp_dom_types.rect; [@key "contentSize"]
+    layout_viewport : layout_viewport; [@key "layoutViewport"] [@ocaml.deprecated "deprecated in CDP"]
+    visual_viewport : visual_viewport; [@key "visualViewport"] [@ocaml.deprecated "deprecated in CDP"]
+    content_size : Cdp_dom_types.rect; [@key "contentSize"] [@ocaml.deprecated "deprecated in CDP"]
     css_layout_viewport : layout_viewport; [@key "cssLayoutViewport"]
     css_visual_viewport : visual_viewport; [@key "cssVisualViewport"]
     css_content_size : Cdp_dom_types.rect; [@key "cssContentSize"]
@@ -353,7 +386,11 @@ module Navigate = struct
     referrer : string option; [@key "referrer"] [@option] [@json.drop_default]
     transition_type : transition_type option; [@key "transitionType"] [@option] [@json.drop_default]
     frame_id : Cdp_base.Page.Frame_id.t option; [@key "frameId"] [@option] [@json.drop_default]
-    referrer_policy : referrer_policy option; [@key "referrerPolicy"] [@option] [@json.drop_default]
+    referrer_policy : referrer_policy option;
+       [@key "referrerPolicy"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -361,7 +398,11 @@ module Navigate = struct
     frame_id : Cdp_base.Page.Frame_id.t; [@key "frameId"]
     loader_id : Cdp_base.Network.Loader_id.t option; [@key "loaderId"] [@option] [@json.drop_default]
     error_text : string option; [@key "errorText"] [@option] [@json.drop_default]
-    is_download : bool option; [@key "isDownload"] [@option] [@json.drop_default]
+    is_download : bool option;
+       [@key "isDownload"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
 
@@ -406,15 +447,31 @@ module Print_to_pdf = struct
     header_template : string option; [@key "headerTemplate"] [@option] [@json.drop_default]
     footer_template : string option; [@key "footerTemplate"] [@option] [@json.drop_default]
     prefer_css_page_size : bool option; [@key "preferCSSPageSize"] [@option] [@json.drop_default]
-    transfer_mode : transfer_mode option; [@key "transferMode"] [@option] [@json.drop_default]
-    generate_tagged_pdf : bool option; [@key "generateTaggedPDF"] [@option] [@json.drop_default]
-    generate_document_outline : bool option; [@key "generateDocumentOutline"] [@option] [@json.drop_default]
+    transfer_mode : transfer_mode option;
+       [@key "transferMode"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    generate_tagged_pdf : bool option;
+       [@key "generateTaggedPDF"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    generate_document_outline : bool option;
+       [@key "generateDocumentOutline"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = {
     data : string; [@key "data"]
-    stream : Cdp_base.Io.Stream_handle.t option; [@key "stream"] [@option] [@json.drop_default]
+    stream : Cdp_base.Io.Stream_handle.t option;
+       [@key "stream"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
 
@@ -428,7 +485,11 @@ module Reload = struct
   type params = {
     ignore_cache : bool option; [@key "ignoreCache"] [@option] [@json.drop_default]
     script_to_evaluate_on_load : string option; [@key "scriptToEvaluateOnLoad"] [@option] [@json.drop_default]
-    loader_id : Cdp_base.Network.Loader_id.t option; [@key "loaderId"] [@option] [@json.drop_default]
+    loader_id : Cdp_base.Network.Loader_id.t option;
+       [@key "loaderId"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -776,7 +837,10 @@ module Start_screen_recording = struct
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
-  type result = { stream : Cdp_base.Io.Stream_handle.t [@key "stream"] }
+  type result = {
+    stream : Cdp_base.Io.Stream_handle.t;
+       [@key "stream"] [@alert experimental "experimental in CDP, may change with Chrome"]
+  }
   [@@allow_extra_fields] [@@deriving json, show, eq]
 
   let command params : result Cdp_command.t =
@@ -787,7 +851,10 @@ end
 module Stop_screen_recording = struct
   let name = "Page.stopScreenRecording"
 
-  type result = { stream : Cdp_base.Io.Stream_handle.t [@key "stream"] }
+  type result = {
+    stream : Cdp_base.Io.Stream_handle.t;
+       [@key "stream"] [@alert experimental "experimental in CDP, may change with Chrome"]
+  }
   [@@allow_extra_fields] [@@deriving json, show, eq]
 
   let command : result Cdp_command.t = { Cdp_command.name; params = None; parse = result_of_json }
@@ -978,7 +1045,11 @@ module Set_intercept_file_chooser_dialog = struct
 
   type params = {
     enabled : bool; [@key "enabled"]
-    cancel : bool option; [@key "cancel"] [@option] [@json.drop_default]
+    cancel : bool option;
+       [@key "cancel"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -1038,9 +1109,14 @@ module File_chooser_opened = struct
   [@@compact_variants] [@@deriving json, show, eq]
 
   type params = {
-    frame_id : Cdp_base.Page.Frame_id.t; [@key "frameId"]
+    frame_id : Cdp_base.Page.Frame_id.t;
+       [@key "frameId"] [@alert experimental "experimental in CDP, may change with Chrome"]
     mode : mode; [@key "mode"]
-    backend_node_id : Cdp_base.Dom.Backend_node_id.t option; [@key "backendNodeId"] [@option] [@json.drop_default]
+    backend_node_id : Cdp_base.Dom.Backend_node_id.t option;
+       [@key "backendNodeId"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -1081,7 +1157,7 @@ module Frame_detached = struct
 
   type params = {
     frame_id : Cdp_base.Page.Frame_id.t; [@key "frameId"]
-    reason : reason; [@key "reason"]
+    reason : reason; [@key "reason"] [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -1103,7 +1179,7 @@ module Frame_navigated = struct
 
   type params = {
     frame : frame; [@key "frame"]
-    type_ : navigation_type; [@key "type"]
+    type_ : navigation_type; [@key "type"] [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -1268,7 +1344,8 @@ module Javascript_dialog_closed = struct
   let name = "Page.javascriptDialogClosed"
 
   type params = {
-    frame_id : Cdp_base.Page.Frame_id.t; [@key "frameId"]
+    frame_id : Cdp_base.Page.Frame_id.t;
+       [@key "frameId"] [@alert experimental "experimental in CDP, may change with Chrome"]
     result : bool; [@key "result"]
     user_input : string; [@key "userInput"]
   }
@@ -1282,7 +1359,8 @@ module Javascript_dialog_opening = struct
 
   type params = {
     url : string; [@key "url"]
-    frame_id : Cdp_base.Page.Frame_id.t; [@key "frameId"]
+    frame_id : Cdp_base.Page.Frame_id.t;
+       [@key "frameId"] [@alert experimental "experimental in CDP, may change with Chrome"]
     message : string; [@key "message"]
     type_ : dialog_type; [@key "type"]
     has_browser_handler : bool; [@key "hasBrowserHandler"]

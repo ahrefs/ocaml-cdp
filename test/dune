@@ -1,7 +1,9 @@
 (executable
  (name test_decode)
  (modules test_decode)
- (libraries cdp yojson))
+ (libraries cdp yojson)
+ (flags
+  (:standard -alert -experimental)))
 
 (executable
  (name test_envelope)

@@ -83,14 +83,12 @@ let () =
         match cookie with
         | None -> Lwt.return_unit
         | Some (cookie_name, cookie_value) ->
-          let%lwt set =
+          let%lwt (_set : Cdp.Network.Set_cookie.result) =
             call ~session
               (Cdp.Network.Set_cookie.command
                  (Cdp.Network.Set_cookie.make_params ~name:cookie_name ~value:cookie_value ~url ()))
           in
-          (match set.success with
-          | true -> Printf.printf "cookie %s set for %s\n%!" cookie_name url
-          | false -> Printf.printf "cookie %s was NOT accepted for %s\n%!" cookie_name url);
+          Printf.printf "cookie %s set for %s\n%!" cookie_name url;
           Lwt.return_unit
       in
       Printf.printf "tailing %s — browse in the Chrome window, Ctrl+C to stop\n%!" url;

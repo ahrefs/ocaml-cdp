@@ -39,10 +39,19 @@ end
 module Enable = struct
   let name = "Debugger.enable"
 
-  type params = { max_scripts_cache_size : float option [@key "maxScriptsCacheSize"] [@option] [@json.drop_default] }
+  type params = {
+    max_scripts_cache_size : float option;
+       [@key "maxScriptsCacheSize"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+  }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
-  type result = { debugger_id : Cdp_base.Runtime.Unique_debugger_id.t [@key "debuggerId"] }
+  type result = {
+    debugger_id : Cdp_base.Runtime.Unique_debugger_id.t;
+       [@key "debuggerId"] [@alert experimental "experimental in CDP, may change with Chrome"]
+  }
   [@@allow_extra_fields] [@@deriving json, show, eq]
 
   let command params : result Cdp_command.t =
@@ -59,10 +68,22 @@ module Evaluate_on_call_frame = struct
     include_command_line_api : bool option; [@key "includeCommandLineAPI"] [@option] [@json.drop_default]
     silent : bool option; [@key "silent"] [@option] [@json.drop_default]
     return_by_value : bool option; [@key "returnByValue"] [@option] [@json.drop_default]
-    generate_preview : bool option; [@key "generatePreview"] [@option] [@json.drop_default]
+    generate_preview : bool option;
+       [@key "generatePreview"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
     throw_on_side_effect : bool option; [@key "throwOnSideEffect"] [@option] [@json.drop_default]
-    timeout : Cdp_base.Runtime.Time_delta.t option; [@key "timeout"] [@option] [@json.drop_default]
-    scope_number : int option; [@key "scopeNumber"] [@option] [@json.drop_default]
+    timeout : Cdp_base.Runtime.Time_delta.t option;
+       [@key "timeout"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    scope_number : int option;
+       [@key "scopeNumber"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -217,15 +238,17 @@ module Restart_frame = struct
 
   type params = {
     call_frame_id : Cdp_base.Debugger.Call_frame_id.t; [@key "callFrameId"]
-    mode : mode option; [@key "mode"] [@option] [@json.drop_default]
+    mode : mode option;
+       [@key "mode"] [@option] [@json.drop_default] [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = {
-    call_frames : call_frame list; [@key "callFrames"]
-    async_stack_trace : Cdp_runtime_types.stack_trace option; [@key "asyncStackTrace"] [@option] [@json.drop_default]
+    call_frames : call_frame list; [@key "callFrames"] [@ocaml.deprecated "deprecated in CDP"]
+    async_stack_trace : Cdp_runtime_types.stack_trace option;
+       [@key "asyncStackTrace"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
     async_stack_trace_id : Cdp_runtime_types.stack_trace_id option;
-       [@key "asyncStackTraceId"] [@option] [@json.drop_default]
+       [@key "asyncStackTraceId"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
 
@@ -461,7 +484,11 @@ module Set_script_source = struct
     script_id : Cdp_base.Runtime.Script_id.t; [@key "scriptId"]
     script_source : string; [@key "scriptSource"]
     dry_run : bool option; [@key "dryRun"] [@option] [@json.drop_default]
-    allow_top_frame_editing : bool option; [@key "allowTopFrameEditing"] [@option] [@json.drop_default]
+    allow_top_frame_editing : bool option;
+       [@key "allowTopFrameEditing"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -475,12 +502,15 @@ module Set_script_source = struct
   [@@compact_variants] [@@deriving json, show, eq]
 
   type result = {
-    call_frames : call_frame list option; [@key "callFrames"] [@option] [@json.drop_default]
-    stack_changed : bool option; [@key "stackChanged"] [@option] [@json.drop_default]
-    async_stack_trace : Cdp_runtime_types.stack_trace option; [@key "asyncStackTrace"] [@option] [@json.drop_default]
+    call_frames : call_frame list option;
+       [@key "callFrames"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
+    stack_changed : bool option;
+       [@key "stackChanged"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
+    async_stack_trace : Cdp_runtime_types.stack_trace option;
+       [@key "asyncStackTrace"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
     async_stack_trace_id : Cdp_runtime_types.stack_trace_id option;
-       [@key "asyncStackTraceId"] [@option] [@json.drop_default]
-    status : status; [@key "status"]
+       [@key "asyncStackTraceId"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
+    status : status; [@key "status"] [@alert experimental "experimental in CDP, may change with Chrome"]
     exception_details : Cdp_runtime_types.exception_details option;
        [@key "exceptionDetails"] [@option] [@json.drop_default]
   }
@@ -527,8 +557,16 @@ module Step_into = struct
   let name = "Debugger.stepInto"
 
   type params = {
-    break_on_async_call : bool option; [@key "breakOnAsyncCall"] [@option] [@json.drop_default]
-    skip_list : location_range list option; [@key "skipList"] [@option] [@json.drop_default]
+    break_on_async_call : bool option;
+       [@key "breakOnAsyncCall"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    skip_list : location_range list option;
+       [@key "skipList"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -553,7 +591,13 @@ end
 module Step_over = struct
   let name = "Debugger.stepOver"
 
-  type params = { skip_list : location_range list option [@key "skipList"] [@option] [@json.drop_default] }
+  type params = {
+    skip_list : location_range list option;
+       [@key "skipList"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+  }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = unit [@@deriving show, eq]
@@ -604,9 +648,16 @@ module Paused = struct
     hit_breakpoints : string list option; [@key "hitBreakpoints"] [@option] [@json.drop_default]
     async_stack_trace : Cdp_runtime_types.stack_trace option; [@key "asyncStackTrace"] [@option] [@json.drop_default]
     async_stack_trace_id : Cdp_runtime_types.stack_trace_id option;
-       [@key "asyncStackTraceId"] [@option] [@json.drop_default]
+       [@key "asyncStackTraceId"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
     async_call_stack_trace_id : Cdp_runtime_types.stack_trace_id option;
-       [@key "asyncCallStackTraceId"] [@option] [@json.drop_default]
+       [@key "asyncCallStackTraceId"]
+       [@option]
+       [@json.drop_default]
+       [@ocaml.deprecated "deprecated in CDP"]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -641,10 +692,26 @@ module Script_failed_to_parse = struct
     has_source_url : bool option; [@key "hasSourceURL"] [@option] [@json.drop_default]
     is_module : bool option; [@key "isModule"] [@option] [@json.drop_default]
     length : int option; [@key "length"] [@option] [@json.drop_default]
-    stack_trace : Cdp_runtime_types.stack_trace option; [@key "stackTrace"] [@option] [@json.drop_default]
-    code_offset : int option; [@key "codeOffset"] [@option] [@json.drop_default]
-    script_language : script_language option; [@key "scriptLanguage"] [@option] [@json.drop_default]
-    embedder_name : string option; [@key "embedderName"] [@option] [@json.drop_default]
+    stack_trace : Cdp_runtime_types.stack_trace option;
+       [@key "stackTrace"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    code_offset : int option;
+       [@key "codeOffset"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    script_language : script_language option;
+       [@key "scriptLanguage"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    embedder_name : string option;
+       [@key "embedderName"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -665,17 +732,45 @@ module Script_parsed = struct
     hash : string; [@key "hash"]
     build_id : string; [@key "buildId"]
     execution_context_aux_data : Cdp_json.t option; [@key "executionContextAuxData"] [@option] [@json.drop_default]
-    is_live_edit : bool option; [@key "isLiveEdit"] [@option] [@json.drop_default]
+    is_live_edit : bool option;
+       [@key "isLiveEdit"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
     source_map_url : string option; [@key "sourceMapURL"] [@option] [@json.drop_default]
     has_source_url : bool option; [@key "hasSourceURL"] [@option] [@json.drop_default]
     is_module : bool option; [@key "isModule"] [@option] [@json.drop_default]
     length : int option; [@key "length"] [@option] [@json.drop_default]
-    stack_trace : Cdp_runtime_types.stack_trace option; [@key "stackTrace"] [@option] [@json.drop_default]
-    code_offset : int option; [@key "codeOffset"] [@option] [@json.drop_default]
-    script_language : script_language option; [@key "scriptLanguage"] [@option] [@json.drop_default]
-    debug_symbols : debug_symbols list option; [@key "debugSymbols"] [@option] [@json.drop_default]
-    embedder_name : string option; [@key "embedderName"] [@option] [@json.drop_default]
-    resolved_breakpoints : resolved_breakpoint list option; [@key "resolvedBreakpoints"] [@option] [@json.drop_default]
+    stack_trace : Cdp_runtime_types.stack_trace option;
+       [@key "stackTrace"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    code_offset : int option;
+       [@key "codeOffset"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    script_language : script_language option;
+       [@key "scriptLanguage"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    debug_symbols : debug_symbols list option;
+       [@key "debugSymbols"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    embedder_name : string option;
+       [@key "embedderName"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    resolved_breakpoints : resolved_breakpoint list option;
+       [@key "resolvedBreakpoints"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 

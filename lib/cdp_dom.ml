@@ -104,7 +104,11 @@ module Enable = struct
   [@@compact_variants] [@@deriving json, show, eq]
 
   type params = {
-    include_whitespace : include_whitespace option; [@key "includeWhitespace"] [@option] [@json.drop_default]
+    include_whitespace : include_whitespace option;
+       [@key "includeWhitespace"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -257,7 +261,11 @@ module Get_outer_html = struct
     node_id : Cdp_base.Dom.Node_id.t option; [@key "nodeId"] [@option] [@json.drop_default]
     backend_node_id : Cdp_base.Dom.Backend_node_id.t option; [@key "backendNodeId"] [@option] [@json.drop_default]
     object_id : Cdp_base.Runtime.Remote_object_id.t option; [@key "objectId"] [@option] [@json.drop_default]
-    include_shadow_dom : bool option; [@key "includeShadowDOM"] [@option] [@json.drop_default]
+    include_shadow_dom : bool option;
+       [@key "includeShadowDOM"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -912,7 +920,8 @@ module Adopted_style_sheets_modified = struct
 
   type params = {
     node_id : Cdp_base.Dom.Node_id.t; [@key "nodeId"]
-    adopted_style_sheets : Cdp_base.Dom.Style_sheet_id.t list; [@key "adoptedStyleSheets"]
+    adopted_style_sheets : Cdp_base.Dom.Style_sheet_id.t list;
+       [@key "adoptedStyleSheets"] [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 

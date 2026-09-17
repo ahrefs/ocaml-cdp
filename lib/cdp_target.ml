@@ -49,7 +49,8 @@ module Close_target = struct
   type params = { target_id : Cdp_base.Target.Target_id.t [@key "targetId"] }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
-  type result = { success : bool [@key "success"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+  type result = { success : bool [@key "success"] [@ocaml.deprecated "deprecated in CDP"] }
+  [@@allow_extra_fields] [@@deriving json, show, eq]
 
   let command params : result Cdp_command.t =
     { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
@@ -78,11 +79,26 @@ module Create_browser_context = struct
   let name = "Target.createBrowserContext"
 
   type params = {
-    dispose_on_detach : bool option; [@key "disposeOnDetach"] [@option] [@json.drop_default]
-    proxy_server : string option; [@key "proxyServer"] [@option] [@json.drop_default]
-    proxy_bypass_list : string option; [@key "proxyBypassList"] [@option] [@json.drop_default]
+    dispose_on_detach : bool option;
+       [@key "disposeOnDetach"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    proxy_server : string option;
+       [@key "proxyServer"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    proxy_bypass_list : string option;
+       [@key "proxyBypassList"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
     origins_with_universal_network_access : string list option;
-       [@key "originsWithUniversalNetworkAccess"] [@option] [@json.drop_default]
+       [@key "originsWithUniversalNetworkAccess"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -99,7 +115,10 @@ module Get_browser_contexts = struct
   type result = {
     browser_context_ids : Cdp_base.Browser.Browser_context_id.t list; [@key "browserContextIds"]
     default_browser_context_id : Cdp_base.Browser.Browser_context_id.t option;
-       [@key "defaultBrowserContextId"] [@option] [@json.drop_default]
+       [@key "defaultBrowserContextId"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
 
@@ -111,19 +130,37 @@ module Create_target = struct
 
   type params = {
     url : string; [@key "url"]
-    left : int option; [@key "left"] [@option] [@json.drop_default]
-    top : int option; [@key "top"] [@option] [@json.drop_default]
+    left : int option;
+       [@key "left"] [@option] [@json.drop_default] [@alert experimental "experimental in CDP, may change with Chrome"]
+    top : int option;
+       [@key "top"] [@option] [@json.drop_default] [@alert experimental "experimental in CDP, may change with Chrome"]
     width : int option; [@key "width"] [@option] [@json.drop_default]
     height : int option; [@key "height"] [@option] [@json.drop_default]
     window_state : window_state option; [@key "windowState"] [@option] [@json.drop_default]
     browser_context_id : Cdp_base.Browser.Browser_context_id.t option;
-       [@key "browserContextId"] [@option] [@json.drop_default]
-    enable_begin_frame_control : bool option; [@key "enableBeginFrameControl"] [@option] [@json.drop_default]
+       [@key "browserContextId"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    enable_begin_frame_control : bool option;
+       [@key "enableBeginFrameControl"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
     new_window : bool option; [@key "newWindow"] [@option] [@json.drop_default]
     background : bool option; [@key "background"] [@option] [@json.drop_default]
-    for_tab : bool option; [@key "forTab"] [@option] [@json.drop_default]
-    hidden : bool option; [@key "hidden"] [@option] [@json.drop_default]
-    focus : bool option; [@key "focus"] [@option] [@json.drop_default]
+    for_tab : bool option;
+       [@key "forTab"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    hidden : bool option;
+       [@key "hidden"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    focus : bool option;
+       [@key "focus"] [@option] [@json.drop_default] [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -139,7 +176,8 @@ module Detach_from_target = struct
 
   type params = {
     session_id : Cdp_base.Target.Session_id.t option; [@key "sessionId"] [@option] [@json.drop_default]
-    target_id : Cdp_base.Target.Target_id.t option; [@key "targetId"] [@option] [@json.drop_default]
+    target_id : Cdp_base.Target.Target_id.t option;
+       [@key "targetId"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -181,7 +219,13 @@ end
 module Get_targets = struct
   let name = "Target.getTargets"
 
-  type params = { filter : target_filter option [@key "filter"] [@option] [@json.drop_default] }
+  type params = {
+    filter : target_filter option;
+       [@key "filter"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+  }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
   type result = { target_infos : target_info list [@key "targetInfos"] }
@@ -197,7 +241,8 @@ module Send_message_to_target = struct
   type params = {
     message : string; [@key "message"]
     session_id : Cdp_base.Target.Session_id.t option; [@key "sessionId"] [@option] [@json.drop_default]
-    target_id : Cdp_base.Target.Target_id.t option; [@key "targetId"] [@option] [@json.drop_default]
+    target_id : Cdp_base.Target.Target_id.t option;
+       [@key "targetId"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -216,8 +261,16 @@ module Set_auto_attach = struct
   type params = {
     auto_attach : bool; [@key "autoAttach"]
     wait_for_debugger_on_start : bool; [@key "waitForDebuggerOnStart"]
-    flatten : bool option; [@key "flatten"] [@option] [@json.drop_default]
-    filter : target_filter option; [@key "filter"] [@option] [@json.drop_default]
+    flatten : bool option;
+       [@key "flatten"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    filter : target_filter option;
+       [@key "filter"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -235,7 +288,11 @@ module Auto_attach_related = struct
   type params = {
     target_id : Cdp_base.Target.Target_id.t; [@key "targetId"]
     wait_for_debugger_on_start : bool; [@key "waitForDebuggerOnStart"]
-    filter : target_filter option; [@key "filter"] [@option] [@json.drop_default]
+    filter : target_filter option;
+       [@key "filter"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -253,7 +310,11 @@ module Set_discover_targets = struct
 
   type params = {
     discover : bool; [@key "discover"]
-    filter : target_filter option; [@key "filter"] [@option] [@json.drop_default]
+    filter : target_filter option;
+       [@key "filter"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -330,7 +391,8 @@ module Detached_from_target = struct
 
   type params = {
     session_id : Cdp_base.Target.Session_id.t; [@key "sessionId"]
-    target_id : Cdp_base.Target.Target_id.t option; [@key "targetId"] [@option] [@json.drop_default]
+    target_id : Cdp_base.Target.Target_id.t option;
+       [@key "targetId"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -344,7 +406,8 @@ module Received_message_from_target = struct
   type params = {
     session_id : Cdp_base.Target.Session_id.t; [@key "sessionId"]
     message : string; [@key "message"]
-    target_id : Cdp_base.Target.Target_id.t option; [@key "targetId"] [@option] [@json.drop_default]
+    target_id : Cdp_base.Target.Target_id.t option;
+       [@key "targetId"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 

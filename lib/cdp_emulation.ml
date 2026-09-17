@@ -148,20 +148,66 @@ module Set_device_metrics_override = struct
     height : int; [@key "height"]
     device_scale_factor : float; [@key "deviceScaleFactor"]
     mobile : bool; [@key "mobile"]
-    scale : float option; [@key "scale"] [@option] [@json.drop_default]
-    screen_width : int option; [@key "screenWidth"] [@option] [@json.drop_default]
-    screen_height : int option; [@key "screenHeight"] [@option] [@json.drop_default]
-    position_x : int option; [@key "positionX"] [@option] [@json.drop_default]
-    position_y : int option; [@key "positionY"] [@option] [@json.drop_default]
-    dont_set_visible_size : bool option; [@key "dontSetVisibleSize"] [@option] [@json.drop_default]
+    scale : float option;
+       [@key "scale"] [@option] [@json.drop_default] [@alert experimental "experimental in CDP, may change with Chrome"]
+    screen_width : int option;
+       [@key "screenWidth"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    screen_height : int option;
+       [@key "screenHeight"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    position_x : int option;
+       [@key "positionX"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    position_y : int option;
+       [@key "positionY"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    dont_set_visible_size : bool option;
+       [@key "dontSetVisibleSize"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
     screen_orientation : screen_orientation option; [@key "screenOrientation"] [@option] [@json.drop_default]
-    viewport : Cdp_page_types.viewport option; [@key "viewport"] [@option] [@json.drop_default]
-    display_feature : display_feature option; [@key "displayFeature"] [@option] [@json.drop_default]
-    device_posture : device_posture option; [@key "devicePosture"] [@option] [@json.drop_default]
-    scrollbar_type : scrollbar_type option; [@key "scrollbarType"] [@option] [@json.drop_default]
+    viewport : Cdp_page_types.viewport option;
+       [@key "viewport"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    display_feature : display_feature option;
+       [@key "displayFeature"]
+       [@option]
+       [@json.drop_default]
+       [@ocaml.deprecated "deprecated in CDP"]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    device_posture : device_posture option;
+       [@key "devicePosture"]
+       [@option]
+       [@json.drop_default]
+       [@ocaml.deprecated "deprecated in CDP"]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    scrollbar_type : scrollbar_type option;
+       [@key "scrollbarType"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
     screen_orientation_lock_emulation : bool option;
-       [@key "screenOrientationLockEmulation"] [@option] [@json.drop_default]
-    viewport_meta : viewport_meta option; [@key "viewportMeta"] [@option] [@json.drop_default]
+       [@key "screenOrientationLockEmulation"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    viewport_meta : viewport_meta option;
+       [@key "viewportMeta"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -669,7 +715,11 @@ module Set_user_agent_override = struct
     user_agent : string; [@key "userAgent"]
     accept_language : string option; [@key "acceptLanguage"] [@option] [@json.drop_default]
     platform : string option; [@key "platform"] [@option] [@json.drop_default]
-    user_agent_metadata : user_agent_metadata option; [@key "userAgentMetadata"] [@option] [@json.drop_default]
+    user_agent_metadata : user_agent_metadata option;
+       [@key "userAgentMetadata"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 

@@ -32,15 +32,31 @@ module Call_function_on = struct
     arguments : call_argument list option; [@key "arguments"] [@option] [@json.drop_default]
     silent : bool option; [@key "silent"] [@option] [@json.drop_default]
     return_by_value : bool option; [@key "returnByValue"] [@option] [@json.drop_default]
-    generate_preview : bool option; [@key "generatePreview"] [@option] [@json.drop_default]
+    generate_preview : bool option;
+       [@key "generatePreview"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
     user_gesture : bool option; [@key "userGesture"] [@option] [@json.drop_default]
     await_promise : bool option; [@key "awaitPromise"] [@option] [@json.drop_default]
     execution_context_id : Cdp_base.Runtime.Execution_context_id.t option;
        [@key "executionContextId"] [@option] [@json.drop_default]
     object_group : string option; [@key "objectGroup"] [@option] [@json.drop_default]
-    throw_on_side_effect : bool option; [@key "throwOnSideEffect"] [@option] [@json.drop_default]
-    unique_context_id : string option; [@key "uniqueContextId"] [@option] [@json.drop_default]
-    serialization_options : serialization_options option; [@key "serializationOptions"] [@option] [@json.drop_default]
+    throw_on_side_effect : bool option;
+       [@key "throwOnSideEffect"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    unique_context_id : string option;
+       [@key "uniqueContextId"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    serialization_options : serialization_options option;
+       [@key "serializationOptions"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -116,16 +132,48 @@ module Evaluate = struct
     silent : bool option; [@key "silent"] [@option] [@json.drop_default]
     context_id : Cdp_base.Runtime.Execution_context_id.t option; [@key "contextId"] [@option] [@json.drop_default]
     return_by_value : bool option; [@key "returnByValue"] [@option] [@json.drop_default]
-    generate_preview : bool option; [@key "generatePreview"] [@option] [@json.drop_default]
+    generate_preview : bool option;
+       [@key "generatePreview"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
     user_gesture : bool option; [@key "userGesture"] [@option] [@json.drop_default]
     await_promise : bool option; [@key "awaitPromise"] [@option] [@json.drop_default]
-    throw_on_side_effect : bool option; [@key "throwOnSideEffect"] [@option] [@json.drop_default]
-    timeout : Cdp_base.Runtime.Time_delta.t option; [@key "timeout"] [@option] [@json.drop_default]
-    disable_breaks : bool option; [@key "disableBreaks"] [@option] [@json.drop_default]
-    repl_mode : bool option; [@key "replMode"] [@option] [@json.drop_default]
-    allow_unsafe_eval_blocked_by_csp : bool option; [@key "allowUnsafeEvalBlockedByCSP"] [@option] [@json.drop_default]
-    unique_context_id : string option; [@key "uniqueContextId"] [@option] [@json.drop_default]
-    serialization_options : serialization_options option; [@key "serializationOptions"] [@option] [@json.drop_default]
+    throw_on_side_effect : bool option;
+       [@key "throwOnSideEffect"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    timeout : Cdp_base.Runtime.Time_delta.t option;
+       [@key "timeout"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    disable_breaks : bool option;
+       [@key "disableBreaks"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    repl_mode : bool option;
+       [@key "replMode"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    allow_unsafe_eval_blocked_by_csp : bool option;
+       [@key "allowUnsafeEvalBlockedByCSP"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    unique_context_id : string option;
+       [@key "uniqueContextId"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    serialization_options : serialization_options option;
+       [@key "serializationOptions"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -169,9 +217,21 @@ module Get_properties = struct
   type params = {
     object_id : Cdp_base.Runtime.Remote_object_id.t; [@key "objectId"]
     own_properties : bool option; [@key "ownProperties"] [@option] [@json.drop_default]
-    accessor_properties_only : bool option; [@key "accessorPropertiesOnly"] [@option] [@json.drop_default]
-    generate_preview : bool option; [@key "generatePreview"] [@option] [@json.drop_default]
-    non_indexed_properties_only : bool option; [@key "nonIndexedPropertiesOnly"] [@option] [@json.drop_default]
+    accessor_properties_only : bool option;
+       [@key "accessorPropertiesOnly"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    generate_preview : bool option;
+       [@key "generatePreview"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    non_indexed_properties_only : bool option;
+       [@key "nonIndexedPropertiesOnly"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -180,7 +240,10 @@ module Get_properties = struct
     internal_properties : internal_property_descriptor list option;
        [@key "internalProperties"] [@option] [@json.drop_default]
     private_properties : private_property_descriptor list option;
-       [@key "privateProperties"] [@option] [@json.drop_default]
+       [@key "privateProperties"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
     exception_details : exception_details option; [@key "exceptionDetails"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq]
@@ -340,7 +403,11 @@ module Add_binding = struct
   type params = {
     name : string; [@key "name"]
     execution_context_id : Cdp_base.Runtime.Execution_context_id.t option;
-       [@key "executionContextId"] [@option] [@json.drop_default]
+       [@key "executionContextId"]
+       [@option]
+       [@json.drop_default]
+       [@ocaml.deprecated "deprecated in CDP"]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
     execution_context_name : string option; [@key "executionContextName"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
@@ -427,7 +494,11 @@ module Console_api_called = struct
     execution_context_id : Cdp_base.Runtime.Execution_context_id.t; [@key "executionContextId"]
     timestamp : Cdp_base.Runtime.Timestamp.t; [@key "timestamp"]
     stack_trace : stack_trace option; [@key "stackTrace"] [@option] [@json.drop_default]
-    context : string option; [@key "context"] [@option] [@json.drop_default]
+    context : string option;
+       [@key "context"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -471,8 +542,10 @@ module Execution_context_destroyed = struct
   let name = "Runtime.executionContextDestroyed"
 
   type params = {
-    execution_context_id : Cdp_base.Runtime.Execution_context_id.t; [@key "executionContextId"]
-    execution_context_unique_id : string; [@key "executionContextUniqueId"]
+    execution_context_id : Cdp_base.Runtime.Execution_context_id.t;
+       [@key "executionContextId"] [@ocaml.deprecated "deprecated in CDP"]
+    execution_context_unique_id : string;
+       [@key "executionContextUniqueId"] [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -496,7 +569,10 @@ module Inspect_requested = struct
     object_ : remote_object; [@key "object"]
     hints : Cdp_json.t; [@key "hints"]
     execution_context_id : Cdp_base.Runtime.Execution_context_id.t option;
-       [@key "executionContextId"] [@option] [@json.drop_default]
+       [@key "executionContextId"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 

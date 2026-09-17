@@ -13,13 +13,29 @@ type target_info = {
   attached : bool; [@key "attached"]
   parent_id : Cdp_base.Target.Target_id.t option; [@key "parentId"] [@option] [@json.drop_default]
   opener_id : Cdp_base.Target.Target_id.t option; [@key "openerId"] [@option] [@json.drop_default]
-  can_access_opener : bool; [@key "canAccessOpener"]
-  opener_frame_id : Cdp_base.Page.Frame_id.t option; [@key "openerFrameId"] [@option] [@json.drop_default]
-  parent_frame_id : Cdp_base.Page.Frame_id.t option; [@key "parentFrameId"] [@option] [@json.drop_default]
+  can_access_opener : bool; [@key "canAccessOpener"] [@alert experimental "experimental in CDP, may change with Chrome"]
+  opener_frame_id : Cdp_base.Page.Frame_id.t option;
+     [@key "openerFrameId"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
+  parent_frame_id : Cdp_base.Page.Frame_id.t option;
+     [@key "parentFrameId"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
   browser_context_id : Cdp_base.Browser.Browser_context_id.t option;
-     [@key "browserContextId"] [@option] [@json.drop_default]
-  subtype : string option; [@key "subtype"] [@option] [@json.drop_default]
-  embedder_data : Cdp_json.t option; [@key "embedderData"] [@option] [@json.drop_default]
+     [@key "browserContextId"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
+  subtype : string option;
+     [@key "subtype"] [@option] [@json.drop_default] [@alert experimental "experimental in CDP, may change with Chrome"]
+  embedder_data : Cdp_json.t option;
+     [@key "embedderData"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
 }
 [@@allow_extra_fields]
 

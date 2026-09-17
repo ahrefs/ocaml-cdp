@@ -106,10 +106,19 @@ and remote_object = {
   unserializable_value : Cdp_base.Runtime.Unserializable_value.t option;
      [@key "unserializableValue"] [@option] [@json.drop_default]
   description : string option; [@key "description"] [@option] [@json.drop_default]
-  deep_serialized_value : deep_serialized_value option; [@key "deepSerializedValue"] [@option] [@json.drop_default]
+  deep_serialized_value : deep_serialized_value option;
+     [@key "deepSerializedValue"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
   object_id : Cdp_base.Runtime.Remote_object_id.t option; [@key "objectId"] [@option] [@json.drop_default]
-  preview : object_preview option; [@key "preview"] [@option] [@json.drop_default]
-  custom_preview : custom_preview option; [@key "customPreview"] [@option] [@json.drop_default]
+  preview : object_preview option;
+     [@key "preview"] [@option] [@json.drop_default] [@alert experimental "experimental in CDP, may change with Chrome"]
+  custom_preview : custom_preview option;
+     [@key "customPreview"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
 }
 [@@allow_extra_fields]
 
@@ -259,7 +268,7 @@ and execution_context_description = {
   id : Cdp_base.Runtime.Execution_context_id.t; [@key "id"]
   origin : string; [@key "origin"]
   name : string; [@key "name"]
-  unique_id : string; [@key "uniqueId"]
+  unique_id : string; [@key "uniqueId"] [@alert experimental "experimental in CDP, may change with Chrome"]
   aux_data : Cdp_json.t option; [@key "auxData"] [@option] [@json.drop_default]
 }
 [@@allow_extra_fields]
@@ -275,7 +284,11 @@ and exception_details = {
   exception_ : remote_object option; [@key "exception"] [@option] [@json.drop_default]
   execution_context_id : Cdp_base.Runtime.Execution_context_id.t option;
      [@key "executionContextId"] [@option] [@json.drop_default]
-  exception_meta_data : Cdp_json.t option; [@key "exceptionMetaData"] [@option] [@json.drop_default]
+  exception_meta_data : Cdp_json.t option;
+     [@key "exceptionMetaData"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
 }
 [@@allow_extra_fields]
 
@@ -292,7 +305,11 @@ and stack_trace = {
   description : string option; [@key "description"] [@option] [@json.drop_default]
   call_frames : call_frame list; [@key "callFrames"]
   parent : stack_trace option; [@key "parent"] [@option] [@json.drop_default]
-  parent_id : stack_trace_id option; [@key "parentId"] [@option] [@json.drop_default]
+  parent_id : stack_trace_id option;
+     [@key "parentId"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
 }
 [@@allow_extra_fields]
 

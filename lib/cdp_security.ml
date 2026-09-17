@@ -97,10 +97,11 @@ module Security_state_changed = struct
 
   type params = {
     security_state : security_state; [@key "securityState"]
-    scheme_is_cryptographic : bool; [@key "schemeIsCryptographic"]
-    explanations : security_state_explanation list; [@key "explanations"]
-    insecure_content_status : insecure_content_status; [@key "insecureContentStatus"]
-    summary : string option; [@key "summary"] [@option] [@json.drop_default]
+    scheme_is_cryptographic : bool; [@key "schemeIsCryptographic"] [@ocaml.deprecated "deprecated in CDP"]
+    explanations : security_state_explanation list; [@key "explanations"] [@ocaml.deprecated "deprecated in CDP"]
+    insecure_content_status : insecure_content_status;
+       [@key "insecureContentStatus"] [@ocaml.deprecated "deprecated in CDP"]
+    summary : string option; [@key "summary"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 

@@ -73,7 +73,8 @@ and user_agent_brand_version = {
 and user_agent_metadata = {
   brands : user_agent_brand_version list option; [@key "brands"] [@option] [@json.drop_default]
   full_version_list : user_agent_brand_version list option; [@key "fullVersionList"] [@option] [@json.drop_default]
-  full_version : string option; [@key "fullVersion"] [@option] [@json.drop_default]
+  full_version : string option;
+     [@key "fullVersion"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
   platform : string; [@key "platform"]
   platform_version : string; [@key "platformVersion"]
   architecture : string; [@key "architecture"]

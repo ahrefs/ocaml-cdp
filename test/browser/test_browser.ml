@@ -73,12 +73,12 @@ let () =
       | _unexpected -> assert false);
       pass "a multi-megabyte response reassembles intact under the default cap";
       (* shape 5: state roundtrip — write a cookie, read it back typed *)
-      let%lwt cookie_set =
+      (* a rejected cookie fails the call; the deprecated [success] field is always true *)
+      let%lwt (_cookie_set : Cdp.Network.Set_cookie.result) =
         call ~session
           (Cdp.Network.Set_cookie.command
              (Cdp.Network.Set_cookie.make_params ~name:"cdp_smoke" ~value:"42" ~url:"https://example.com/" ()))
       in
-      assert cookie_set.success;
       let%lwt cookies =
         call ~session
           (Cdp.Network.Get_cookies.command (Cdp.Network.Get_cookies.make_params ~urls:[ "https://example.com/" ] ()))

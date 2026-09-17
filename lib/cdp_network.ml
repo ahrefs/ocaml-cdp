@@ -58,7 +58,11 @@ module Delete_cookies = struct
     url : string option; [@key "url"] [@option] [@json.drop_default]
     domain : string option; [@key "domain"] [@option] [@json.drop_default]
     path : string option; [@key "path"] [@option] [@json.drop_default]
-    partition_key : cookie_partition_key option; [@key "partitionKey"] [@option] [@json.drop_default]
+    partition_key : cookie_partition_key option;
+       [@key "partitionKey"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -89,9 +93,21 @@ module Emulate_network_conditions = struct
     download_throughput : float; [@key "downloadThroughput"]
     upload_throughput : float; [@key "uploadThroughput"]
     connection_type : connection_type option; [@key "connectionType"] [@option] [@json.drop_default]
-    packet_loss : float option; [@key "packetLoss"] [@option] [@json.drop_default]
-    packet_queue_length : int option; [@key "packetQueueLength"] [@option] [@json.drop_default]
-    packet_reordering : bool option; [@key "packetReordering"] [@option] [@json.drop_default]
+    packet_loss : float option;
+       [@key "packetLoss"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    packet_queue_length : int option;
+       [@key "packetQueueLength"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    packet_reordering : bool option;
+       [@key "packetReordering"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -108,7 +124,7 @@ module Emulate_network_conditions_by_rule = struct
   let name = "Network.emulateNetworkConditionsByRule"
 
   type params = {
-    offline : bool option; [@key "offline"] [@option] [@json.drop_default]
+    offline : bool option; [@key "offline"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
     emulate_offline_service_worker : bool option; [@key "emulateOfflineServiceWorker"] [@option] [@json.drop_default]
     matched_network_conditions : network_conditions list; [@key "matchedNetworkConditions"]
   }
@@ -146,11 +162,27 @@ module Enable = struct
   let name = "Network.enable"
 
   type params = {
-    max_total_buffer_size : int option; [@key "maxTotalBufferSize"] [@option] [@json.drop_default]
-    max_resource_buffer_size : int option; [@key "maxResourceBufferSize"] [@option] [@json.drop_default]
+    max_total_buffer_size : int option;
+       [@key "maxTotalBufferSize"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    max_resource_buffer_size : int option;
+       [@key "maxResourceBufferSize"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
     max_post_data_size : int option; [@key "maxPostDataSize"] [@option] [@json.drop_default]
-    report_direct_socket_traffic : bool option; [@key "reportDirectSocketTraffic"] [@option] [@json.drop_default]
-    enable_durable_messages : bool option; [@key "enableDurableMessages"] [@option] [@json.drop_default]
+    report_direct_socket_traffic : bool option;
+       [@key "reportDirectSocketTraffic"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    enable_durable_messages : bool option;
+       [@key "enableDurableMessages"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -284,7 +316,7 @@ module Set_blocked_ur_ls = struct
 
   type params = {
     url_patterns : block_pattern list option; [@key "urlPatterns"] [@option] [@json.drop_default]
-    urls : string list option; [@key "urls"] [@option] [@json.drop_default]
+    urls : string list option; [@key "urls"] [@option] [@json.drop_default] [@ocaml.deprecated "deprecated in CDP"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -337,14 +369,31 @@ module Set_cookie = struct
     http_only : bool option; [@key "httpOnly"] [@option] [@json.drop_default]
     same_site : cookie_same_site option; [@key "sameSite"] [@option] [@json.drop_default]
     expires : Cdp_base.Network.Time_since_epoch.t option; [@key "expires"] [@option] [@json.drop_default]
-    priority : cookie_priority option; [@key "priority"] [@option] [@json.drop_default]
-    source_scheme : cookie_source_scheme option; [@key "sourceScheme"] [@option] [@json.drop_default]
-    source_port : int option; [@key "sourcePort"] [@option] [@json.drop_default]
-    partition_key : cookie_partition_key option; [@key "partitionKey"] [@option] [@json.drop_default]
+    priority : cookie_priority option;
+       [@key "priority"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    source_scheme : cookie_source_scheme option;
+       [@key "sourceScheme"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    source_port : int option;
+       [@key "sourcePort"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
+    partition_key : cookie_partition_key option;
+       [@key "partitionKey"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
-  type result = { success : bool [@key "success"] } [@@allow_extra_fields] [@@deriving json, show, eq]
+  type result = { success : bool [@key "success"] [@ocaml.deprecated "deprecated in CDP"] }
+  [@@allow_extra_fields] [@@deriving json, show, eq]
 
   let command params : result Cdp_command.t =
     { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }
@@ -399,7 +448,10 @@ module Set_user_agent_override = struct
     accept_language : string option; [@key "acceptLanguage"] [@option] [@json.drop_default]
     platform : string option; [@key "platform"] [@option] [@json.drop_default]
     user_agent_metadata : Cdp_emulation_types.user_agent_metadata option;
-       [@key "userAgentMetadata"] [@option] [@json.drop_default]
+       [@key "userAgentMetadata"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -533,7 +585,8 @@ module Data_received = struct
     timestamp : Cdp_base.Network.Monotonic_time.t; [@key "timestamp"]
     data_length : int; [@key "dataLength"]
     encoded_data_length : int; [@key "encodedDataLength"]
-    data : string option; [@key "data"] [@option] [@json.drop_default]
+    data : string option;
+       [@key "data"] [@option] [@json.drop_default] [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -605,13 +658,17 @@ module Request_will_be_sent = struct
     timestamp : Cdp_base.Network.Monotonic_time.t; [@key "timestamp"]
     wall_time : Cdp_base.Network.Time_since_epoch.t; [@key "wallTime"]
     initiator : initiator; [@key "initiator"]
-    redirect_has_extra_info : bool; [@key "redirectHasExtraInfo"]
+    redirect_has_extra_info : bool;
+       [@key "redirectHasExtraInfo"] [@alert experimental "experimental in CDP, may change with Chrome"]
     redirect_response : response option; [@key "redirectResponse"] [@option] [@json.drop_default]
     type_ : resource_type option; [@key "type"] [@option] [@json.drop_default]
     frame_id : Cdp_base.Page.Frame_id.t option; [@key "frameId"] [@option] [@json.drop_default]
     has_user_gesture : bool option; [@key "hasUserGesture"] [@option] [@json.drop_default]
     render_blocking_behavior : render_blocking_behavior option;
-       [@key "renderBlockingBehavior"] [@option] [@json.drop_default]
+       [@key "renderBlockingBehavior"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
 
@@ -654,7 +711,7 @@ module Response_received = struct
     timestamp : Cdp_base.Network.Monotonic_time.t; [@key "timestamp"]
     type_ : resource_type; [@key "type"]
     response : response; [@key "response"]
-    has_extra_info : bool; [@key "hasExtraInfo"]
+    has_extra_info : bool; [@key "hasExtraInfo"] [@alert experimental "experimental in CDP, may change with Chrome"]
     frame_id : Cdp_base.Page.Frame_id.t option; [@key "frameId"] [@option] [@json.drop_default]
   }
   [@@allow_extra_fields] [@@deriving json, show, eq, make]
@@ -1000,7 +1057,8 @@ module Request_will_be_sent_extra_info = struct
     request_id : Cdp_base.Network.Request_id.t; [@key "requestId"]
     associated_cookies : associated_cookie list; [@key "associatedCookies"]
     headers : headers; [@key "headers"]
-    connect_timing : connect_timing; [@key "connectTiming"]
+    connect_timing : connect_timing;
+       [@key "connectTiming"] [@alert experimental "experimental in CDP, may change with Chrome"]
     device_bound_session_usages : device_bound_session_with_usage list option;
        [@key "deviceBoundSessionUsages"] [@option] [@json.drop_default]
     client_security_state : client_security_state option; [@key "clientSecurityState"] [@option] [@json.drop_default]
@@ -1024,7 +1082,11 @@ module Response_received_extra_info = struct
     resource_ip_address_space : ip_address_space; [@key "resourceIPAddressSpace"]
     status_code : int; [@key "statusCode"]
     headers_text : string option; [@key "headersText"] [@option] [@json.drop_default]
-    cookie_partition_key : cookie_partition_key option; [@key "cookiePartitionKey"] [@option] [@json.drop_default]
+    cookie_partition_key : cookie_partition_key option;
+       [@key "cookiePartitionKey"]
+       [@option]
+       [@json.drop_default]
+       [@alert experimental "experimental in CDP, may change with Chrome"]
     cookie_partition_key_opaque : bool option; [@key "cookiePartitionKeyOpaque"] [@option] [@json.drop_default]
     exempted_cookies : exempted_set_cookie_with_reason list option;
        [@key "exemptedCookies"] [@option] [@json.drop_default]

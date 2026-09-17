@@ -9,27 +9,38 @@ module Util = Yojson.Safe.Util
 
 let spf = Printf.sprintf
 
+type flags = {
+  deprecated : bool;
+  experimental : bool;
+}
+
 type domain = {
   name : string;
   types : Json.t list;
   commands : Json.t list;
   events : Json.t list;
+  flags : flags;
 }
 
 let jstr field json = Util.member field json |> Util.to_string
+
 let jlist field json =
   match Util.member field json with
   | `Null -> []
   | value -> Util.to_list value
+
 let has_field field json =
   match Util.member field json with
   | `Null -> false
   | _present -> true
+
 let jbool field json =
   match Util.member field json with
-  | `Bool value -> value
   | `Null -> false
+  | `Bool value -> value
   | wrong_type -> failwith (spf "cdp-gen: field %S must be a boolean, got %s" field (Json.to_string wrong_type))
+
+let flags_of_json json = { deprecated = jbool "deprecated" json; experimental = jbool "experimental" json }
 
 let is_letter ch = Naming.is_upper ch || Naming.is_lower ch
 let is_digit = Naming.is_digit
@@ -54,6 +65,7 @@ let load_domains path =
       types = jlist "types" domain_json;
       commands = jlist "commands" domain_json;
       events = jlist "events" domain_json;
+      flags = flags_of_json domain_json;
     })
 
 (* a domain name or type id defined twice would silently overwrite its

@@ -30,11 +30,15 @@ and call_frame = {
   function_name : string; [@key "functionName"]
   function_location : location option; [@key "functionLocation"] [@option] [@json.drop_default]
   location : location; [@key "location"]
-  url : string; [@key "url"]
+  url : string; [@key "url"] [@ocaml.deprecated "deprecated in CDP"]
   scope_chain : scope list; [@key "scopeChain"]
   this : Cdp_runtime_types.remote_object; [@key "this"]
   return_value : Cdp_runtime_types.remote_object option; [@key "returnValue"] [@option] [@json.drop_default]
-  can_be_restarted : bool option; [@key "canBeRestarted"] [@option] [@json.drop_default]
+  can_be_restarted : bool option;
+     [@key "canBeRestarted"]
+     [@option]
+     [@json.drop_default]
+     [@alert experimental "experimental in CDP, may change with Chrome"]
 }
 [@@allow_extra_fields]
 
@@ -58,7 +62,8 @@ and scope = {
   name : string option; [@key "name"] [@option] [@json.drop_default]
   start_location : location option; [@key "startLocation"] [@option] [@json.drop_default]
   end_location : location option; [@key "endLocation"] [@option] [@json.drop_default]
-  empty : bool option; [@key "empty"] [@option] [@json.drop_default]
+  empty : bool option;
+     [@key "empty"] [@option] [@json.drop_default] [@alert experimental "experimental in CDP, may change with Chrome"]
 }
 [@@allow_extra_fields]
 
