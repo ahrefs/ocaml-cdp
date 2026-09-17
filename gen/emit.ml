@@ -90,24 +90,15 @@ let enum_decl ~tname ~attrs values =
 (* a record; fields with an inline enum get that enum hoisted to a named
    type (name chosen by ~hoist_name). Returns the hoisted decls and the record. *)
 let record_decl ~selected ~alias_tbl ~domain ~tname ~attrs ~hoist_name props =
-  let hoist raw_name enum_json =
-    let values = List.map Util.to_string (Util.to_list enum_json) in
-    enum_decl ~tname:(hoist_name raw_name) ~attrs:"" values
-  in
   let field prop =
     let orig = jstr "name" prop in
     let optional = jbool "optional" prop in
     let field_type, hoisted =
-      match Util.member "enum" prop with
-      | `List _ as enum_json ->
-        let enum = hoist orig enum_json in
-        enum.name, Some enum
-      | _no_inline_enum ->
-      match Util.member "type" prop, Util.member "items" prop with
-      | `String "array", (`Assoc _ as items) when has_field "enum" items ->
-        let enum = hoist orig (Util.member "enum" items) in
-        spf "%s list" enum.name, Some enum
-      | _not_an_enum_array -> map_type ~selected ~alias_tbl ~domain prop, None
+      match Inline_enum.of_prop prop with
+      | Some inline_enum ->
+        let enum = enum_decl ~tname:(hoist_name orig) ~attrs:"" (Inline_enum.values inline_enum) in
+        Inline_enum.field_type inline_enum ~enum_name:enum.name, Some enum
+      | None -> map_type ~selected ~alias_tbl ~domain prop, None
     in
     let ocaml_type, wire_attrs =
       match optional with
@@ -130,10 +121,9 @@ let named_type_decls ~selected ~alias_tbl ~domain type_def =
   match Util.member "enum" type_def, Util.member "properties" type_def with
   | `List values, _ -> [ enum_decl ~tname ~attrs (List.map Util.to_string values) ]
   | `Null, `List (_ :: _ as props) ->
-    let parent = camel_to_snake (jstr "id" type_def) in
     let hoisted, record =
       record_decl ~selected ~alias_tbl ~domain ~tname ~attrs
-        ~hoist_name:(fun field -> spf "%s_%s" parent (camel_to_snake field))
+        ~hoist_name:(hoisted_in_type ~type_id:(jstr "id" type_def))
         props
     in
     hoisted @ [ record ]
@@ -248,7 +238,7 @@ let emit_types_file ~revision ~selected ~alias_tbl (domain : domain) =
    - then the record with its own deriving list
    Returns the text and the type names it defines. *)
 let record_block ~selected ~alias_tbl ~domain ~tname ~make props =
-  let hoisted, record = record_decl ~selected ~alias_tbl ~domain ~tname ~attrs:"" ~hoist_name:sanitize_lower props in
+  let hoisted, record = record_decl ~selected ~alias_tbl ~domain ~tname ~attrs:"" ~hoist_name:hoisted_in_item props in
   let record_deriving = if make then "json, show, eq, make" else "json, show, eq" in
   ( spf "%s\n%s\n" (render_chain ~deriving:"json, show, eq" hoisted) (render_chain ~deriving:record_deriving [ record ]),
     List.map (fun decl -> decl.name) (hoisted @ [ record ]) )

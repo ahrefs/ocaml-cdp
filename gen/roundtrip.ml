@@ -84,9 +84,69 @@ let item_targets ~domains ~alias_tbl (domain : domain) =
     | [] -> []
     | props -> [ params_target props ])
 
+(* Every enum of a domain with its wire values: named enums, enums hoisted
+   from a named type, enums hoisted from a command or event module. *)
+type enum_target = {
+  enum_label : string;
+  enum_path : string; (* module path of the type, for its codecs and its Other constructor *)
+  enum_type : string;
+  values : string list;
+}
+
+let enum_targets ~alias_tbl (domain : domain) =
+  let index_module = module_of_domain domain.name in
+  let domain_path = spf "Cdp.%s" index_module in
+  let hoisted_in ~enum_path ~owner ~hoist_name props =
+    List.filter_map
+      (fun prop ->
+        let field = jstr "name" prop in
+        Inline_enum.of_prop prop
+        |> Option.map (fun inline_enum ->
+          {
+            enum_label = spf "%s.%s" owner field;
+            enum_path;
+            enum_type = hoist_name field;
+            values = Inline_enum.values inline_enum;
+          }))
+      props
+  in
+  let named =
+    List.concat_map
+      (fun type_def ->
+        let id = jstr "id" type_def in
+        let owner = spf "%s.%s" domain.name id in
+        match Util.member "enum" type_def with
+        | `List values ->
+          [
+            {
+              enum_label = owner;
+              enum_path = domain_path;
+              enum_type = sanitize_lower id;
+              values = List.map Util.to_string values;
+            };
+          ]
+        | _not_an_enum ->
+          hoisted_in ~enum_path:domain_path ~owner ~hoist_name:(hoisted_in_type ~type_id:id)
+            (jlist "properties" type_def))
+      domain.types
+  in
+  let items =
+    Emit.item_modules ~alias_tbl domain
+    |> List.concat_map (fun (mname, item) ->
+      let props =
+        match item with
+        | `Command command -> jlist "parameters" command @ jlist "returns" command
+        | `Event event -> jlist "parameters" event
+      in
+      hoisted_in ~enum_path:(spf "%s.%s" domain_path mname) ~owner:(spf "%s.%s" domain.name mname)
+        ~hoist_name:hoisted_in_item props)
+  in
+  named @ items
+
 type output = {
   contents : string;
   emitted : int;
+  enum_checks : int;
   skipped : (string * string) list; (* label, reason *)
 }
 
@@ -120,9 +180,39 @@ let emit ~revision ~domains ~alias_tbl =
     \  let redecoded = of_json encoded in\n\
     \  match equal decoded redecoded with\n\
     \  | true -> ()\n\
-    \  | false -> fail name \"value changed after an encode/decode roundtrip\"\n\n";
+    \  | false -> fail name \"value changed after an encode/decode roundtrip\"\n\n\
+     (* every wire value of an enum decodes to its own constructor, never to\n\
+    \   the Other fallback, and encodes back to the same string *)\n\
+     let check_enum name of_json to_json is_other values =\n\
+    \  List.iter\n\
+    \    (fun value ->\n\
+    \      let decoded = of_json (`String value) in\n\
+    \      (match is_other decoded with\n\
+    \      | false -> ()\n\
+    \      | true -> fail name (\"value \" ^ value ^ \" decodes to Other\"));\n\
+    \      match to_json decoded with\n\
+    \      | `String encoded when String.equal encoded value -> ()\n\
+    \      | encoded -> fail name (\"value \" ^ value ^ \" encodes back as \" ^ Yojson.Basic.to_string encoded))\n\
+    \    values\n\n";
   let emitted = ref 0 in
+  let enum_checks = ref 0 in
   let skipped = ref [] in
+  List.iter
+    (fun (domain : domain) ->
+      List.iter
+        (fun target ->
+          incr enum_checks;
+          Buffer.add_string buf
+            (spf
+               "let () =\n\
+               \  check_enum %S %s.%s_of_json %s.%s_to_json\n\
+               \    (fun (value : %s.%s) -> match value with %s.Other _ -> true | _known -> false)\n\
+               \    [ %s ]\n"
+               target.enum_label target.enum_path target.enum_type target.enum_path target.enum_type target.enum_path
+               target.enum_type target.enum_path
+               (String.concat "; " (List.map (spf "%S") target.values))))
+        (enum_targets ~alias_tbl domain))
+    domains;
   List.iter
     (fun (domain : domain) ->
       let targets = named_type_targets ~domains ~alias_tbl domain @ item_targets ~domains ~alias_tbl domain in
@@ -143,4 +233,4 @@ let emit ~revision ~domains ~alias_tbl =
     \  match !failures with\n\
     \  | 0 -> print_endline \"all roundtrip tests passed\"\n\
     \  | count -> failwith (Printf.sprintf \"%d roundtrip failures\" count)\n";
-  { contents = Buffer.contents buf; emitted = !emitted; skipped = List.rev !skipped }
+  { contents = Buffer.contents buf; emitted = !emitted; enum_checks = !enum_checks; skipped = List.rev !skipped }

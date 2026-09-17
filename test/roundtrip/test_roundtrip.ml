@@ -32,6 +32,1773 @@ let check name of_json to_json equal raw =
   | true -> ()
   | false -> fail name "value changed after an encode/decode roundtrip"
 
+(* every wire value of an enum decodes to its own constructor, never to
+   the Other fallback, and encodes back to the same string *)
+let check_enum name of_json to_json is_other values =
+  List.iter
+    (fun value ->
+      let decoded = of_json (`String value) in
+      (match is_other decoded with
+      | false -> ()
+      | true -> fail name ("value " ^ value ^ " decodes to Other"));
+      match to_json decoded with
+      | `String encoded when String.equal encoded value -> ()
+      | encoded -> fail name ("value " ^ value ^ " encodes back as " ^ Yojson.Basic.to_string encoded))
+    values
+
+let () =
+  check_enum "Browser.WindowState" Cdp.Browser.window_state_of_json Cdp.Browser.window_state_to_json
+    (fun (value : Cdp.Browser.window_state) ->
+      match value with
+      | Cdp.Browser.Other _ -> true
+      | _known -> false)
+    [ "normal"; "minimized"; "maximized"; "fullscreen" ]
+let () =
+  check_enum "Browser.PermissionType" Cdp.Browser.permission_type_of_json Cdp.Browser.permission_type_to_json
+    (fun (value : Cdp.Browser.permission_type) ->
+      match value with
+      | Cdp.Browser.Other _ -> true
+      | _known -> false)
+    [
+      "ar";
+      "audioCapture";
+      "automaticFullscreen";
+      "backgroundFetch";
+      "backgroundSync";
+      "cameraPanTiltZoom";
+      "capturedSurfaceControl";
+      "clipboardReadWrite";
+      "clipboardSanitizedWrite";
+      "displayCapture";
+      "durableStorage";
+      "geolocation";
+      "handTracking";
+      "idleDetection";
+      "keyboardLock";
+      "localFonts";
+      "localNetwork";
+      "localNetworkAccess";
+      "loopbackNetwork";
+      "midi";
+      "midiSysex";
+      "nfc";
+      "notifications";
+      "paymentHandler";
+      "periodicBackgroundSync";
+      "pointerLock";
+      "protectedMediaIdentifier";
+      "sensors";
+      "smartCard";
+      "speakerSelection";
+      "storageAccess";
+      "topLevelStorageAccess";
+      "videoCapture";
+      "vr";
+      "wakeLockScreen";
+      "wakeLockSystem";
+      "webAppInstallation";
+      "webPrinting";
+      "windowManagement";
+    ]
+let () =
+  check_enum "Browser.PermissionSetting" Cdp.Browser.permission_setting_of_json Cdp.Browser.permission_setting_to_json
+    (fun (value : Cdp.Browser.permission_setting) ->
+      match value with
+      | Cdp.Browser.Other _ -> true
+      | _known -> false)
+    [ "granted"; "denied"; "prompt" ]
+let () =
+  check_enum "Browser.BrowserCommandId" Cdp.Browser.browser_command_id_of_json Cdp.Browser.browser_command_id_to_json
+    (fun (value : Cdp.Browser.browser_command_id) ->
+      match value with
+      | Cdp.Browser.Other _ -> true
+      | _known -> false)
+    [ "openTabSearch"; "closeTabSearch"; "openGlic" ]
+let () =
+  check_enum "Browser.Set_download_behavior.behavior" Cdp.Browser.Set_download_behavior.behavior_of_json
+    Cdp.Browser.Set_download_behavior.behavior_to_json
+    (fun (value : Cdp.Browser.Set_download_behavior.behavior) ->
+      match value with
+      | Cdp.Browser.Set_download_behavior.Other _ -> true
+      | _known -> false)
+    [ "deny"; "allow"; "allowAndName"; "default" ]
+let () =
+  check_enum "Browser.Download_progress.state" Cdp.Browser.Download_progress.state_of_json
+    Cdp.Browser.Download_progress.state_to_json
+    (fun (value : Cdp.Browser.Download_progress.state) ->
+      match value with
+      | Cdp.Browser.Download_progress.Other _ -> true
+      | _known -> false)
+    [ "inProgress"; "completed"; "canceled" ]
+let () =
+  check_enum "DOM.PseudoType" Cdp.Dom.pseudo_type_of_json Cdp.Dom.pseudo_type_to_json
+    (fun (value : Cdp.Dom.pseudo_type) ->
+      match value with
+      | Cdp.Dom.Other _ -> true
+      | _known -> false)
+    [
+      "first-line";
+      "first-letter";
+      "checkmark";
+      "before";
+      "after";
+      "expand-icon";
+      "picker-icon";
+      "interest-button";
+      "marker";
+      "backdrop";
+      "column";
+      "selection";
+      "search-text";
+      "target-text";
+      "spelling-error";
+      "grammar-error";
+      "highlight";
+      "first-line-inherited";
+      "scroll-marker";
+      "scroll-marker-group";
+      "scroll-button";
+      "scrollbar";
+      "scrollbar-thumb";
+      "scrollbar-button";
+      "scrollbar-track";
+      "scrollbar-track-piece";
+      "scrollbar-corner";
+      "resizer";
+      "input-list-button";
+      "view-transition";
+      "view-transition-group";
+      "view-transition-image-pair";
+      "view-transition-group-children";
+      "view-transition-old";
+      "view-transition-new";
+      "placeholder";
+      "file-selector-button";
+      "details-content";
+      "picker";
+      "select-listbox";
+      "permission-icon";
+      "overscroll-area-parent";
+      "overscroll-backdrop";
+      "skeleton";
+    ]
+let () =
+  check_enum "DOM.ShadowRootType" Cdp.Dom.shadow_root_type_of_json Cdp.Dom.shadow_root_type_to_json
+    (fun (value : Cdp.Dom.shadow_root_type) ->
+      match value with
+      | Cdp.Dom.Other _ -> true
+      | _known -> false)
+    [ "user-agent"; "open"; "closed" ]
+let () =
+  check_enum "DOM.CompatibilityMode" Cdp.Dom.compatibility_mode_of_json Cdp.Dom.compatibility_mode_to_json
+    (fun (value : Cdp.Dom.compatibility_mode) ->
+      match value with
+      | Cdp.Dom.Other _ -> true
+      | _known -> false)
+    [ "QuirksMode"; "LimitedQuirksMode"; "NoQuirksMode" ]
+let () =
+  check_enum "DOM.PhysicalAxes" Cdp.Dom.physical_axes_of_json Cdp.Dom.physical_axes_to_json
+    (fun (value : Cdp.Dom.physical_axes) ->
+      match value with
+      | Cdp.Dom.Other _ -> true
+      | _known -> false)
+    [ "Horizontal"; "Vertical"; "Both" ]
+let () =
+  check_enum "DOM.LogicalAxes" Cdp.Dom.logical_axes_of_json Cdp.Dom.logical_axes_to_json
+    (fun (value : Cdp.Dom.logical_axes) ->
+      match value with
+      | Cdp.Dom.Other _ -> true
+      | _known -> false)
+    [ "Inline"; "Block"; "Both" ]
+let () =
+  check_enum "DOM.ScrollOrientation" Cdp.Dom.scroll_orientation_of_json Cdp.Dom.scroll_orientation_to_json
+    (fun (value : Cdp.Dom.scroll_orientation) ->
+      match value with
+      | Cdp.Dom.Other _ -> true
+      | _known -> false)
+    [ "horizontal"; "vertical" ]
+let () =
+  check_enum "DOM.Enable.includeWhitespace" Cdp.Dom.Enable.include_whitespace_of_json
+    Cdp.Dom.Enable.include_whitespace_to_json
+    (fun (value : Cdp.Dom.Enable.include_whitespace) ->
+      match value with
+      | Cdp.Dom.Enable.Other _ -> true
+      | _known -> false)
+    [ "none"; "all" ]
+let () =
+  check_enum "DOM.Get_element_by_relation.relation" Cdp.Dom.Get_element_by_relation.relation_of_json
+    Cdp.Dom.Get_element_by_relation.relation_to_json
+    (fun (value : Cdp.Dom.Get_element_by_relation.relation) ->
+      match value with
+      | Cdp.Dom.Get_element_by_relation.Other _ -> true
+      | _known -> false)
+    [ "PopoverTarget"; "InterestTarget"; "CommandFor" ]
+let () =
+  check_enum "DOM.Set_text_marker.type" Cdp.Dom.Set_text_marker.type__of_json Cdp.Dom.Set_text_marker.type__to_json
+    (fun (value : Cdp.Dom.Set_text_marker.type_) ->
+      match value with
+      | Cdp.Dom.Set_text_marker.Other _ -> true
+      | _known -> false)
+    [ "spelling"; "grammar" ]
+let () =
+  check_enum "Emulation.ScreenOrientation.type" Cdp.Emulation.screen_orientation_type_of_json
+    Cdp.Emulation.screen_orientation_type_to_json
+    (fun (value : Cdp.Emulation.screen_orientation_type) ->
+      match value with
+      | Cdp.Emulation.Other _ -> true
+      | _known -> false)
+    [ "portraitPrimary"; "portraitSecondary"; "landscapePrimary"; "landscapeSecondary" ]
+let () =
+  check_enum "Emulation.DisplayFeature.orientation" Cdp.Emulation.display_feature_orientation_of_json
+    Cdp.Emulation.display_feature_orientation_to_json
+    (fun (value : Cdp.Emulation.display_feature_orientation) ->
+      match value with
+      | Cdp.Emulation.Other _ -> true
+      | _known -> false)
+    [ "vertical"; "horizontal" ]
+let () =
+  check_enum "Emulation.DevicePosture.type" Cdp.Emulation.device_posture_type_of_json
+    Cdp.Emulation.device_posture_type_to_json
+    (fun (value : Cdp.Emulation.device_posture_type) ->
+      match value with
+      | Cdp.Emulation.Other _ -> true
+      | _known -> false)
+    [ "continuous"; "folded" ]
+let () =
+  check_enum "Emulation.VirtualTimePolicy" Cdp.Emulation.virtual_time_policy_of_json
+    Cdp.Emulation.virtual_time_policy_to_json
+    (fun (value : Cdp.Emulation.virtual_time_policy) ->
+      match value with
+      | Cdp.Emulation.Other _ -> true
+      | _known -> false)
+    [ "advance"; "pause"; "pauseIfNetworkFetchesPending" ]
+let () =
+  check_enum "Emulation.SensorType" Cdp.Emulation.sensor_type_of_json Cdp.Emulation.sensor_type_to_json
+    (fun (value : Cdp.Emulation.sensor_type) ->
+      match value with
+      | Cdp.Emulation.Other _ -> true
+      | _known -> false)
+    [
+      "absolute-orientation";
+      "accelerometer";
+      "ambient-light";
+      "gravity";
+      "gyroscope";
+      "linear-acceleration";
+      "magnetometer";
+      "relative-orientation";
+    ]
+let () =
+  check_enum "Emulation.PressureSource" Cdp.Emulation.pressure_source_of_json Cdp.Emulation.pressure_source_to_json
+    (fun (value : Cdp.Emulation.pressure_source) ->
+      match value with
+      | Cdp.Emulation.Other _ -> true
+      | _known -> false)
+    [ "cpu" ]
+let () =
+  check_enum "Emulation.PressureState" Cdp.Emulation.pressure_state_of_json Cdp.Emulation.pressure_state_to_json
+    (fun (value : Cdp.Emulation.pressure_state) ->
+      match value with
+      | Cdp.Emulation.Other _ -> true
+      | _known -> false)
+    [ "nominal"; "fair"; "serious"; "critical" ]
+let () =
+  check_enum "Emulation.DisabledImageType" Cdp.Emulation.disabled_image_type_of_json
+    Cdp.Emulation.disabled_image_type_to_json
+    (fun (value : Cdp.Emulation.disabled_image_type) ->
+      match value with
+      | Cdp.Emulation.Other _ -> true
+      | _known -> false)
+    [ "avif"; "jxl"; "webp" ]
+let () =
+  check_enum "Emulation.Set_device_metrics_override.scrollbarType"
+    Cdp.Emulation.Set_device_metrics_override.scrollbar_type_of_json
+    Cdp.Emulation.Set_device_metrics_override.scrollbar_type_to_json
+    (fun (value : Cdp.Emulation.Set_device_metrics_override.scrollbar_type) ->
+      match value with
+      | Cdp.Emulation.Set_device_metrics_override.Other _ -> true
+      | _known -> false)
+    [ "overlay"; "default" ]
+let () =
+  check_enum "Emulation.Set_device_metrics_override.viewportMeta"
+    Cdp.Emulation.Set_device_metrics_override.viewport_meta_of_json
+    Cdp.Emulation.Set_device_metrics_override.viewport_meta_to_json
+    (fun (value : Cdp.Emulation.Set_device_metrics_override.viewport_meta) ->
+      match value with
+      | Cdp.Emulation.Set_device_metrics_override.Other _ -> true
+      | _known -> false)
+    [ "enable"; "default" ]
+let () =
+  check_enum "Emulation.Set_emit_touch_events_for_mouse.configuration"
+    Cdp.Emulation.Set_emit_touch_events_for_mouse.configuration_of_json
+    Cdp.Emulation.Set_emit_touch_events_for_mouse.configuration_to_json
+    (fun (value : Cdp.Emulation.Set_emit_touch_events_for_mouse.configuration) ->
+      match value with
+      | Cdp.Emulation.Set_emit_touch_events_for_mouse.Other _ -> true
+      | _known -> false)
+    [ "mobile"; "desktop" ]
+let () =
+  check_enum "Emulation.Set_emulated_vision_deficiency.type" Cdp.Emulation.Set_emulated_vision_deficiency.type__of_json
+    Cdp.Emulation.Set_emulated_vision_deficiency.type__to_json
+    (fun (value : Cdp.Emulation.Set_emulated_vision_deficiency.type_) ->
+      match value with
+      | Cdp.Emulation.Set_emulated_vision_deficiency.Other _ -> true
+      | _known -> false)
+    [ "none"; "blurredVision"; "reducedContrast"; "achromatopsia"; "deuteranopia"; "protanopia"; "tritanopia" ]
+let () =
+  check_enum "Emulation.Set_cpu_performance_override.performanceTier"
+    Cdp.Emulation.Set_cpu_performance_override.performance_tier_of_json
+    Cdp.Emulation.Set_cpu_performance_override.performance_tier_to_json
+    (fun (value : Cdp.Emulation.Set_cpu_performance_override.performance_tier) ->
+      match value with
+      | Cdp.Emulation.Set_cpu_performance_override.Other _ -> true
+      | _known -> false)
+    [ "unknown"; "low"; "mid"; "high"; "ultra" ]
+let () =
+  check_enum "Network.ResourceType" Cdp.Network.resource_type_of_json Cdp.Network.resource_type_to_json
+    (fun (value : Cdp.Network.resource_type) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [
+      "Document";
+      "Stylesheet";
+      "Image";
+      "Media";
+      "Font";
+      "Script";
+      "TextTrack";
+      "XHR";
+      "Fetch";
+      "Prefetch";
+      "EventSource";
+      "WebSocket";
+      "Manifest";
+      "SignedExchange";
+      "Ping";
+      "CSPViolationReport";
+      "Preflight";
+      "FedCM";
+      "Other";
+    ]
+let () =
+  check_enum "Network.ErrorReason" Cdp.Network.error_reason_of_json Cdp.Network.error_reason_to_json
+    (fun (value : Cdp.Network.error_reason) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [
+      "Failed";
+      "Aborted";
+      "TimedOut";
+      "AccessDenied";
+      "ConnectionClosed";
+      "ConnectionReset";
+      "ConnectionRefused";
+      "ConnectionAborted";
+      "ConnectionFailed";
+      "NameNotResolved";
+      "InternetDisconnected";
+      "AddressUnreachable";
+      "BlockedByClient";
+      "BlockedByResponse";
+    ]
+let () =
+  check_enum "Network.ConnectionType" Cdp.Network.connection_type_of_json Cdp.Network.connection_type_to_json
+    (fun (value : Cdp.Network.connection_type) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "none"; "cellular2g"; "cellular3g"; "cellular4g"; "bluetooth"; "ethernet"; "wifi"; "wimax"; "other" ]
+let () =
+  check_enum "Network.CookieSameSite" Cdp.Network.cookie_same_site_of_json Cdp.Network.cookie_same_site_to_json
+    (fun (value : Cdp.Network.cookie_same_site) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "Strict"; "Lax"; "None" ]
+let () =
+  check_enum "Network.CookiePriority" Cdp.Network.cookie_priority_of_json Cdp.Network.cookie_priority_to_json
+    (fun (value : Cdp.Network.cookie_priority) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "Low"; "Medium"; "High" ]
+let () =
+  check_enum "Network.CookieSourceScheme" Cdp.Network.cookie_source_scheme_of_json
+    Cdp.Network.cookie_source_scheme_to_json
+    (fun (value : Cdp.Network.cookie_source_scheme) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "Unset"; "NonSecure"; "Secure" ]
+let () =
+  check_enum "Network.ResourcePriority" Cdp.Network.resource_priority_of_json Cdp.Network.resource_priority_to_json
+    (fun (value : Cdp.Network.resource_priority) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "VeryLow"; "Low"; "Medium"; "High"; "VeryHigh" ]
+let () =
+  check_enum "Network.RenderBlockingBehavior" Cdp.Network.render_blocking_behavior_of_json
+    Cdp.Network.render_blocking_behavior_to_json
+    (fun (value : Cdp.Network.render_blocking_behavior) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "Blocking"; "InBodyParserBlocking"; "NonBlocking"; "NonBlockingDynamic"; "PotentiallyBlocking" ]
+let () =
+  check_enum "Network.Request.referrerPolicy" Cdp.Network.request_referrer_policy_of_json
+    Cdp.Network.request_referrer_policy_to_json
+    (fun (value : Cdp.Network.request_referrer_policy) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [
+      "unsafe-url";
+      "no-referrer-when-downgrade";
+      "no-referrer";
+      "origin";
+      "origin-when-cross-origin";
+      "same-origin";
+      "strict-origin";
+      "strict-origin-when-cross-origin";
+    ]
+let () =
+  check_enum "Network.CertificateTransparencyCompliance" Cdp.Network.certificate_transparency_compliance_of_json
+    Cdp.Network.certificate_transparency_compliance_to_json
+    (fun (value : Cdp.Network.certificate_transparency_compliance) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "unknown"; "not-compliant"; "compliant" ]
+let () =
+  check_enum "Network.BlockedReason" Cdp.Network.blocked_reason_of_json Cdp.Network.blocked_reason_to_json
+    (fun (value : Cdp.Network.blocked_reason) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [
+      "other";
+      "csp";
+      "mixed-content";
+      "origin";
+      "inspector";
+      "integrity";
+      "subresource-filter";
+      "content-type";
+      "coep-frame-resource-needs-coep-header";
+      "coop-sandboxed-iframe-cannot-navigate-to-coop-page";
+      "corp-not-same-origin";
+      "corp-not-same-origin-after-defaulted-to-same-origin-by-coep";
+      "corp-not-same-origin-after-defaulted-to-same-origin-by-dip";
+      "corp-not-same-origin-after-defaulted-to-same-origin-by-coep-and-dip";
+      "corp-not-same-site";
+      "sri-message-signature-mismatch";
+    ]
+let () =
+  check_enum "Network.CorsError" Cdp.Network.cors_error_of_json Cdp.Network.cors_error_to_json
+    (fun (value : Cdp.Network.cors_error) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [
+      "DisallowedByMode";
+      "InvalidResponse";
+      "WildcardOriginNotAllowed";
+      "MissingAllowOriginHeader";
+      "MultipleAllowOriginValues";
+      "InvalidAllowOriginValue";
+      "AllowOriginMismatch";
+      "InvalidAllowCredentials";
+      "CorsDisabledScheme";
+      "PreflightInvalidStatus";
+      "PreflightDisallowedRedirect";
+      "PreflightWildcardOriginNotAllowed";
+      "PreflightMissingAllowOriginHeader";
+      "PreflightMultipleAllowOriginValues";
+      "PreflightInvalidAllowOriginValue";
+      "PreflightAllowOriginMismatch";
+      "PreflightInvalidAllowCredentials";
+      "PreflightMissingAllowExternal";
+      "PreflightInvalidAllowExternal";
+      "InvalidAllowMethodsPreflightResponse";
+      "InvalidAllowHeadersPreflightResponse";
+      "MethodDisallowedByPreflightResponse";
+      "HeaderDisallowedByPreflightResponse";
+      "RedirectContainsCredentials";
+      "InsecureLocalNetwork";
+      "InvalidLocalNetworkAccess";
+      "NoCorsRedirectModeNotFollow";
+      "LocalNetworkAccessPermissionDenied";
+    ]
+let () =
+  check_enum "Network.ServiceWorkerResponseSource" Cdp.Network.service_worker_response_source_of_json
+    Cdp.Network.service_worker_response_source_to_json
+    (fun (value : Cdp.Network.service_worker_response_source) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "cache-storage"; "http-cache"; "fallback-code"; "network" ]
+let () =
+  check_enum "Network.TrustTokenParams.refreshPolicy" Cdp.Network.trust_token_params_refresh_policy_of_json
+    Cdp.Network.trust_token_params_refresh_policy_to_json
+    (fun (value : Cdp.Network.trust_token_params_refresh_policy) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "UseCached"; "Refresh" ]
+let () =
+  check_enum "Network.TrustTokenOperationType" Cdp.Network.trust_token_operation_type_of_json
+    Cdp.Network.trust_token_operation_type_to_json
+    (fun (value : Cdp.Network.trust_token_operation_type) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "Issuance"; "Redemption"; "Signing" ]
+let () =
+  check_enum "Network.AlternateProtocolUsage" Cdp.Network.alternate_protocol_usage_of_json
+    Cdp.Network.alternate_protocol_usage_to_json
+    (fun (value : Cdp.Network.alternate_protocol_usage) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [
+      "alternativeJobWonWithoutRace";
+      "alternativeJobWonRace";
+      "mainJobWonRace";
+      "mappingMissing";
+      "broken";
+      "dnsAlpnH3JobWonWithoutRace";
+      "dnsAlpnH3JobWonRace";
+      "unspecifiedReason";
+    ]
+let () =
+  check_enum "Network.ServiceWorkerRouterSource" Cdp.Network.service_worker_router_source_of_json
+    Cdp.Network.service_worker_router_source_to_json
+    (fun (value : Cdp.Network.service_worker_router_source) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "network"; "cache"; "fetch-event"; "race-network-and-fetch-handler"; "race-network-and-cache" ]
+let () =
+  check_enum "Network.Initiator.type" Cdp.Network.initiator_type_of_json Cdp.Network.initiator_type_to_json
+    (fun (value : Cdp.Network.initiator_type) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "parser"; "script"; "preload"; "SignedExchange"; "preflight"; "FedCM"; "other" ]
+let () =
+  check_enum "Network.SetCookieBlockedReason" Cdp.Network.set_cookie_blocked_reason_of_json
+    Cdp.Network.set_cookie_blocked_reason_to_json
+    (fun (value : Cdp.Network.set_cookie_blocked_reason) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [
+      "SecureOnly";
+      "SameSiteStrict";
+      "SameSiteLax";
+      "SameSiteUnspecifiedTreatedAsLax";
+      "SameSiteNoneInsecure";
+      "UserPreferences";
+      "ThirdPartyPhaseout";
+      "ThirdPartyBlockedInFirstPartySet";
+      "SyntaxError";
+      "SchemeNotSupported";
+      "OverwriteSecure";
+      "InvalidDomain";
+      "InvalidPrefix";
+      "UnknownError";
+      "SchemefulSameSiteStrict";
+      "SchemefulSameSiteLax";
+      "SchemefulSameSiteUnspecifiedTreatedAsLax";
+      "NameValuePairExceedsMaxSize";
+      "DisallowedCharacter";
+      "NoCookieContent";
+    ]
+let () =
+  check_enum "Network.CookieBlockedReason" Cdp.Network.cookie_blocked_reason_of_json
+    Cdp.Network.cookie_blocked_reason_to_json
+    (fun (value : Cdp.Network.cookie_blocked_reason) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [
+      "SecureOnly";
+      "NotOnPath";
+      "DomainMismatch";
+      "SameSiteStrict";
+      "SameSiteLax";
+      "SameSiteUnspecifiedTreatedAsLax";
+      "SameSiteNoneInsecure";
+      "UserPreferences";
+      "ThirdPartyPhaseout";
+      "ThirdPartyBlockedInFirstPartySet";
+      "UnknownError";
+      "SchemefulSameSiteStrict";
+      "SchemefulSameSiteLax";
+      "SchemefulSameSiteUnspecifiedTreatedAsLax";
+      "NameValuePairExceedsMaxSize";
+      "PortMismatch";
+      "SchemeMismatch";
+      "AnonymousContext";
+    ]
+let () =
+  check_enum "Network.CookieExemptionReason" Cdp.Network.cookie_exemption_reason_of_json
+    Cdp.Network.cookie_exemption_reason_to_json
+    (fun (value : Cdp.Network.cookie_exemption_reason) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [
+      "None";
+      "UserSetting";
+      "EnterprisePolicy";
+      "StorageAccess";
+      "TopLevelStorageAccess";
+      "Scheme";
+      "SameSiteNoneCookiesInSandbox";
+    ]
+let () =
+  check_enum "Network.AuthChallenge.source" Cdp.Network.auth_challenge_source_of_json
+    Cdp.Network.auth_challenge_source_to_json
+    (fun (value : Cdp.Network.auth_challenge_source) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "Server"; "Proxy" ]
+let () =
+  check_enum "Network.AuthChallengeResponse.response" Cdp.Network.auth_challenge_response_response_of_json
+    Cdp.Network.auth_challenge_response_response_to_json
+    (fun (value : Cdp.Network.auth_challenge_response_response) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "Default"; "CancelAuth"; "ProvideCredentials" ]
+let () =
+  check_enum "Network.SignedExchangeErrorField" Cdp.Network.signed_exchange_error_field_of_json
+    Cdp.Network.signed_exchange_error_field_to_json
+    (fun (value : Cdp.Network.signed_exchange_error_field) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [
+      "signatureSig";
+      "signatureIntegrity";
+      "signatureCertUrl";
+      "signatureCertSha256";
+      "signatureValidityUrl";
+      "signatureTimestamps";
+    ]
+let () =
+  check_enum "Network.DirectSocketDnsQueryType" Cdp.Network.direct_socket_dns_query_type_of_json
+    Cdp.Network.direct_socket_dns_query_type_to_json
+    (fun (value : Cdp.Network.direct_socket_dns_query_type) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "ipv4"; "ipv6" ]
+let () =
+  check_enum "Network.LocalNetworkAccessRequestPolicy" Cdp.Network.local_network_access_request_policy_of_json
+    Cdp.Network.local_network_access_request_policy_to_json
+    (fun (value : Cdp.Network.local_network_access_request_policy) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "Allow"; "BlockFromInsecureToMorePrivate"; "WarnFromInsecureToMorePrivate"; "PermissionBlock"; "PermissionWarn" ]
+let () =
+  check_enum "Network.IPAddressSpace" Cdp.Network.ip_address_space_of_json Cdp.Network.ip_address_space_to_json
+    (fun (value : Cdp.Network.ip_address_space) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "Loopback"; "Local"; "Public"; "Unknown" ]
+let () =
+  check_enum "Network.CrossOriginOpenerPolicyValue" Cdp.Network.cross_origin_opener_policy_value_of_json
+    Cdp.Network.cross_origin_opener_policy_value_to_json
+    (fun (value : Cdp.Network.cross_origin_opener_policy_value) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [
+      "SameOrigin";
+      "SameOriginAllowPopups";
+      "RestrictProperties";
+      "UnsafeNone";
+      "SameOriginPlusCoep";
+      "RestrictPropertiesPlusCoep";
+      "NoopenerAllowPopups";
+    ]
+let () =
+  check_enum "Network.CrossOriginEmbedderPolicyValue" Cdp.Network.cross_origin_embedder_policy_value_of_json
+    Cdp.Network.cross_origin_embedder_policy_value_to_json
+    (fun (value : Cdp.Network.cross_origin_embedder_policy_value) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "None"; "Credentialless"; "RequireCorp" ]
+let () =
+  check_enum "Network.ContentSecurityPolicySource" Cdp.Network.content_security_policy_source_of_json
+    Cdp.Network.content_security_policy_source_to_json
+    (fun (value : Cdp.Network.content_security_policy_source) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "HTTP"; "Meta" ]
+let () =
+  check_enum "Network.ReportStatus" Cdp.Network.report_status_of_json Cdp.Network.report_status_to_json
+    (fun (value : Cdp.Network.report_status) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "Queued"; "Pending"; "MarkedForRemoval"; "Success" ]
+let () =
+  check_enum "Network.DeviceBoundSessionWithUsage.usage" Cdp.Network.device_bound_session_with_usage_usage_of_json
+    Cdp.Network.device_bound_session_with_usage_usage_to_json
+    (fun (value : Cdp.Network.device_bound_session_with_usage_usage) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [
+      "NotInScope";
+      "InScopeRefreshNotYetNeeded";
+      "InScopeRefreshNotAllowed";
+      "ProactiveRefreshNotPossible";
+      "ProactiveRefreshAttempted";
+      "Deferred";
+    ]
+let () =
+  check_enum "Network.DeviceBoundSessionUrlRule.ruleType" Cdp.Network.device_bound_session_url_rule_rule_type_of_json
+    Cdp.Network.device_bound_session_url_rule_rule_type_to_json
+    (fun (value : Cdp.Network.device_bound_session_url_rule_rule_type) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "Exclude"; "Include" ]
+let () =
+  check_enum "Network.DeviceBoundSessionFetchResult" Cdp.Network.device_bound_session_fetch_result_of_json
+    Cdp.Network.device_bound_session_fetch_result_to_json
+    (fun (value : Cdp.Network.device_bound_session_fetch_result) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [
+      "Success";
+      "SigningKeyGenerationError";
+      "AttestationKeyGenerationError";
+      "SigningError";
+      "TransientSigningError";
+      "ServerRequestedTermination";
+      "InvalidSessionId";
+      "InvalidChallenge";
+      "TooManyChallenges";
+      "InvalidFetcherUrl";
+      "InvalidRefreshUrl";
+      "TransientHttpError";
+      "ScopeOriginSameSiteMismatch";
+      "RefreshUrlSameSiteMismatch";
+      "MismatchedSessionId";
+      "MissingScope";
+      "NoCredentials";
+      "SubdomainRegistrationWellKnownUnavailable";
+      "SubdomainRegistrationUnauthorized";
+      "SubdomainRegistrationWellKnownMalformed";
+      "SessionProviderWellKnownUnavailable";
+      "RelyingPartyWellKnownUnavailable";
+      "FederatedKeyThumbprintMismatch";
+      "InvalidFederatedSessionUrl";
+      "InvalidFederatedKey";
+      "TooManyRelyingOriginLabels";
+      "BoundCookieSetForbidden";
+      "NetError";
+      "ProxyError";
+      "EmptySessionConfig";
+      "InvalidCredentialsConfig";
+      "InvalidCredentialsType";
+      "InvalidCredentialsEmptyName";
+      "InvalidCredentialsCookie";
+      "PersistentHttpError";
+      "RegistrationAttemptedChallenge";
+      "InvalidScopeOrigin";
+      "ScopeOriginContainsPath";
+      "RefreshInitiatorNotString";
+      "RefreshInitiatorInvalidHostPattern";
+      "InvalidScopeSpecification";
+      "MissingScopeSpecificationType";
+      "EmptyScopeSpecificationDomain";
+      "EmptyScopeSpecificationPath";
+      "InvalidScopeSpecificationType";
+      "InvalidScopeIncludeSite";
+      "MissingScopeIncludeSite";
+      "FederatedNotAuthorizedByProvider";
+      "FederatedNotAuthorizedByRelyingParty";
+      "SessionProviderWellKnownMalformed";
+      "SessionProviderWellKnownHasProviderOrigin";
+      "RelyingPartyWellKnownMalformed";
+      "RelyingPartyWellKnownHasRelyingOrigins";
+      "InvalidFederatedSessionProviderSessionMissing";
+      "InvalidFederatedSessionWrongProviderOrigin";
+      "InvalidCredentialsCookieCreationTime";
+      "InvalidCredentialsCookieName";
+      "InvalidCredentialsCookieParsing";
+      "InvalidCredentialsCookieUnpermittedAttribute";
+      "InvalidCredentialsCookieInvalidDomain";
+      "InvalidCredentialsCookiePrefix";
+      "InvalidScopeRulePath";
+      "InvalidScopeRuleHostPattern";
+      "ScopeRuleOriginScopedHostPatternMismatch";
+      "ScopeRuleSiteScopedHostPatternMismatch";
+      "SigningQuotaExceeded";
+      "InvalidConfigJson";
+      "InvalidFederatedSessionProviderFailedToRestoreKey";
+      "FailedToUnwrapKey";
+      "SessionDeletedDuringRefresh";
+      "CrossOriginRegistrationSiteNotIncluded";
+      "InvalidPreProvisionedKeyInitiatorMissing";
+      "PreProvisionedKeyAccessNotGranted";
+      "PreProvisionedKeyNotFound";
+      "AttestationCertificationError";
+      "AttestationSigningError";
+    ]
+let () =
+  check_enum "Network.RefreshEventDetails.refreshResult" Cdp.Network.refresh_event_details_refresh_result_of_json
+    Cdp.Network.refresh_event_details_refresh_result_to_json
+    (fun (value : Cdp.Network.refresh_event_details_refresh_result) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [
+      "Refreshed";
+      "InitializedService";
+      "Unreachable";
+      "ServerError";
+      "FatalError";
+      "SigningQuotaExceeded";
+      "RefreshedAsWaiter";
+      "TransientSigningError";
+      "InScopeRefreshNotYetNeeded";
+    ]
+let () =
+  check_enum "Network.TerminationEventDetails.deletionReason"
+    Cdp.Network.termination_event_details_deletion_reason_of_json
+    Cdp.Network.termination_event_details_deletion_reason_to_json
+    (fun (value : Cdp.Network.termination_event_details_deletion_reason) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [
+      "Expired";
+      "FailedToRestoreKey";
+      "FailedToUnwrapKey";
+      "StoragePartitionCleared";
+      "ClearBrowsingData";
+      "ServerRequested";
+      "InvalidSessionParams";
+      "RefreshFatalError";
+      "DevTools";
+      "Replaced";
+    ]
+let () =
+  check_enum "Network.ChallengeEventDetails.challengeResult"
+    Cdp.Network.challenge_event_details_challenge_result_of_json
+    Cdp.Network.challenge_event_details_challenge_result_to_json
+    (fun (value : Cdp.Network.challenge_event_details_challenge_result) ->
+      match value with
+      | Cdp.Network.Other _ -> true
+      | _known -> false)
+    [ "Success"; "NoSessionId"; "NoSessionMatch"; "CantSetBoundCookie" ]
+let () =
+  check_enum "Network.Trust_token_operation_done.status" Cdp.Network.Trust_token_operation_done.status_of_json
+    Cdp.Network.Trust_token_operation_done.status_to_json
+    (fun (value : Cdp.Network.Trust_token_operation_done.status) ->
+      match value with
+      | Cdp.Network.Trust_token_operation_done.Other _ -> true
+      | _known -> false)
+    [
+      "Ok";
+      "InvalidArgument";
+      "MissingIssuerKeys";
+      "FailedPrecondition";
+      "ResourceExhausted";
+      "AlreadyExists";
+      "ResourceLimited";
+      "Unauthorized";
+      "BadResponse";
+      "InternalError";
+      "UnknownError";
+      "FulfilledLocally";
+      "SiteIssuerLimit";
+    ]
+let () =
+  check_enum "Page.AdFrameType" Cdp.Page.ad_frame_type_of_json Cdp.Page.ad_frame_type_to_json
+    (fun (value : Cdp.Page.ad_frame_type) ->
+      match value with
+      | Cdp.Page.Other _ -> true
+      | _known -> false)
+    [ "none"; "child"; "root" ]
+let () =
+  check_enum "Page.AdFrameExplanation" Cdp.Page.ad_frame_explanation_of_json Cdp.Page.ad_frame_explanation_to_json
+    (fun (value : Cdp.Page.ad_frame_explanation) ->
+      match value with
+      | Cdp.Page.Other _ -> true
+      | _known -> false)
+    [ "ParentIsAd"; "CreatedByAdScript"; "MatchedBlockingRule" ]
+let () =
+  check_enum "Page.SecureContextType" Cdp.Page.secure_context_type_of_json Cdp.Page.secure_context_type_to_json
+    (fun (value : Cdp.Page.secure_context_type) ->
+      match value with
+      | Cdp.Page.Other _ -> true
+      | _known -> false)
+    [ "Secure"; "SecureLocalhost"; "InsecureScheme"; "InsecureAncestor" ]
+let () =
+  check_enum "Page.CrossOriginIsolatedContextType" Cdp.Page.cross_origin_isolated_context_type_of_json
+    Cdp.Page.cross_origin_isolated_context_type_to_json
+    (fun (value : Cdp.Page.cross_origin_isolated_context_type) ->
+      match value with
+      | Cdp.Page.Other _ -> true
+      | _known -> false)
+    [ "Isolated"; "NotIsolated"; "NotIsolatedFeatureDisabled" ]
+let () =
+  check_enum "Page.GatedAPIFeatures" Cdp.Page.gated_api_features_of_json Cdp.Page.gated_api_features_to_json
+    (fun (value : Cdp.Page.gated_api_features) ->
+      match value with
+      | Cdp.Page.Other _ -> true
+      | _known -> false)
+    [ "SharedArrayBuffers"; "SharedArrayBuffersTransferAllowed"; "PerformanceMeasureMemory"; "PerformanceProfile" ]
+let () =
+  check_enum "Page.PermissionsPolicyFeature" Cdp.Page.permissions_policy_feature_of_json
+    Cdp.Page.permissions_policy_feature_to_json
+    (fun (value : Cdp.Page.permissions_policy_feature) ->
+      match value with
+      | Cdp.Page.Other _ -> true
+      | _known -> false)
+    [
+      "accelerometer";
+      "all-screens-capture";
+      "ambient-light-sensor";
+      "aria-notify";
+      "autofill";
+      "autoplay";
+      "bluetooth";
+      "browsing-topics";
+      "camera";
+      "captured-surface-control";
+      "ch-dpr";
+      "ch-device-memory";
+      "ch-downlink";
+      "ch-ect";
+      "ch-prefers-color-scheme";
+      "ch-prefers-reduced-motion";
+      "ch-prefers-reduced-transparency";
+      "ch-rtt";
+      "ch-save-data";
+      "ch-ua";
+      "ch-ua-arch";
+      "ch-ua-bitness";
+      "ch-ua-high-entropy-values";
+      "ch-ua-platform";
+      "ch-ua-model";
+      "ch-ua-mobile";
+      "ch-ua-form-factors";
+      "ch-ua-full-version";
+      "ch-ua-full-version-list";
+      "ch-ua-platform-version";
+      "ch-ua-wow64";
+      "ch-viewport-height";
+      "ch-viewport-width";
+      "ch-width";
+      "clipboard-read";
+      "clipboard-write";
+      "compute-pressure";
+      "controlled-frame";
+      "cross-origin-isolated";
+      "deferred-fetch";
+      "deferred-fetch-minimal";
+      "device-attributes";
+      "digital-credentials-create";
+      "digital-credentials-get";
+      "direct-sockets";
+      "direct-sockets-multicast";
+      "display-capture";
+      "document-domain";
+      "encrypted-media";
+      "execution-while-out-of-viewport";
+      "execution-while-not-rendered";
+      "focus-without-user-activation";
+      "fullscreen";
+      "frobulate";
+      "gamepad";
+      "geolocation";
+      "gyroscope";
+      "haptics";
+      "hid";
+      "identity-credentials-get";
+      "idle-detection";
+      "interest-cohort";
+      "keyboard-map";
+      "language-detector";
+      "language-model";
+      "local-fonts";
+      "local-network";
+      "local-network-access";
+      "loopback-network";
+      "magnetometer";
+      "manual-text";
+      "media-playback-while-not-visible";
+      "microphone";
+      "midi";
+      "on-device-speech-recognition";
+      "otp-credentials";
+      "payment";
+      "picture-in-picture";
+      "private-state-token-issuance";
+      "private-state-token-redemption";
+      "publickey-credentials-create";
+      "publickey-credentials-get";
+      "rewriter";
+      "screen-wake-lock";
+      "serial";
+      "shared-storage";
+      "shared-storage-select-url";
+      "smart-card";
+      "speaker-selection";
+      "storage-access";
+      "sub-apps";
+      "summarizer";
+      "sync-xhr";
+      "tools";
+      "translator";
+      "unload";
+      "usb";
+      "usb-unrestricted";
+      "vertical-scroll";
+      "web-app-installation";
+      "webnn";
+      "web-printing";
+      "web-share";
+      "window-management";
+      "writer";
+      "xr-spatial-tracking";
+    ]
+let () =
+  check_enum "Page.PermissionsPolicyBlockReason" Cdp.Page.permissions_policy_block_reason_of_json
+    Cdp.Page.permissions_policy_block_reason_to_json
+    (fun (value : Cdp.Page.permissions_policy_block_reason) ->
+      match value with
+      | Cdp.Page.Other _ -> true
+      | _known -> false)
+    [ "Header"; "IframeAttribute"; "InFencedFrameTree"; "InIsolatedApp" ]
+let () =
+  check_enum "Page.OriginTrialTokenStatus" Cdp.Page.origin_trial_token_status_of_json
+    Cdp.Page.origin_trial_token_status_to_json
+    (fun (value : Cdp.Page.origin_trial_token_status) ->
+      match value with
+      | Cdp.Page.Other _ -> true
+      | _known -> false)
+    [
+      "Success";
+      "NotSupported";
+      "Insecure";
+      "Expired";
+      "WrongOrigin";
+      "InvalidSignature";
+      "Malformed";
+      "WrongVersion";
+      "FeatureDisabled";
+      "TokenDisabled";
+      "FeatureDisabledForUser";
+      "UnknownTrial";
+    ]
+let () =
+  check_enum "Page.OriginTrialStatus" Cdp.Page.origin_trial_status_of_json Cdp.Page.origin_trial_status_to_json
+    (fun (value : Cdp.Page.origin_trial_status) ->
+      match value with
+      | Cdp.Page.Other _ -> true
+      | _known -> false)
+    [ "Enabled"; "ValidTokenNotProvided"; "OSNotSupported"; "TrialNotAllowed" ]
+let () =
+  check_enum "Page.OriginTrialUsageRestriction" Cdp.Page.origin_trial_usage_restriction_of_json
+    Cdp.Page.origin_trial_usage_restriction_to_json
+    (fun (value : Cdp.Page.origin_trial_usage_restriction) ->
+      match value with
+      | Cdp.Page.Other _ -> true
+      | _known -> false)
+    [ "None"; "Subset" ]
+let () =
+  check_enum "Page.TransitionType" Cdp.Page.transition_type_of_json Cdp.Page.transition_type_to_json
+    (fun (value : Cdp.Page.transition_type) ->
+      match value with
+      | Cdp.Page.Other _ -> true
+      | _known -> false)
+    [
+      "link";
+      "typed";
+      "address_bar";
+      "auto_bookmark";
+      "auto_subframe";
+      "manual_subframe";
+      "generated";
+      "auto_toplevel";
+      "form_submit";
+      "reload";
+      "keyword";
+      "keyword_generated";
+      "other";
+    ]
+let () =
+  check_enum "Page.DialogType" Cdp.Page.dialog_type_of_json Cdp.Page.dialog_type_to_json
+    (fun (value : Cdp.Page.dialog_type) ->
+      match value with
+      | Cdp.Page.Other _ -> true
+      | _known -> false)
+    [ "alert"; "confirm"; "prompt"; "beforeunload" ]
+let () =
+  check_enum "Page.ClientNavigationReason" Cdp.Page.client_navigation_reason_of_json
+    Cdp.Page.client_navigation_reason_to_json
+    (fun (value : Cdp.Page.client_navigation_reason) ->
+      match value with
+      | Cdp.Page.Other _ -> true
+      | _known -> false)
+    [
+      "anchorClick";
+      "formSubmissionGet";
+      "formSubmissionPost";
+      "httpHeaderRefresh";
+      "initialFrameNavigation";
+      "metaTagRefresh";
+      "other";
+      "pageBlockInterstitial";
+      "reload";
+      "scriptInitiated";
+    ]
+let () =
+  check_enum "Page.ClientNavigationDisposition" Cdp.Page.client_navigation_disposition_of_json
+    Cdp.Page.client_navigation_disposition_to_json
+    (fun (value : Cdp.Page.client_navigation_disposition) ->
+      match value with
+      | Cdp.Page.Other _ -> true
+      | _known -> false)
+    [ "currentTab"; "newTab"; "newWindow"; "download" ]
+let () =
+  check_enum "Page.ReferrerPolicy" Cdp.Page.referrer_policy_of_json Cdp.Page.referrer_policy_to_json
+    (fun (value : Cdp.Page.referrer_policy) ->
+      match value with
+      | Cdp.Page.Other _ -> true
+      | _known -> false)
+    [
+      "noReferrer";
+      "noReferrerWhenDowngrade";
+      "origin";
+      "originWhenCrossOrigin";
+      "sameOrigin";
+      "strictOrigin";
+      "strictOriginWhenCrossOrigin";
+      "unsafeUrl";
+    ]
+let () =
+  check_enum "Page.NavigationType" Cdp.Page.navigation_type_of_json Cdp.Page.navigation_type_to_json
+    (fun (value : Cdp.Page.navigation_type) ->
+      match value with
+      | Cdp.Page.Other _ -> true
+      | _known -> false)
+    [ "Navigation"; "BackForwardCacheRestore" ]
+let () =
+  check_enum "Page.BackForwardCacheNotRestoredReason" Cdp.Page.back_forward_cache_not_restored_reason_of_json
+    Cdp.Page.back_forward_cache_not_restored_reason_to_json
+    (fun (value : Cdp.Page.back_forward_cache_not_restored_reason) ->
+      match value with
+      | Cdp.Page.Other _ -> true
+      | _known -> false)
+    [
+      "NotPrimaryMainFrame";
+      "BackForwardCacheDisabled";
+      "RelatedActiveContentsExist";
+      "HTTPStatusNotOK";
+      "SchemeNotHTTPOrHTTPS";
+      "Loading";
+      "WasGrantedMediaAccess";
+      "DisableForRenderFrameHostCalled";
+      "DomainNotAllowed";
+      "HTTPMethodNotGET";
+      "SubframeIsNavigating";
+      "Timeout";
+      "CacheLimit";
+      "JavaScriptExecution";
+      "RendererProcessKilled";
+      "RendererProcessCrashed";
+      "SchedulerTrackedFeatureUsed";
+      "ConflictingBrowsingInstance";
+      "CacheFlushed";
+      "ServiceWorkerVersionActivation";
+      "SessionRestored";
+      "ServiceWorkerPostMessage";
+      "EnteredBackForwardCacheBeforeServiceWorkerHostAdded";
+      "RenderFrameHostReused_SameSite";
+      "RenderFrameHostReused_CrossSite";
+      "ServiceWorkerClaim";
+      "IgnoreEventAndEvict";
+      "HaveInnerContents";
+      "TimeoutPuttingInCache";
+      "BackForwardCacheDisabledByLowMemory";
+      "BackForwardCacheDisabledByCommandLine";
+      "NetworkRequestDatapipeDrainedAsBytesConsumer";
+      "NetworkRequestRedirected";
+      "NetworkRequestTimeout";
+      "NetworkExceedsBufferLimit";
+      "NavigationCancelledWhileRestoring";
+      "NotMostRecentNavigationEntry";
+      "BackForwardCacheDisabledForPrerender";
+      "UserAgentOverrideDiffers";
+      "ForegroundCacheLimit";
+      "ForwardCacheDisabled";
+      "BrowsingInstanceNotSwapped";
+      "BackForwardCacheDisabledForDelegate";
+      "UnloadHandlerExistsInMainFrame";
+      "UnloadHandlerExistsInSubFrame";
+      "ServiceWorkerUnregistration";
+      "CacheControlNoStore";
+      "CacheControlNoStoreCookieModified";
+      "CacheControlNoStoreHTTPOnlyCookieModified";
+      "NoResponseHead";
+      "Unknown";
+      "ActivationNavigationsDisallowedForBug1234857";
+      "ErrorDocument";
+      "FencedFramesEmbedder";
+      "CookieDisabled";
+      "HTTPAuthRequired";
+      "CookieFlushed";
+      "BroadcastChannelOnMessage";
+      "WebViewSettingsChanged";
+      "WebViewJavaScriptObjectChanged";
+      "WebViewMessageListenerInjected";
+      "WebViewSafeBrowsingAllowlistChanged";
+      "WebViewDocumentStartJavascriptChanged";
+      "WebSocket";
+      "WebTransport";
+      "WebRTC";
+      "MainResourceHasCacheControlNoStore";
+      "MainResourceHasCacheControlNoCache";
+      "SubresourceHasCacheControlNoStore";
+      "SubresourceHasCacheControlNoCache";
+      "ContainsPlugins";
+      "DocumentLoaded";
+      "OutstandingNetworkRequestOthers";
+      "RequestedMIDIPermission";
+      "RequestedAudioCapturePermission";
+      "RequestedVideoCapturePermission";
+      "RequestedBackForwardCacheBlockedSensors";
+      "RequestedBackgroundWorkPermission";
+      "BroadcastChannel";
+      "WebXR";
+      "SharedWorker";
+      "SharedWorkerMessage";
+      "SharedWorkerWithNoActiveClient";
+      "WebLocks";
+      "WebLocksContention";
+      "WebHID";
+      "WebBluetooth";
+      "WebShare";
+      "RequestedStorageAccessGrant";
+      "WebNfc";
+      "OutstandingNetworkRequestFetch";
+      "OutstandingNetworkRequestXHR";
+      "AppBanner";
+      "Printing";
+      "WebDatabase";
+      "PictureInPicture";
+      "SpeechRecognizer";
+      "IdleManager";
+      "PaymentManager";
+      "SpeechSynthesis";
+      "KeyboardLock";
+      "WebOTPService";
+      "OutstandingNetworkRequestDirectSocket";
+      "InjectedJavascript";
+      "InjectedStyleSheet";
+      "KeepaliveRequest";
+      "IndexedDBEvent";
+      "Dummy";
+      "JsNetworkRequestReceivedCacheControlNoStoreResource";
+      "WebRTCUsedWithCCNS";
+      "WebTransportUsedWithCCNS";
+      "WebSocketUsedWithCCNS";
+      "SmartCard";
+      "LiveMediaStreamTrack";
+      "UnloadHandler";
+      "ParserAborted";
+      "ContentSecurityHandler";
+      "ContentWebAuthenticationAPI";
+      "ContentFileChooser";
+      "ContentSerial";
+      "ContentFileSystemAccess";
+      "ContentMediaDevicesDispatcherHost";
+      "ContentWebBluetooth";
+      "ContentWebUSB";
+      "ContentMediaSessionService";
+      "ContentScreenReader";
+      "ContentDiscarded";
+      "EmbedderPopupBlockerTabHelper";
+      "EmbedderSafeBrowsingTriggeredPopupBlocker";
+      "EmbedderSafeBrowsingThreatDetails";
+      "EmbedderAppBannerManager";
+      "EmbedderDomDistillerViewerSource";
+      "EmbedderDomDistillerSelfDeletingRequestDelegate";
+      "EmbedderOomInterventionTabHelper";
+      "EmbedderOfflinePage";
+      "EmbedderChromePasswordManagerClientBindCredentialManager";
+      "EmbedderPermissionRequestManager";
+      "EmbedderModalDialog";
+      "EmbedderExtensions";
+      "EmbedderExtensionMessaging";
+      "EmbedderExtensionMessagingForOpenPort";
+      "EmbedderExtensionSentMessageToCachedFrame";
+      "EmbedderExtensionFrame";
+      "EmbedderPrivilegedWebContents";
+      "RequestedByWebViewClient";
+      "PostMessageByWebViewClient";
+      "CacheControlNoStoreDeviceBoundSessionTerminated";
+      "CacheLimitPrunedOnModerateMemoryPressure";
+      "CacheLimitPrunedOnCriticalMemoryPressure";
+    ]
+let () =
+  check_enum "Page.BackForwardCacheNotRestoredReasonType" Cdp.Page.back_forward_cache_not_restored_reason_type_of_json
+    Cdp.Page.back_forward_cache_not_restored_reason_type_to_json
+    (fun (value : Cdp.Page.back_forward_cache_not_restored_reason_type) ->
+      match value with
+      | Cdp.Page.Other _ -> true
+      | _known -> false)
+    [ "SupportPending"; "PageSupportNeeded"; "Circumstantial" ]
+let () =
+  check_enum "Page.Capture_screenshot.format" Cdp.Page.Capture_screenshot.format_of_json
+    Cdp.Page.Capture_screenshot.format_to_json
+    (fun (value : Cdp.Page.Capture_screenshot.format) ->
+      match value with
+      | Cdp.Page.Capture_screenshot.Other _ -> true
+      | _known -> false)
+    [ "jpeg"; "png"; "webp" ]
+let () =
+  check_enum "Page.Capture_snapshot.format" Cdp.Page.Capture_snapshot.format_of_json
+    Cdp.Page.Capture_snapshot.format_to_json
+    (fun (value : Cdp.Page.Capture_snapshot.format) ->
+      match value with
+      | Cdp.Page.Capture_snapshot.Other _ -> true
+      | _known -> false)
+    [ "mhtml" ]
+let () =
+  check_enum "Page.Print_to_pdf.transferMode" Cdp.Page.Print_to_pdf.transfer_mode_of_json
+    Cdp.Page.Print_to_pdf.transfer_mode_to_json
+    (fun (value : Cdp.Page.Print_to_pdf.transfer_mode) ->
+      match value with
+      | Cdp.Page.Print_to_pdf.Other _ -> true
+      | _known -> false)
+    [ "ReturnAsBase64"; "ReturnAsStream" ]
+let () =
+  check_enum "Page.Set_download_behavior.behavior" Cdp.Page.Set_download_behavior.behavior_of_json
+    Cdp.Page.Set_download_behavior.behavior_to_json
+    (fun (value : Cdp.Page.Set_download_behavior.behavior) ->
+      match value with
+      | Cdp.Page.Set_download_behavior.Other _ -> true
+      | _known -> false)
+    [ "deny"; "allow"; "default" ]
+let () =
+  check_enum "Page.Set_touch_emulation_enabled.configuration" Cdp.Page.Set_touch_emulation_enabled.configuration_of_json
+    Cdp.Page.Set_touch_emulation_enabled.configuration_to_json
+    (fun (value : Cdp.Page.Set_touch_emulation_enabled.configuration) ->
+      match value with
+      | Cdp.Page.Set_touch_emulation_enabled.Other _ -> true
+      | _known -> false)
+    [ "mobile"; "desktop" ]
+let () =
+  check_enum "Page.Start_screencast.format" Cdp.Page.Start_screencast.format_of_json
+    Cdp.Page.Start_screencast.format_to_json
+    (fun (value : Cdp.Page.Start_screencast.format) ->
+      match value with
+      | Cdp.Page.Start_screencast.Other _ -> true
+      | _known -> false)
+    [ "jpeg"; "png" ]
+let () =
+  check_enum "Page.Set_web_lifecycle_state.state" Cdp.Page.Set_web_lifecycle_state.state_of_json
+    Cdp.Page.Set_web_lifecycle_state.state_to_json
+    (fun (value : Cdp.Page.Set_web_lifecycle_state.state) ->
+      match value with
+      | Cdp.Page.Set_web_lifecycle_state.Other _ -> true
+      | _known -> false)
+    [ "frozen"; "active" ]
+let () =
+  check_enum "Page.Set_spc_transaction_mode.mode" Cdp.Page.Set_spc_transaction_mode.mode_of_json
+    Cdp.Page.Set_spc_transaction_mode.mode_to_json
+    (fun (value : Cdp.Page.Set_spc_transaction_mode.mode) ->
+      match value with
+      | Cdp.Page.Set_spc_transaction_mode.Other _ -> true
+      | _known -> false)
+    [ "none"; "autoAccept"; "autoChooseToAuthAnotherWay"; "autoReject"; "autoOptOut" ]
+let () =
+  check_enum "Page.Set_rph_registration_mode.mode" Cdp.Page.Set_rph_registration_mode.mode_of_json
+    Cdp.Page.Set_rph_registration_mode.mode_to_json
+    (fun (value : Cdp.Page.Set_rph_registration_mode.mode) ->
+      match value with
+      | Cdp.Page.Set_rph_registration_mode.Other _ -> true
+      | _known -> false)
+    [ "none"; "autoAccept"; "autoReject" ]
+let () =
+  check_enum "Page.File_chooser_opened.mode" Cdp.Page.File_chooser_opened.mode_of_json
+    Cdp.Page.File_chooser_opened.mode_to_json
+    (fun (value : Cdp.Page.File_chooser_opened.mode) ->
+      match value with
+      | Cdp.Page.File_chooser_opened.Other _ -> true
+      | _known -> false)
+    [ "selectSingle"; "selectMultiple" ]
+let () =
+  check_enum "Page.Frame_detached.reason" Cdp.Page.Frame_detached.reason_of_json Cdp.Page.Frame_detached.reason_to_json
+    (fun (value : Cdp.Page.Frame_detached.reason) ->
+      match value with
+      | Cdp.Page.Frame_detached.Other _ -> true
+      | _known -> false)
+    [ "remove"; "swap" ]
+let () =
+  check_enum "Page.Frame_started_navigating.navigationType" Cdp.Page.Frame_started_navigating.navigation_type_of_json
+    Cdp.Page.Frame_started_navigating.navigation_type_to_json
+    (fun (value : Cdp.Page.Frame_started_navigating.navigation_type) ->
+      match value with
+      | Cdp.Page.Frame_started_navigating.Other _ -> true
+      | _known -> false)
+    [
+      "reload";
+      "reloadBypassingCache";
+      "restore";
+      "restoreWithPost";
+      "historySameDocument";
+      "historyDifferentDocument";
+      "sameDocument";
+      "differentDocument";
+    ]
+let () =
+  check_enum "Page.Download_progress.state" Cdp.Page.Download_progress.state_of_json
+    Cdp.Page.Download_progress.state_to_json
+    (fun (value : Cdp.Page.Download_progress.state) ->
+      match value with
+      | Cdp.Page.Download_progress.Other _ -> true
+      | _known -> false)
+    [ "inProgress"; "completed"; "canceled" ]
+let () =
+  check_enum "Page.Navigated_within_document.navigationType" Cdp.Page.Navigated_within_document.navigation_type_of_json
+    Cdp.Page.Navigated_within_document.navigation_type_to_json
+    (fun (value : Cdp.Page.Navigated_within_document.navigation_type) ->
+      match value with
+      | Cdp.Page.Navigated_within_document.Other _ -> true
+      | _known -> false)
+    [ "fragment"; "historyApi"; "other" ]
+let () =
+  check_enum "Security.MixedContentType" Cdp.Security.mixed_content_type_of_json Cdp.Security.mixed_content_type_to_json
+    (fun (value : Cdp.Security.mixed_content_type) ->
+      match value with
+      | Cdp.Security.Other _ -> true
+      | _known -> false)
+    [ "blockable"; "optionally-blockable"; "none" ]
+let () =
+  check_enum "Security.SecurityState" Cdp.Security.security_state_of_json Cdp.Security.security_state_to_json
+    (fun (value : Cdp.Security.security_state) ->
+      match value with
+      | Cdp.Security.Other _ -> true
+      | _known -> false)
+    [ "unknown"; "neutral"; "insecure"; "secure"; "info"; "insecure-broken" ]
+let () =
+  check_enum "Security.SafetyTipStatus" Cdp.Security.safety_tip_status_of_json Cdp.Security.safety_tip_status_to_json
+    (fun (value : Cdp.Security.safety_tip_status) ->
+      match value with
+      | Cdp.Security.Other _ -> true
+      | _known -> false)
+    [ "badReputation"; "lookalike" ]
+let () =
+  check_enum "Security.CertificateErrorAction" Cdp.Security.certificate_error_action_of_json
+    Cdp.Security.certificate_error_action_to_json
+    (fun (value : Cdp.Security.certificate_error_action) ->
+      match value with
+      | Cdp.Security.Other _ -> true
+      | _known -> false)
+    [ "continue"; "cancel" ]
+let () =
+  check_enum "Target.WindowState" Cdp.Target.window_state_of_json Cdp.Target.window_state_to_json
+    (fun (value : Cdp.Target.window_state) ->
+      match value with
+      | Cdp.Target.Other _ -> true
+      | _known -> false)
+    [ "normal"; "minimized"; "maximized"; "fullscreen" ]
+let () =
+  check_enum "Debugger.Scope.type" Cdp.Debugger.scope_type_of_json Cdp.Debugger.scope_type_to_json
+    (fun (value : Cdp.Debugger.scope_type) ->
+      match value with
+      | Cdp.Debugger.Other _ -> true
+      | _known -> false)
+    [ "global"; "local"; "with"; "closure"; "catch"; "block"; "script"; "eval"; "module"; "wasm-expression-stack" ]
+let () =
+  check_enum "Debugger.BreakLocation.type" Cdp.Debugger.break_location_type_of_json
+    Cdp.Debugger.break_location_type_to_json
+    (fun (value : Cdp.Debugger.break_location_type) ->
+      match value with
+      | Cdp.Debugger.Other _ -> true
+      | _known -> false)
+    [ "debuggerStatement"; "call"; "return" ]
+let () =
+  check_enum "Debugger.ScriptLanguage" Cdp.Debugger.script_language_of_json Cdp.Debugger.script_language_to_json
+    (fun (value : Cdp.Debugger.script_language) ->
+      match value with
+      | Cdp.Debugger.Other _ -> true
+      | _known -> false)
+    [ "JavaScript"; "WebAssembly" ]
+let () =
+  check_enum "Debugger.DebugSymbols.type" Cdp.Debugger.debug_symbols_type_of_json
+    Cdp.Debugger.debug_symbols_type_to_json
+    (fun (value : Cdp.Debugger.debug_symbols_type) ->
+      match value with
+      | Cdp.Debugger.Other _ -> true
+      | _known -> false)
+    [ "SourceMap"; "EmbeddedDWARF"; "ExternalDWARF" ]
+let () =
+  check_enum "Debugger.Continue_to_location.targetCallFrames"
+    Cdp.Debugger.Continue_to_location.target_call_frames_of_json
+    Cdp.Debugger.Continue_to_location.target_call_frames_to_json
+    (fun (value : Cdp.Debugger.Continue_to_location.target_call_frames) ->
+      match value with
+      | Cdp.Debugger.Continue_to_location.Other _ -> true
+      | _known -> false)
+    [ "any"; "current" ]
+let () =
+  check_enum "Debugger.Restart_frame.mode" Cdp.Debugger.Restart_frame.mode_of_json
+    Cdp.Debugger.Restart_frame.mode_to_json
+    (fun (value : Cdp.Debugger.Restart_frame.mode) ->
+      match value with
+      | Cdp.Debugger.Restart_frame.Other _ -> true
+      | _known -> false)
+    [ "StepInto" ]
+let () =
+  check_enum "Debugger.Set_instrumentation_breakpoint.instrumentation"
+    Cdp.Debugger.Set_instrumentation_breakpoint.instrumentation_of_json
+    Cdp.Debugger.Set_instrumentation_breakpoint.instrumentation_to_json
+    (fun (value : Cdp.Debugger.Set_instrumentation_breakpoint.instrumentation) ->
+      match value with
+      | Cdp.Debugger.Set_instrumentation_breakpoint.Other _ -> true
+      | _known -> false)
+    [ "beforeScriptExecution"; "beforeScriptWithSourceMapExecution" ]
+let () =
+  check_enum "Debugger.Set_pause_on_exceptions.state" Cdp.Debugger.Set_pause_on_exceptions.state_of_json
+    Cdp.Debugger.Set_pause_on_exceptions.state_to_json
+    (fun (value : Cdp.Debugger.Set_pause_on_exceptions.state) ->
+      match value with
+      | Cdp.Debugger.Set_pause_on_exceptions.Other _ -> true
+      | _known -> false)
+    [ "none"; "caught"; "uncaught"; "all" ]
+let () =
+  check_enum "Debugger.Set_script_source.status" Cdp.Debugger.Set_script_source.status_of_json
+    Cdp.Debugger.Set_script_source.status_to_json
+    (fun (value : Cdp.Debugger.Set_script_source.status) ->
+      match value with
+      | Cdp.Debugger.Set_script_source.Other _ -> true
+      | _known -> false)
+    [ "Ok"; "CompileError"; "BlockedByActiveGenerator"; "BlockedByActiveFunction"; "BlockedByTopLevelEsModuleChange" ]
+let () =
+  check_enum "Debugger.Paused.reason" Cdp.Debugger.Paused.reason_of_json Cdp.Debugger.Paused.reason_to_json
+    (fun (value : Cdp.Debugger.Paused.reason) ->
+      match value with
+      | Cdp.Debugger.Paused.Other _ -> true
+      | _known -> false)
+    [
+      "ambiguous";
+      "assert";
+      "CSPViolation";
+      "debugCommand";
+      "DOM";
+      "EventListener";
+      "exception";
+      "instrumentation";
+      "OOM";
+      "other";
+      "promiseRejection";
+      "XHR";
+      "step";
+    ]
+let () =
+  check_enum "Runtime.SerializationOptions.serialization" Cdp.Runtime.serialization_options_serialization_of_json
+    Cdp.Runtime.serialization_options_serialization_to_json
+    (fun (value : Cdp.Runtime.serialization_options_serialization) ->
+      match value with
+      | Cdp.Runtime.Other _ -> true
+      | _known -> false)
+    [ "deep"; "json"; "idOnly" ]
+let () =
+  check_enum "Runtime.DeepSerializedValue.type" Cdp.Runtime.deep_serialized_value_type_of_json
+    Cdp.Runtime.deep_serialized_value_type_to_json
+    (fun (value : Cdp.Runtime.deep_serialized_value_type) ->
+      match value with
+      | Cdp.Runtime.Other _ -> true
+      | _known -> false)
+    [
+      "undefined";
+      "null";
+      "string";
+      "number";
+      "boolean";
+      "bigint";
+      "regexp";
+      "date";
+      "symbol";
+      "array";
+      "object";
+      "function";
+      "map";
+      "set";
+      "weakmap";
+      "weakset";
+      "error";
+      "proxy";
+      "promise";
+      "typedarray";
+      "arraybuffer";
+      "node";
+      "window";
+      "generator";
+    ]
+let () =
+  check_enum "Runtime.RemoteObject.type" Cdp.Runtime.remote_object_type_of_json Cdp.Runtime.remote_object_type_to_json
+    (fun (value : Cdp.Runtime.remote_object_type) ->
+      match value with
+      | Cdp.Runtime.Other _ -> true
+      | _known -> false)
+    [ "object"; "function"; "undefined"; "string"; "number"; "boolean"; "symbol"; "bigint" ]
+let () =
+  check_enum "Runtime.RemoteObject.subtype" Cdp.Runtime.remote_object_subtype_of_json
+    Cdp.Runtime.remote_object_subtype_to_json
+    (fun (value : Cdp.Runtime.remote_object_subtype) ->
+      match value with
+      | Cdp.Runtime.Other _ -> true
+      | _known -> false)
+    [
+      "array";
+      "null";
+      "node";
+      "regexp";
+      "date";
+      "map";
+      "set";
+      "weakmap";
+      "weakset";
+      "iterator";
+      "generator";
+      "error";
+      "proxy";
+      "promise";
+      "typedarray";
+      "arraybuffer";
+      "dataview";
+      "webassemblymemory";
+      "wasmvalue";
+      "deferredmodule";
+      "trustedtype";
+    ]
+let () =
+  check_enum "Runtime.ObjectPreview.type" Cdp.Runtime.object_preview_type_of_json
+    Cdp.Runtime.object_preview_type_to_json
+    (fun (value : Cdp.Runtime.object_preview_type) ->
+      match value with
+      | Cdp.Runtime.Other _ -> true
+      | _known -> false)
+    [ "object"; "function"; "undefined"; "string"; "number"; "boolean"; "symbol"; "bigint" ]
+let () =
+  check_enum "Runtime.ObjectPreview.subtype" Cdp.Runtime.object_preview_subtype_of_json
+    Cdp.Runtime.object_preview_subtype_to_json
+    (fun (value : Cdp.Runtime.object_preview_subtype) ->
+      match value with
+      | Cdp.Runtime.Other _ -> true
+      | _known -> false)
+    [
+      "array";
+      "null";
+      "node";
+      "regexp";
+      "date";
+      "map";
+      "set";
+      "weakmap";
+      "weakset";
+      "iterator";
+      "generator";
+      "error";
+      "proxy";
+      "promise";
+      "typedarray";
+      "arraybuffer";
+      "dataview";
+      "webassemblymemory";
+      "wasmvalue";
+      "deferredmodule";
+      "trustedtype";
+    ]
+let () =
+  check_enum "Runtime.PropertyPreview.type" Cdp.Runtime.property_preview_type_of_json
+    Cdp.Runtime.property_preview_type_to_json
+    (fun (value : Cdp.Runtime.property_preview_type) ->
+      match value with
+      | Cdp.Runtime.Other _ -> true
+      | _known -> false)
+    [ "object"; "function"; "undefined"; "string"; "number"; "boolean"; "symbol"; "accessor"; "bigint" ]
+let () =
+  check_enum "Runtime.PropertyPreview.subtype" Cdp.Runtime.property_preview_subtype_of_json
+    Cdp.Runtime.property_preview_subtype_to_json
+    (fun (value : Cdp.Runtime.property_preview_subtype) ->
+      match value with
+      | Cdp.Runtime.Other _ -> true
+      | _known -> false)
+    [
+      "array";
+      "null";
+      "node";
+      "regexp";
+      "date";
+      "map";
+      "set";
+      "weakmap";
+      "weakset";
+      "iterator";
+      "generator";
+      "error";
+      "proxy";
+      "promise";
+      "typedarray";
+      "arraybuffer";
+      "dataview";
+      "webassemblymemory";
+      "wasmvalue";
+      "deferredmodule";
+      "trustedtype";
+    ]
+let () =
+  check_enum "Runtime.Console_api_called.type" Cdp.Runtime.Console_api_called.type__of_json
+    Cdp.Runtime.Console_api_called.type__to_json
+    (fun (value : Cdp.Runtime.Console_api_called.type_) ->
+      match value with
+      | Cdp.Runtime.Console_api_called.Other _ -> true
+      | _known -> false)
+    [
+      "log";
+      "debug";
+      "info";
+      "error";
+      "warning";
+      "dir";
+      "dirxml";
+      "table";
+      "trace";
+      "clear";
+      "startGroup";
+      "startGroupCollapsed";
+      "endGroup";
+      "assert";
+      "profile";
+      "profileEnd";
+      "count";
+      "timeEnd";
+    ]
 let () =
   check "Browser.BrowserContextID" Cdp.Base.Browser.Browser_context_id.of_json
     Cdp.Base.Browser.Browser_context_id.to_json Cdp.Base.Browser.Browser_context_id.equal "\"sample\""

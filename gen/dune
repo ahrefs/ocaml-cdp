@@ -2,7 +2,7 @@
 
 (library
  (name cdp_gen)
- (modules naming protocol emit fetch sample roundtrip)
+ (modules naming protocol inline_enum emit fetch sample roundtrip)
  (libraries yojson))
 
 (executable

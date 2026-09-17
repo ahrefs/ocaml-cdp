@@ -3,12 +3,13 @@
    plus wire attributes); equal/show/make come from ppx_deriving.
 
    Modules:
-     Naming     protocol names -> OCaml names
-     Protocol   load and check the JSON, alias table, file IO
-     Emit       print the library code
-     Sample     one JSON sample per protocol type
-     Roundtrip  print the roundtrip test
-     Fetch      download a protocol snapshot
+     Naming       protocol names -> OCaml names
+     Protocol     load and check the JSON, alias table, file IO
+     Inline_enum  an enum written on a property, hoisted to a named type
+     Emit         print the library code
+     Sample       one JSON sample per protocol type
+     Roundtrip    print the roundtrip test
+     Fetch        download a protocol snapshot
    This file is only the CLI.
 
    Output layout:
@@ -117,10 +118,11 @@ let generate ~browser ~js ~outdir ~domains_arg =
 
 let roundtrip ~browser ~js ~outfile ~domains_arg =
   let { revision; domains; alias_tbl; selected = _ } = load_protocol ~browser ~js ~domains_arg in
-  let { Roundtrip.contents; emitted; skipped } = Roundtrip.emit ~revision ~domains ~alias_tbl in
+  let { Roundtrip.contents; emitted; enum_checks; skipped } = Roundtrip.emit ~revision ~domains ~alias_tbl in
   Protocol.write_file outfile contents;
   List.iter (fun (label, reason) -> Printf.eprintf "skipped %s: %s\n" label reason) skipped;
-  Printf.printf "generated %s: %d roundtrip checks, %d skipped\n" outfile emitted (List.length skipped)
+  Printf.printf "generated %s: %d roundtrip checks, %d enum checks, %d skipped\n" outfile emitted enum_checks
+    (List.length skipped)
 
 let usage =
   "usage:\n\

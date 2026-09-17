@@ -93,6 +93,12 @@ let domain_module_of_domain domain = String.capitalize_ascii (file_of_domain dom
 let types_module_of_domain domain = domain_module_of_domain domain ^ "_types"
 let submodule_of_name name = String.capitalize_ascii (sanitize_lower name)
 
+(* Names of enums hoisted out of a property.
+   - inside a named type: <type>_<field>, so two types can share a field name
+   - inside a command or event module: the field name, the module already scopes it *)
+let hoisted_in_type ~type_id field = Printf.sprintf "%s_%s" (camel_to_snake type_id) (camel_to_snake field)
+let hoisted_in_item field = sanitize_lower field
+
 (* enum value -> constructor: "optionally-blockable" -> Optionally_blockable,
    "text/css" -> Text_css, "-Infinity" -> Minus_Infinity, "0" -> V0 *)
 let constructor_of_enum_value value =
