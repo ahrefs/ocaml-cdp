@@ -87,6 +87,17 @@ let check_unique_names domains =
       names
   in
   check_unique ~what:"domain" (List.map (fun domain -> domain.name) domains);
+  let check_unique_files domains =
+    let seen = Hashtbl.create 16 in
+    List.iter
+      (fun domain ->
+        let file = Naming.file_of_domain domain.name ^ ".ml" in
+        match Hashtbl.find_opt seen file with
+        | None -> Hashtbl.replace seen file domain.name
+        | Some earlier -> failwith (spf "cdp-gen: domains %s and %s both become %s" earlier domain.name file))
+      domains
+  in
+  check_unique_files domains;
   List.iter
     (fun domain ->
       let qualify key item = spf "%s.%s" domain.name (get_string key item) in

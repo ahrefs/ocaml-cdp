@@ -37,4 +37,14 @@ the second one under the _command / _event fallback; the generator refuses.
   $ cdp-gen generate two_events.json empty.json out all
   cdp-gen: event Demo.ping is defined twice
   [1]
+
+Two domains that differ only in case would write the same cdp_demo.ml, the
+second one silently replacing the first.
+
+  $ cat > two_cases.json << 'EOF'
+  > {"domains":[{"domain":"Demo","types":[]},{"domain":"DEMO","types":[]}]}
+  > EOF
+  $ cdp-gen generate two_cases.json empty.json out all
+  cdp-gen: domains Demo and DEMO both become cdp_demo.ml
+  [1]
   $ ls out
