@@ -20,4 +20,4 @@
  (public_name cdp-gen)
  (package cdp-gen)
  (modules gen)
- (libraries cdp_gen yojson))
+ (libraries cdp_gen yojson cmdliner))

@@ -1,5 +1,8 @@
 # Unreleased
 
+- `cdp-gen`: `--help` on every command, paths checked up front, and any
+  number of protocol files instead of exactly two.
+
 - `cdp`: `Cdp.Envelope.build_request ~id ?session command` builds the wire
   request straight from a typed command, for transports other than `cdp-lwt`.
 

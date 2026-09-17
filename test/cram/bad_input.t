@@ -8,9 +8,12 @@ uncaught exception.
   Unexpected end of input
   [1]
 
+A missing file is a command-line error: checked before any work, exit 124.
+
   $ cdp-gen generate does_not_exist.json js.json out all
-  cdp-gen: does_not_exist.json: No such file or directory
-  [1]
+  Usage: cdp-gen generate [--help] [OPTION]… PROTOCOL… OUTDIR DOMAINS
+  cdp-gen: PROTOCOL… arguments: no 'does_not_exist.json' file
+  [124]
 
 A structurally wrong protocol (a type without an id) is also a clean error.
 

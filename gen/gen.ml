@@ -36,8 +36,8 @@ open Cdp_gen
 (* The revision is stamped into every generated header comment.
    - read from the REVISION file next to the protocol JSON
    - anything that could not be a revision id is refused *)
-let read_revision ~browser =
-  let revision_file = Filename.concat (Filename.dirname browser) "REVISION" in
+let read_revision ~protocol_file =
+  let revision_file = Filename.concat (Filename.dirname protocol_file) "REVISION" in
   match Protocol.read_file revision_file with
   | exception Sys_error _no_revision_file -> "unknown"
   | contents ->
@@ -61,9 +61,13 @@ type loaded = {
 
 (* shared front half of generate and roundtrip: read REVISION, load and
    select domains, build the alias table, verify the type graph *)
-let load_protocol ~browser ~js ~domains_arg =
-  let revision = read_revision ~browser in
-  let all = Protocol.load_domains browser @ Protocol.load_domains js in
+let load_protocol ~protocol_files ~domains_arg =
+  let revision =
+    match protocol_files with
+    | first :: _others -> read_revision ~protocol_file:first
+    | [] -> "unknown"
+  in
+  let all = List.concat_map Protocol.load_domains protocol_files in
   Protocol.check_unique_names all;
   Protocol.check_identifiers all;
   let selected =
@@ -93,8 +97,8 @@ let load_protocol ~browser ~js ~domains_arg =
   Protocol.check_types_dag domains ~alias_tbl;
   { revision; selected; domains; alias_tbl }
 
-let generate ~browser ~js ~outdir ~domains_arg =
-  let { revision; selected; domains; alias_tbl } = load_protocol ~browser ~js ~domains_arg in
+let generate ~protocol_files ~outdir ~domains_arg =
+  let { revision; selected; domains; alias_tbl } = load_protocol ~protocol_files ~domains_arg in
   (* render every file before writing any: a generator error leaves outdir untouched *)
   let base_file = Emit.emit_base_file ~revision ~alias_tbl domains in
   let domain_files =
@@ -128,32 +132,16 @@ let generate ~browser ~js ~outdir ~domains_arg =
   Protocol.write_file (Filename.concat outdir "cdp.ml") index;
   Printf.printf "generated cdp.ml index (%d domains, protocol %s)\n" (List.length domains) revision
 
-let roundtrip ~browser ~js ~outfile ~domains_arg =
-  let { revision; domains; alias_tbl; selected = _ } = load_protocol ~browser ~js ~domains_arg in
+let roundtrip ~protocol_files ~outfile ~domains_arg =
+  let { revision; domains; alias_tbl; selected = _ } = load_protocol ~protocol_files ~domains_arg in
   let { Roundtrip.contents; emitted; enum_checks; skipped } = Roundtrip.emit ~revision ~domains ~alias_tbl in
   Protocol.write_file outfile contents;
   List.iter (fun (label, reason) -> Printf.eprintf "skipped %s: %s\n" label reason) skipped;
   Printf.printf "generated %s: %d roundtrip checks, %d enum checks, %d skipped\n" outfile emitted enum_checks
     (List.length skipped)
 
-let usage =
-  "usage:\n\
-  \  cdp-gen generate <browser_protocol.json> <js_protocol.json> <outdir> <Domain1,Domain2,...|all>\n\
-  \  cdp-gen roundtrip <browser_protocol.json> <js_protocol.json> <outfile.ml> <Domain1,Domain2,...|all>\n\
-  \  cdp-gen fetch <outdir> [<revision>]\n\
-   generate stamps headers from the REVISION file next to the protocol JSON."
-
-let () =
-  try
-    match Array.to_list Sys.argv with
-    | _ :: "generate" :: [ browser; js; outdir; domains ] -> generate ~browser ~js ~outdir ~domains_arg:domains
-    | _ :: "roundtrip" :: [ browser; js; outfile; domains ] -> roundtrip ~browser ~js ~outfile ~domains_arg:domains
-    | _ :: "fetch" :: [ outdir ] -> Fetch.fetch ~outdir ~rev:None
-    | _ :: "fetch" :: [ outdir; rev ] -> Fetch.fetch ~outdir ~rev:(Some rev)
-    | _invalid_arguments ->
-      prerr_endline usage;
-      exit 1
-  with
+let run action =
+  try action () with
   | Failure message ->
     prerr_endline message;
     exit 1
@@ -166,3 +154,49 @@ let () =
   | Sys_error message ->
     prerr_endline ("cdp-gen: " ^ message);
     exit 1
+
+let protocol_files_argument =
+  let doc = "A protocol definition, usually browser_protocol.json and js_protocol.json. All of them are loaded." in
+  Cmdliner.Arg.(non_empty & pos_left ~rev:true 1 non_dir_file [] & info [] ~docv:"PROTOCOL" ~doc)
+
+let domains_argument =
+  let doc = "Comma-separated domain names to generate, or $(b,all)." in
+  Cmdliner.Arg.(required & pos ~rev:true 0 (some string) None & info [] ~docv:"DOMAINS" ~doc)
+
+let generate_command =
+  let doc = "Generate the typed OCaml modules for the selected domains into a directory." in
+  let outdir_argument =
+    let doc = "An existing directory; generated cdp_*.ml files that this run does not produce are removed from it." in
+    Cmdliner.Arg.(required & pos ~rev:true 1 (some dir) None & info [] ~docv:"OUTDIR" ~doc)
+  in
+  let action protocol_files outdir domains_arg = run (fun () -> generate ~protocol_files ~outdir ~domains_arg) in
+  Cmdliner.Cmd.v (Cmdliner.Cmd.info "generate" ~doc)
+    Cmdliner.Term.(const action $ protocol_files_argument $ outdir_argument $ domains_argument)
+
+let roundtrip_command =
+  let doc = "Write the roundtrip test file for the selected domains." in
+  let outfile_argument =
+    let doc = "The OCaml file to write." in
+    Cmdliner.Arg.(required & pos ~rev:true 1 (some string) None & info [] ~docv:"OUTFILE" ~doc)
+  in
+  let action protocol_files outfile domains_arg = run (fun () -> roundtrip ~protocol_files ~outfile ~domains_arg) in
+  Cmdliner.Cmd.v (Cmdliner.Cmd.info "roundtrip" ~doc)
+    Cmdliner.Term.(const action $ protocol_files_argument $ outfile_argument $ domains_argument)
+
+let fetch_command =
+  let doc = "Download a protocol snapshot from npm into a directory, with its LICENSE and REVISION." in
+  let outdir_argument =
+    let doc = "An existing directory." in
+    Cmdliner.Arg.(required & pos 0 (some dir) None & info [] ~docv:"OUTDIR" ~doc)
+  in
+  let revision_argument =
+    let doc = "A devtools-protocol revision such as 1680125; the latest when absent." in
+    Cmdliner.Arg.(value & pos 1 (some string) None & info [] ~docv:"REVISION" ~doc)
+  in
+  let action outdir rev = run (fun () -> Fetch.fetch ~outdir ~rev) in
+  Cmdliner.Cmd.v (Cmdliner.Cmd.info "fetch" ~doc) Cmdliner.Term.(const action $ outdir_argument $ revision_argument)
+
+let () =
+  let doc = "Generate typed OCaml modules from the Chrome DevTools Protocol JSON." in
+  let info = Cmdliner.Cmd.info "cdp-gen" ~doc in
+  exit (Cmdliner.Cmd.eval (Cmdliner.Cmd.group info [ generate_command; roundtrip_command; fetch_command ]))

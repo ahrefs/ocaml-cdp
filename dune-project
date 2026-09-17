@@ -60,7 +60,9 @@
   (ocaml
    (>= "4.14"))
   (yojson
-   (>= "1.6.0"))))
+   (>= "1.6.0"))
+  (cmdliner
+   (>= "1.1.0"))))
 
 (package
  (name cdp-lwt)

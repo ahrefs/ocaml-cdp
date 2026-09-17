@@ -149,7 +149,11 @@ JSON), use the CLI directly:
 ```sh
 cdp-gen fetch mydir 1650000
 cdp-gen generate mydir/browser_protocol.json mydir/js_protocol.json out Network,Page
+cdp-gen generate --help       # every argument explained
 ```
+
+If a selected domain refers to domains outside the list, one message names
+all of them, for example `Fetch also needs DOM,Debugger,Emulation,IO,Network,Page,Runtime,Security`.
 
 To compile the output as a library: copy the four hand-written glue files
 `cdp_json.ml`, `cdp_command.ml`, `cdp_event.ml`, and `cdp_envelope.ml` from
