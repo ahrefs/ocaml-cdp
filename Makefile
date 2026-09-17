@@ -105,17 +105,21 @@ check: ## Fail if lib/ or the roundtrip test does not match the generator output
 FULL_CHECK_DIR ?= /tmp/cdp-check-full
 
 .PHONY: check-full
-check-full: ## Generate ALL protocol domains into a throwaway project and compile them
-	@rm -rf $(FULL_CHECK_DIR) && mkdir -p $(FULL_CHECK_DIR)/lib
+check-full: ## Generate ALL protocol domains into a throwaway project, compile them, run their roundtrip test
+	@rm -rf $(FULL_CHECK_DIR) && mkdir -p $(FULL_CHECK_DIR)/lib $(FULL_CHECK_DIR)/test
 	@cp protocol/browser_protocol.json protocol/js_protocol.json protocol/REVISION $(FULL_CHECK_DIR)/
 	@printf '(lang dune 3.16)\n' > $(FULL_CHECK_DIR)/dune-project
 	@cp lib/cdp_json.ml lib/cdp_command.ml lib/cdp_event.ml lib/cdp_envelope.ml $(FULL_CHECK_DIR)/lib/
 	@printf '(library\n (name cdp)\n (wrapped false)\n (libraries jsonkit yojson)\n (preprocess\n  (pps jsonkit.ppx ppx_deriving.show ppx_deriving.eq ppx_deriving.make))\n (flags (:standard -w -a -alert -all)))\n' > $(FULL_CHECK_DIR)/lib/dune
+	@printf '(test\n (name test_roundtrip)\n (libraries cdp yojson)\n (flags (:standard -w -a -alert -all)))\n' > $(FULL_CHECK_DIR)/test/dune
 	$(DUNE) exec gen/gen.exe -- generate \
 	  $(FULL_CHECK_DIR)/browser_protocol.json $(FULL_CHECK_DIR)/js_protocol.json $(FULL_CHECK_DIR)/lib all
+	$(DUNE) exec gen/gen.exe -- roundtrip \
+	  $(FULL_CHECK_DIR)/browser_protocol.json $(FULL_CHECK_DIR)/js_protocol.json $(FULL_CHECK_DIR)/test/test_roundtrip.ml all 2> /dev/null
 	$(DUNE) build --root $(FULL_CHECK_DIR)
+	$(DUNE) test --root $(FULL_CHECK_DIR)
 	@rm -rf $(FULL_CHECK_DIR)
-	@echo "all protocol domains generate and compile"
+	@echo "all protocol domains generate, compile and roundtrip"
 
 .PHONY: clean
 clean: ## Clean build artifacts
