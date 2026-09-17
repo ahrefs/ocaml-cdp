@@ -1,3 +1,4 @@
+(* https://ocaml.org/manual/5.4/lex.html#sss:keywords *)
 let keywords =
   [
     "and";
@@ -10,6 +11,7 @@ let keywords =
     "do";
     "done";
     "downto";
+    "effect";
     "else";
     "end";
     "exception";

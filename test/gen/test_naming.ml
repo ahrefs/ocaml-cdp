@@ -21,6 +21,7 @@ let () =
 let () =
   assert (String.equal (sanitize_lower "type") "type_");
   assert (String.equal (sanitize_lower "end") "end_");
+  assert (String.equal (sanitize_lower "effect") "effect_");
   assert (String.equal (sanitize_lower "url") "url");
   pass "OCaml keywords get a trailing underscore"
 
