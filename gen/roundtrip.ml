@@ -84,10 +84,15 @@ let item_targets ~domains ~alias_tbl (domain : domain) =
     | [] -> []
     | props -> [ params_target props ])
 
-(* returns (file contents, emitted count, skipped (label, reason) list) *)
-let emit ~domains ~alias_tbl =
+type output = {
+  contents : string;
+  emitted : int;
+  skipped : (string * string) list; (* label, reason *)
+}
+
+let emit ~revision ~domains ~alias_tbl =
   let buf = Buffer.create 65536 in
-  Buffer.add_string buf (Emit.header ());
+  Buffer.add_string buf (Emit.header ~revision);
   Buffer.add_string buf
     "(* Roundtrip tests over every generated type: decode a sample synthesized\n\
     \   from the protocol schema, encode it back, decode again, and compare. *)\n\n\
@@ -124,4 +129,4 @@ let emit ~domains ~alias_tbl =
     \  match !failures with\n\
     \  | 0 -> print_endline \"all roundtrip tests passed\"\n\
     \  | count -> failwith (Printf.sprintf \"%d roundtrip failures\" count)\n";
-  Buffer.contents buf, !emitted, List.rev !skipped
+  { contents = Buffer.contents buf; emitted = !emitted; skipped = List.rev !skipped }

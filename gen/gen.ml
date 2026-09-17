@@ -29,26 +29,36 @@
 
 open Cdp_gen
 
+(* The revision is stamped into every generated header comment.
+   - read from the REVISION file next to the protocol JSON
+   - anything that could not be a revision id is refused *)
+let read_revision ~browser =
+  let revision_file = Filename.concat (Filename.dirname browser) "REVISION" in
+  match Protocol.read_file revision_file with
+  | exception Sys_error _no_revision_file -> "unknown"
+  | contents ->
+    let plain =
+      String.length contents > 0
+      && String.for_all
+           (fun ch -> Protocol.is_letter ch || Protocol.is_digit ch || ch = '.' || ch = '_' || ch = '-')
+           contents
+    in
+    if plain then contents
+    else
+      failwith
+        (Printf.sprintf "cdp-gen: REVISION next to the protocol JSON holds %S, which is not a revision id" contents)
+
+type loaded = {
+  revision : string;
+  selected : string list;
+  domains : Protocol.domain list;
+  alias_tbl : (string * string, string) Hashtbl.t;
+}
+
 (* shared front half of generate and roundtrip: read REVISION, load and
    select domains, build the alias table, verify the type graph *)
 let load_protocol ~browser ~js ~domains_arg =
-  (Emit.revision :=
-     let revision_file = Filename.concat (Filename.dirname browser) "REVISION" in
-     match Protocol.read_file revision_file with
-     | contents ->
-       (* the revision is stamped into every generated header comment; refuse
-          anything that could not be a revision id *)
-       let plain =
-         String.length contents > 0
-         && String.for_all
-              (fun ch -> Protocol.is_letter ch || Protocol.is_digit ch || ch = '.' || ch = '_' || ch = '-')
-              contents
-       in
-       if plain then contents
-       else
-         failwith
-           (Printf.sprintf "cdp-gen: REVISION next to the protocol JSON holds %S, which is not a revision id" contents)
-     | exception Sys_error _no_revision_file -> "unknown");
+  let revision = read_revision ~browser in
   let all = Protocol.load_domains browser @ Protocol.load_domains js in
   Protocol.check_unique_names all;
   Protocol.check_identifiers all;
@@ -68,22 +78,22 @@ let load_protocol ~browser ~js ~domains_arg =
   Protocol.check_refs_exist ~all ~selected:domains;
   let alias_tbl = Protocol.build_alias_table domains in
   Protocol.check_types_dag domains ~alias_tbl;
-  selected, domains, alias_tbl
+  { revision; selected; domains; alias_tbl }
 
 let generate ~browser ~js ~outdir ~domains_arg =
-  let selected, domains, alias_tbl = load_protocol ~browser ~js ~domains_arg in
+  let { revision; selected; domains; alias_tbl } = load_protocol ~browser ~js ~domains_arg in
   (* render every file before writing any: a generator error leaves outdir untouched *)
-  let base_file = Emit.emit_base_file ~alias_tbl domains in
+  let base_file = Emit.emit_base_file ~revision ~alias_tbl domains in
   let domain_files =
     List.map
       (fun (domain : Protocol.domain) ->
         let base = Filename.concat outdir (Naming.file_of_domain domain.name) in
         ( domain,
-          (base ^ "_types.ml", Emit.emit_types_file ~selected ~alias_tbl domain),
-          (base ^ ".ml", Emit.emit_domain_file ~selected ~alias_tbl domain) ))
+          (base ^ "_types.ml", Emit.emit_types_file ~revision ~selected ~alias_tbl domain),
+          (base ^ ".ml", Emit.emit_domain_file ~revision ~selected ~alias_tbl domain) ))
       domains
   in
-  let index = Emit.emit_index domains in
+  let index = Emit.emit_index ~revision domains in
   let fresh =
     "cdp_base.ml"
     :: "cdp.ml"
@@ -103,11 +113,11 @@ let generate ~browser ~js ~outdir ~domains_arg =
         (List.length domain.types) (List.length domain.commands) (List.length domain.events))
     domain_files;
   Protocol.write_file (Filename.concat outdir "cdp.ml") index;
-  Printf.printf "generated cdp.ml index (%d domains, protocol %s)\n" (List.length domains) !Emit.revision
+  Printf.printf "generated cdp.ml index (%d domains, protocol %s)\n" (List.length domains) revision
 
 let roundtrip ~browser ~js ~outfile ~domains_arg =
-  let _selected, domains, alias_tbl = load_protocol ~browser ~js ~domains_arg in
-  let contents, emitted, skipped = Roundtrip.emit ~domains ~alias_tbl in
+  let { revision; domains; alias_tbl; selected = _ } = load_protocol ~browser ~js ~domains_arg in
+  let { Roundtrip.contents; emitted; skipped } = Roundtrip.emit ~revision ~domains ~alias_tbl in
   Protocol.write_file outfile contents;
   List.iter (fun (label, reason) -> Printf.eprintf "skipped %s: %s\n" label reason) skipped;
   Printf.printf "generated %s: %d roundtrip checks, %d skipped\n" outfile emitted (List.length skipped)
