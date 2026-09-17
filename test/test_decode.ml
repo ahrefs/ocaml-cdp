@@ -143,4 +143,15 @@ let () =
   assert (Cdp.Page.Interstitial_shown.event.Cdp.Event.parse (`Assoc []) = ());
   pass "typed event seam (name, payload parsing, unit events)"
 
+(* 12. unknown keys: a newer Chrome sends fields our snapshot does not know;
+       records skip them instead of failing *)
+let () =
+  let json = Yojson.Basic.from_string {|{"x":1,"y":2,"width":3,"height":4,"fromANewerChrome":{"nested":true}}|} in
+  let rect = Cdp.Dom.rect_of_json json in
+  assert (rect.width = 3.0);
+  let event = Cdp.Page.Load_event_fired.event in
+  let params = event.Cdp.Event.parse (Yojson.Basic.from_string {|{"timestamp":1.5,"fromANewerChrome":"x"}|}) in
+  assert (Cdp.Network.Monotonic_time.to_float params.timestamp = 1.5);
+  pass "unknown JSON keys are skipped on types and event params"
+
 let () = print_endline "all tests passed"
