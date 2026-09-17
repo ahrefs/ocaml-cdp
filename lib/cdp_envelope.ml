@@ -37,6 +37,10 @@ let request ~id ?session ~name ~params () : Cdp_json.t =
          | Some session_id -> Some ("sessionId", `String session_id));
        ])
 
+(* for a transport to not take the command apart itself *)
+let build_request ~id ?session (command : _ Cdp_command.t) : Cdp_json.t =
+  request ~id ?session ~name:command.name ~params:command.params ()
+
 let parse (json : Cdp_json.t) : (incoming, string) result =
   let member = Yojson.Basic.Util.member in
   let malformed_error () = Error ("cdp: malformed error object: " ^ Yojson.Basic.to_string json) in

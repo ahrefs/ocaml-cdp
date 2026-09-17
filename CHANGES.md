@@ -1,5 +1,8 @@
 # Unreleased
 
+- `cdp`: `Cdp.Envelope.build_request ~id ?session command` builds the wire
+  request straight from a typed command, for transports other than `cdp-lwt`.
+
 - `cdp-gen`: when the selected domains point at domains outside the
   selection, one message now lists all of them, for example
   `Fetch also needs Network,IO,Page,Runtime,Debugger,Emulation,DOM,Security`,

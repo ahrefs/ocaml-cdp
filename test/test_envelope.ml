@@ -23,6 +23,17 @@ let () =
   pass "request encoding, with and without params and session"
 
 let () =
+  let params = Cdp.Network.Get_response_body.make_params ~request_id:(Cdp.Network.Request_id.of_string "R1") in
+  let command = Cdp.Network.Get_response_body.command params in
+  let json = Cdp.Envelope.build_request ~id:9 ~session:"SESSION1" command in
+  assert (
+    Yojson.Basic.to_string json
+    = {|{"id":9,"method":"Network.getResponseBody","params":{"requestId":"R1"},"sessionId":"SESSION1"}|});
+  let bare = Cdp.Envelope.build_request ~id:10 Cdp.Runtime.Enable.command in
+  assert (Yojson.Basic.to_string bare = {|{"id":10,"method":"Runtime.enable"}|});
+  pass "build_request takes a typed command apart"
+
+let () =
   (match Cdp.Envelope.parse (Yojson.Basic.from_string {|{"id":7,"result":{"ok":true}}|}) with
   | Ok (Response { id = 7; outcome = Ok (`Assoc [ ("ok", `Bool true) ]); session = None }) -> ()
   | _unexpected -> assert false);

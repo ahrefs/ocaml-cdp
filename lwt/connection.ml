@@ -50,7 +50,7 @@ type t = {
   set_closed : unit Lwt.u;
 }
 
-let session_string session = Option.map Cdp.Target.Session_id.to_string session
+let session_to_string session = Option.map Cdp.Target.Session_id.to_string session
 
 let fail_everything connection ~failure =
   let calls = Hashtbl.fold (fun _id (_session, resolve) accumulated -> resolve :: accumulated) connection.pending [] in
@@ -223,7 +223,7 @@ let call connection ?session ?(timeout = default_call_timeout) (command : 'resul
     let result_promise, resolve_result = Lwt.task () in
     Lwt.on_cancel result_promise (fun () -> Hashtbl.remove connection.pending id);
     Hashtbl.replace connection.pending id
-      ( session_string session,
+      ( session_to_string session,
         fun outcome ->
           match outcome with
           | Died failure -> Lwt.wakeup_later_exn resolve_result failure
@@ -232,10 +232,7 @@ let call connection ?session ?(timeout = default_call_timeout) (command : 'resul
           match command.Cdp.Command.parse result_json with
           | parsed -> Lwt.wakeup_later resolve_result parsed
           | exception parse_failure -> Lwt.wakeup_later_exn resolve_result parse_failure );
-    let request =
-      Cdp.Envelope.request ~id ?session:(session_string session) ~name:command.Cdp.Command.name
-        ~params:command.Cdp.Command.params ()
-    in
+    let request = Cdp.Envelope.build_request ~id ?session:(session_to_string session) command in
     let%lwt () =
       try%lwt connection.transport.Transport.send (Yojson.Basic.to_string request)
       with Transport.Closed -> Lwt.fail Connection_closed
@@ -257,7 +254,7 @@ let next_event connection ?session (event : 'params Cdp.Event.t) : 'params Lwt.t
     let params_promise, resolve_params = Lwt.task () in
     let waiter =
       {
-        wanted_session = session_string session;
+        wanted_session = session_to_string session;
         deliver =
           (fun params ->
             match event.Cdp.Event.parse params with
@@ -282,7 +279,7 @@ let on_event connection ?session (event : 'params Cdp.Event.t) (handler : 'param
   | false ->
     let waiter =
       {
-        wanted_session = session_string session;
+        wanted_session = session_to_string session;
         deliver =
           (fun params ->
             match event.Cdp.Event.parse params with
