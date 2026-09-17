@@ -31,8 +31,8 @@ let jbool field json =
   | `Null -> false
   | wrong_type -> failwith (spf "cdp-gen: field %S must be a boolean, got %s" field (Json.to_string wrong_type))
 
-let is_letter ch = (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')
-let is_digit ch = ch >= '0' && ch <= '9'
+let is_letter ch = Naming.is_upper ch || Naming.is_lower ch
+let is_digit = Naming.is_digit
 
 (* a domain name becomes output file names and module names in generated
    code, so anything beyond a plain identifier (a path separator, a comment

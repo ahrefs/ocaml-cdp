@@ -1,6 +1,3 @@
-(* Protocol names -> OCaml names: snake_casing, keyword escapes,
-   module naming, enum-value constructors. *)
-
 let keywords =
   [
     "and";
@@ -100,19 +97,13 @@ let submodule_of_name name = String.capitalize_ascii (sanitize_lower name)
    "text/css" -> Text_css, "-Infinity" -> Minus_Infinity, "0" -> V0 *)
 let constructor_of_enum_value value =
   let value =
-    match String.length value > 0 && value.[0] = '-' with
-    | true -> "Minus_" ^ String.sub value 1 (String.length value - 1)
+    match String.starts_with ~prefix:"-" value with
     | false -> value
+    | true -> "Minus_" ^ String.sub value 1 (String.length value - 1)
   in
-  let buf = Buffer.create (String.length value) in
-  String.iter
-    (fun ch ->
-      if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch = '_' then
-        Buffer.add_char buf ch
-      else Buffer.add_char buf '_')
-    value;
-  let name = Buffer.contents buf in
-  let name = if String.length name > 0 && name.[0] >= '0' && name.[0] <= '9' then "V" ^ name else name in
+  let identifier_char ch = if is_lower ch || is_upper ch || is_digit ch || ch = '_' then ch else '_' in
+  let name = String.map identifier_char value in
+  let name = if String.length name > 0 && is_digit name.[0] then "V" ^ name else name in
   let name = String.capitalize_ascii name in
   match name with
   | "None" | "Some" | "Ok" | "Error" | "Other" -> name ^ "_"

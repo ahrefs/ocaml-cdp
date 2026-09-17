@@ -45,7 +45,7 @@ let resolve_latest_revision () =
       | [ "0"; "0"; revision ] -> revision
       | _unexpected_format -> failwith ("cdp-gen: unexpected npm version: " ^ version))
 
-let is_all_digits text = String.length text > 0 && String.for_all (fun ch -> ch >= '0' && ch <= '9') text
+let is_all_digits text = String.length text > 0 && String.for_all is_digit text
 
 (* the extracted file must be a real protocol definition, not a truncated
    download or an error page *)
