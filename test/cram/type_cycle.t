@@ -41,3 +41,7 @@ cdp_base.ml, which depends on nothing.
   cdp_base.ml
   cdp_beta.ml
   cdp_beta_types.ml
+  cdp_command.ml
+  cdp_envelope.ml
+  cdp_event.ml
+  cdp_json.ml

@@ -13,6 +13,7 @@ A string alias gets of_string/to_string; a number alias gets of_float/to_float.
   > EOF
   $ echo '{"domains":[]}' > js.json
   $ mkdir out && cdp-gen generate browser.json js.json out Demo
+  wrote glue: cdp_json.ml, cdp_command.ml, cdp_event.ml, cdp_envelope.ml
   generated cdp_base.ml: 2 sealed alias modules
   generated cdp_demo(_types).ml: 3 types, 0 commands, 0 events
   generated cdp.ml index (1 domains, protocol unknown)

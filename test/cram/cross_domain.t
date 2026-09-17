@@ -18,6 +18,7 @@ Deprecated and experimental items get annotations.
   > EOF
   $ echo '{"domains":[]}' > js.json
   $ mkdir out && cdp-gen generate browser.json js.json out Alpha,Beta
+  wrote glue: cdp_json.ml, cdp_command.ml, cdp_event.ml, cdp_envelope.ml
   generated cdp_base.ml: 1 sealed alias modules
   generated cdp_alpha(_types).ml: 2 types, 0 commands, 0 events
   generated cdp_beta(_types).ml: 1 types, 0 commands, 0 events

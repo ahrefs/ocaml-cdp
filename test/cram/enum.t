@@ -8,6 +8,7 @@ Value sanitizing: "very-sad" -> Very_sad, "none" -> None_ (OCaml clash).
   > EOF
   $ echo '{"domains":[]}' > js.json
   $ mkdir out && cdp-gen generate browser.json js.json out Demo
+  wrote glue: cdp_json.ml, cdp_command.ml, cdp_event.ml, cdp_envelope.ml
   generated cdp_base.ml: 0 sealed alias modules
   generated cdp_demo(_types).ml: 1 types, 0 commands, 0 events
   generated cdp.ml index (1 domains, protocol unknown)

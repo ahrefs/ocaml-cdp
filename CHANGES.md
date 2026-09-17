@@ -1,5 +1,9 @@
 # Unreleased
 
+- `cdp-gen`: `generate` also writes the four glue modules the generated files
+  need (`cdp_json.ml`, `cdp_command.ml`, `cdp_event.ml`, `cdp_envelope.ml`),
+  so the output directory compiles on its own. Nothing to copy from `lib/`.
+
 - `cdp-gen`: `--help` on every command, paths checked up front, and any
   number of protocol files instead of exactly two.
 

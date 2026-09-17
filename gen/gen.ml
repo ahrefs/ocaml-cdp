@@ -9,6 +9,7 @@
      Hoisted_name the type name such an enum gets
      Attributes   doc comments and alerts a generated item carries
      Dependencies which domains a selection needs through $ref
+     Glue         the four hand-written lib/ modules, embedded at build time
      Emit         print the library code
      Sample       one JSON sample per protocol type
      Roundtrip    print the roundtrip test
@@ -29,7 +30,10 @@
                                command and event (Navigate.params / .result /
                                .name). These reference only *_types modules
                                and Cdp_base, so they can never cycle.
-     cdp.ml                 -- the index: Cdp.Network = Cdp_network, ... *)
+     cdp.ml                 -- the index: Cdp.Network = Cdp_network, ...
+     cdp_json.ml, cdp_command.ml, cdp_event.ml, cdp_envelope.ml
+                            -- copies of the hand-written glue from lib/, so
+                               the output compiles on its own *)
 
 open Cdp_gen
 
@@ -120,6 +124,8 @@ let generate ~protocol_files ~outdir ~domains_arg =
          domain_files
   in
   Protocol.remove_stale_generated_files ~outdir ~fresh;
+  List.iter (fun (name, contents) -> Protocol.write_file (Filename.concat outdir name) contents) Glue.files;
+  Printf.printf "wrote glue: %s\n" (String.concat ", " (List.map fst Glue.files));
   Protocol.write_file (Filename.concat outdir "cdp_base.ml") base_file;
   Printf.printf "generated cdp_base.ml: %d sealed alias modules\n" (Hashtbl.length alias_tbl);
   List.iter

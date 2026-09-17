@@ -109,7 +109,6 @@ check-full: ## Generate ALL protocol domains into a throwaway project, compile t
 	@rm -rf $(FULL_CHECK_DIR) && mkdir -p $(FULL_CHECK_DIR)/lib $(FULL_CHECK_DIR)/test
 	@cp protocol/browser_protocol.json protocol/js_protocol.json protocol/REVISION $(FULL_CHECK_DIR)/
 	@printf '(lang dune 3.16)\n' > $(FULL_CHECK_DIR)/dune-project
-	@cp lib/cdp_json.ml lib/cdp_command.ml lib/cdp_event.ml lib/cdp_envelope.ml $(FULL_CHECK_DIR)/lib/
 	@printf '(library\n (name cdp)\n (wrapped false)\n (libraries jsonkit yojson)\n (preprocess\n  (pps jsonkit.ppx ppx_deriving.show ppx_deriving.eq ppx_deriving.make))\n (flags (:standard -w -a -alert -all)))\n' > $(FULL_CHECK_DIR)/lib/dune
 	@printf '(test\n (name test_roundtrip)\n (libraries cdp yojson)\n (flags (:standard -w -a -alert -all)))\n' > $(FULL_CHECK_DIR)/test/dune
 	$(DUNE) exec gen/gen.exe -- generate \

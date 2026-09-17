@@ -155,10 +155,11 @@ cdp-gen generate --help       # every argument explained
 If a selected domain refers to domains outside the list, one message names
 all of them, for example `Fetch also needs DOM,Debugger,Emulation,IO,Network,Page,Runtime,Security`.
 
-To compile the output as a library: copy the four hand-written glue files
-`cdp_json.ml`, `cdp_command.ml`, `cdp_event.ml`, and `cdp_envelope.ml` from
-[lib/](lib/) next to the generated files, and use this dune stanza (the one
-`make check-full` uses, under whatever library name you like):
+The output directory is complete: next to the generated domain files,
+`generate` writes the four glue modules they need (`cdp_json.ml`,
+`cdp_command.ml`, `cdp_event.ml`, `cdp_envelope.ml`), taken from the same
+sources as the shipped `cdp` library. To compile it, add this dune stanza (the
+one `make check-full` uses), under whatever library name you like:
 
 ```
 (library
