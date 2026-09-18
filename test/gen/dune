@@ -19,3 +19,15 @@
  (package cdp-gen)
  (action
   (run ./test_emit.exe)))
+
+(executable
+ (name test_model)
+ (modules test_model)
+ (libraries cdp_gen yojson))
+
+(rule
+ (alias runtest)
+ (package cdp-gen)
+ (deps ../../protocol/browser_protocol.json ../../protocol/js_protocol.json)
+ (action
+  (run ./test_model.exe)))

@@ -34,6 +34,7 @@
  (name cdp_gen)
  (modules
   naming
+  model
   protocol
   inline_enum
   hoisted_name
