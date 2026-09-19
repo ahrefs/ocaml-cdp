@@ -3,63 +3,58 @@
    - an array gets one element, or [] when the element type is being built already
    - re-entering a type through a required non-array field cannot end. it fails and the caller skips the type *)
 
-let rec of_type ~domains ~visiting ~domain (type_json : Yojson.Safe.t) : Yojson.Safe.t =
-  match Yojson.Safe.Util.member "$ref" type_json with
-  | `String ref_string ->
-    let dom, id = Protocol.parse_ref ~current:domain ref_string in
-    of_named ~domains ~visiting (dom, id)
-  | `Null ->
-    (match Yojson.Safe.Util.member "type" type_json with
-    | `String "string" ->
-      (match Yojson.Safe.Util.member "enum" type_json with
-      | `List (first :: _rest) -> first
-      | _no_enum -> `String "sample")
-    | `String "integer" -> `Int 7
-    | `String "number" -> `Float 1.5
-    | `String "boolean" -> `Bool true
-    | `String "binary" -> `String "c2FtcGxl"
-    | `String ("any" | "object") -> `Assoc []
-    | `String "array" ->
-      let items = Yojson.Safe.Util.member "items" type_json in
-      (match Yojson.Safe.Util.member "$ref" items with
-      | `String ref_string when List.mem (Protocol.parse_ref ~current:domain ref_string) visiting -> `List []
-      | _other_item_type -> `List [ of_type ~domains ~visiting ~domain items ])
-    | unexpected ->
-      failwith (Printf.sprintf "cdp-gen: cannot synthesize a sample for %s" (Yojson.Safe.to_string unexpected)))
-  | unexpected ->
-    failwith (Printf.sprintf "cdp-gen: bad $ref in sample synthesis: %s" (Yojson.Safe.to_string unexpected))
+let of_enum_values values : Yojson.Safe.t =
+  match values with
+  | first :: _rest -> `String first
+  | [] -> `String "sample"
 
-and of_named ~domains ~visiting (dom, id) : Yojson.Safe.t =
-  if List.mem (dom, id) visiting then failwith (Printf.sprintf "cdp-gen: required-field cycle through %s.%s" dom id);
-  let domain_def =
-    match List.find_opt (fun (candidate : Protocol.domain) -> String.equal candidate.name dom) domains with
-    | Some found -> found
-    | None -> failwith (Printf.sprintf "cdp-gen: sample synthesis: domain %s is not generated" dom)
-  in
-  let type_def =
-    match List.find_opt (fun type_def -> String.equal (Protocol.get_string "id" type_def) id) domain_def.types with
-    | Some found -> found
-    | None -> failwith (Printf.sprintf "cdp-gen: sample synthesis: unknown type %s.%s" dom id)
-  in
-  of_def ~domains ~visiting:((dom, id) :: visiting) ~domain:dom type_def
+let is_visiting ~visiting type_ref = List.exists (Model.Type_ref.equal type_ref) visiting
 
-and of_def ~domains ~visiting ~domain type_def : Yojson.Safe.t =
-  match Yojson.Safe.Util.member "properties" type_def with
-  | `List props -> of_props ~domains ~visiting ~domain props
-  | _no_properties -> of_type ~domains ~visiting ~domain type_def
+let rec of_type_expr ~type_index ~visiting (type_expr : Model.Type_expr.t) : Yojson.Safe.t =
+  match type_expr with
+  | Primitive String -> `String "sample"
+  | Primitive Integer -> `Int 7
+  | Primitive Number -> `Float 1.5
+  | Primitive Boolean -> `Bool true
+  | Binary -> `String "c2FtcGxl"
+  | Any -> `Assoc []
+  | Array (Ref type_ref) when is_visiting ~visiting type_ref -> `List []
+  | Array items -> `List [ of_type_expr ~type_index ~visiting items ]
+  | Ref type_ref -> of_named ~type_index ~visiting type_ref
 
-and of_props ~domains ~visiting ~domain props : Yojson.Safe.t =
-  `Assoc (List.filter_map (of_prop ~domains ~visiting ~domain) props)
+and of_named ~type_index ~visiting (type_ref : Model.Type_ref.t) : Yojson.Safe.t =
+  (match is_visiting ~visiting type_ref with
+  | true -> failwith (Printf.sprintf "cdp-gen: required-field cycle through %s.%s" type_ref.domain type_ref.id)
+  | false -> ());
+  match Model.Type_index.find type_index type_ref with
+  | None -> failwith (Printf.sprintf "cdp-gen: sample synthesis: unknown type %s.%s" type_ref.domain type_ref.id)
+  | Some type_def -> of_type_def ~type_index ~visiting:(type_ref :: visiting) type_def
+
+and of_type_def ~type_index ~visiting (type_def : Model.Type_def.t) : Yojson.Safe.t =
+  match type_def.shape with
+  | Sealed_alias primitive -> of_type_expr ~type_index ~visiting (Primitive primitive)
+  | Enum values -> of_enum_values values
+  | Enum_list values -> `List [ of_enum_values values ]
+  | Record fields -> of_properties ~type_index ~visiting fields
+  | Alias type_expr -> of_type_expr ~type_index ~visiting type_expr
+
+and of_properties ~type_index ~visiting fields : Yojson.Safe.t =
+  `Assoc (List.filter_map (of_property ~type_index ~visiting) fields)
 
 (* An optional field is filled too, unless that cannot end:
    - its type is being built already (recursion through the option)
    - its type has no finite sample of its own
    A required field in that position fails loudly instead. *)
-and of_prop ~domains ~visiting ~domain prop =
-  let name = Protocol.get_string "name" prop in
-  match Protocol.get_bool "optional" prop with
-  | false -> Some (name, of_type ~domains ~visiting ~domain prop)
+and of_property ~type_index ~visiting (property : Model.Property.t) =
+  let build_value () =
+    match property.shape with
+    | Enum (Scalar values) -> of_enum_values values
+    | Enum (Array values) -> `List [ of_enum_values values ]
+    | Typed type_expr -> of_type_expr ~type_index ~visiting type_expr
+  in
+  match property.optional with
+  | false -> Some (property.name, build_value ())
   | true ->
-  match of_type ~domains ~visiting ~domain prop with
-  | value -> Some (name, value)
+  match build_value () with
+  | value -> Some (property.name, value)
   | exception Failure _no_finite_sample -> None

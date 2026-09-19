@@ -36,7 +36,6 @@
   naming
   model
   protocol
-  inline_enum
   hoisted_name
   attributes
   dependencies

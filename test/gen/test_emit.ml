@@ -10,13 +10,12 @@ let expect_failure ~name run =
 
 (* setup: two selected domains; one sealed alias in each *)
 let selected = Cdp_gen.Model.Selection.parse "Demo,Other"
-let parse_domain raw = Cdp_gen.Model.Domain.of_json (Yojson.Safe.from_string raw)
 
 let type_index =
   Cdp_gen.Model.Type_index.of_domains
     [
-      parse_domain {|{"domain":"Demo","types":[{"id":"LocalAlias","type":"number"}]}|};
-      parse_domain {|{"domain":"Other","types":[{"id":"AliasId","type":"string"}]}|};
+      Cdp_gen.Model.Domain.of_string {|{"domain":"Demo","types":[{"id":"LocalAlias","type":"number"}]}|};
+      Cdp_gen.Model.Domain.of_string {|{"domain":"Other","types":[{"id":"AliasId","type":"string"}]}|};
     ]
 
 let render raw =

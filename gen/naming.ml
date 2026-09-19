@@ -63,6 +63,7 @@ let keywords =
 let is_upper ch = ch >= 'A' && ch <= 'Z'
 let is_lower ch = ch >= 'a' && ch <= 'z'
 let is_digit ch = ch >= '0' && ch <= '9'
+let is_letter ch = is_upper ch || is_lower ch
 
 (* A capital starts a new word when:
    - the char before it is lowercase or a digit
@@ -95,8 +96,11 @@ let domain_module_of_domain domain = String.capitalize_ascii (file_of_domain dom
 let types_module_of_domain domain = domain_module_of_domain domain ^ "_types"
 let submodule_of_name name = String.capitalize_ascii (sanitize_lower name)
 
-(* enum value -> constructor: "optionally-blockable" -> Optionally_blockable,
-   "text/css" -> Text_css, "-Infinity" -> Minus_Infinity, "0" -> V0 *)
+(* enum value -> constructor: 
+   - "optionally-blockable" -> Optionally_blockable
+   - "text/css" -> Text_css
+   - "-Infinity" -> Minus_Infinity
+   - "0" -> V0 *)
 let constructor_of_enum_value value =
   let value =
     match String.starts_with ~prefix:"-" value with

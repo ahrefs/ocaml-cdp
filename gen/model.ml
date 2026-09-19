@@ -7,6 +7,28 @@
 module Json = Yojson.Safe
 module Util = Yojson.Safe.Util
 
+module Json_field = struct
+  let read_string field json = Util.member field json |> Util.to_string
+
+  let read_list field json =
+    match Util.member field json with
+    | `Null -> []
+    | value -> Util.to_list value
+
+  let has field json =
+    match Util.member field json with
+    | `Null -> false
+    | _present -> true
+
+  (* a missing flag means false; a non-boolean would silently flip a field to required *)
+  let read_bool field json =
+    match Util.member field json with
+    | `Null -> false
+    | `Bool value -> value
+    | wrong_type ->
+      failwith (Printf.sprintf "cdp-gen: field %S must be a boolean, got %s" field (Json.to_string wrong_type))
+end
+
 let description_of_json json = Util.member "description" json |> Util.to_string_option
 
 module Flags = struct
@@ -21,8 +43,8 @@ module Flags = struct
 
   let of_json json =
     {
-      deprecated = Protocol.get_bool "deprecated" json;
-      experimental = Protocol.get_bool "experimental" json;
+      deprecated = Json_field.read_bool "deprecated" json;
+      experimental = Json_field.read_bool "experimental" json;
       redirect = Util.member "redirect" json |> Util.to_string_option;
     }
 
@@ -121,6 +143,8 @@ module Type_ref = struct
     id : string;
   }
 
+  let equal a b = String.equal a.domain b.domain && String.equal a.id b.id
+
   (* "Network.LoaderId" names its domain; "Frame" means the current one *)
   let parse ~current_domain ref_string =
     match String.index_opt ref_string '.' with
@@ -139,7 +163,7 @@ module Identifier : sig
   val check_plain : owner:string -> string -> unit
   val check_enum_values : owner:string -> string list -> unit
 end = struct
-  let is_identifier_char ch = Protocol.is_letter ch || Protocol.is_digit ch || Char.equal ch '_'
+  let is_identifier_char ch = Naming.is_letter ch || Naming.is_digit ch || Char.equal ch '_'
 
   let refuse_name ~owner ~name = failwith (Printf.sprintf "cdp-gen: %s: name %S is not a plain identifier" owner name)
 
@@ -147,7 +171,7 @@ end = struct
     match name with
     | "" -> refuse_name ~owner ~name
     | _not_empty ->
-    match Protocol.is_letter name.[0] && String.for_all is_identifier_char name with
+    match Naming.is_letter name.[0] && String.for_all is_identifier_char name with
     | true -> ()
     | false -> refuse_name ~owner ~name
 
@@ -192,6 +216,12 @@ module Type_expr = struct
         | None -> failwith (Printf.sprintf "cdp-gen: unhandled type in %s: %s" domain (Json.to_string unexpected)))
       | unexpected -> failwith (Printf.sprintf "cdp-gen: unhandled type in %s: %s" domain (Json.to_string unexpected)))
     | unexpected -> failwith (Printf.sprintf "cdp-gen: bad $ref: %s" (Json.to_string unexpected))
+
+  let rec collect_refs type_expr =
+    match type_expr with
+    | Ref type_ref -> [ type_ref ]
+    | Array items -> collect_refs items
+    | Primitive _ | Binary | Any -> []
 end
 
 module Inline_enum = struct
@@ -236,7 +266,7 @@ module Property = struct
   (* a property says one thing: a $ref, or a type. Two at once, or none, is
      refused here instead of being resolved by an unwritten precedence *)
   let check_shape ~owner ~field json =
-    let has key = Protocol.has_field key json in
+    let has key = Json_field.has key json in
     let refuse what = failwith (Printf.sprintf "cdp-gen: %s: field %S %s" owner field what) in
     match has "$ref" with
     | true ->
@@ -253,7 +283,7 @@ module Property = struct
     | _typed -> ()
 
   let of_json ~domain ~owner json =
-    let name = Protocol.get_string "name" json in
+    let name = Json_field.read_string "name" json in
     check_shape ~owner ~field:name json;
     let shape =
       match Inline_enum.of_json json with
@@ -263,12 +293,17 @@ module Property = struct
     {
       name;
       shape;
-      optional = Protocol.get_bool "optional" json;
+      optional = Json_field.read_bool "optional" json;
       description = description_of_json json;
       flags = Flags.of_json json;
     }
 
-  let list_of_json ~domain ~owner field json = List.map (of_json ~domain ~owner) (Protocol.get_list field json)
+  let list_of_json ~domain ~owner field json = List.map (of_json ~domain ~owner) (Json_field.read_list field json)
+
+  let collect_refs property =
+    match property.shape with
+    | Enum _ -> []
+    | Typed type_expr -> Type_expr.collect_refs type_expr
 
   (* two fields that become one OCaml label would make the compiler reject the record *)
   let check_unique_labels ~owner fields =
@@ -287,8 +322,8 @@ module Property = struct
     let check field =
       Identifier.check_plain ~owner field.name;
       match field.shape with
-      | Enum inline_enum -> Identifier.check_enum_values ~owner (Inline_enum.to_values inline_enum)
       | Typed _type_expr -> ()
+      | Enum inline_enum -> Identifier.check_enum_values ~owner (Inline_enum.to_values inline_enum)
     in
     List.iter check fields
 end
@@ -311,7 +346,7 @@ module Type_def = struct
   (* An id type like RequestId is only a primitive with nothing else on it. It gets
      a sealed module, so a FrameId can never be passed where a RequestId is expected. *)
   let sealed_primitive_of_json json =
-    let has key = Protocol.has_field key json in
+    let has key = Json_field.has key json in
     match has "enum" || has "properties" || has "items" with
     | true -> None
     | false ->
@@ -320,7 +355,7 @@ module Type_def = struct
     | _not_a_primitive -> None
 
   let of_json ~domain json =
-    let id = Protocol.get_string "id" json in
+    let id = Json_field.read_string "id" json in
     let owner = Printf.sprintf "%s.%s" domain id in
     let shape =
       match Util.member "enum" json, Util.member "properties" json with
@@ -339,6 +374,12 @@ module Type_def = struct
     match type_def.shape with
     | Sealed_alias primitive -> Some primitive
     | Enum _ | Enum_list _ | Record _ | Alias _ -> None
+
+  let collect_refs type_def =
+    match type_def.shape with
+    | Sealed_alias _ | Enum _ | Enum_list _ -> []
+    | Alias type_expr -> Type_expr.collect_refs type_expr
+    | Record fields -> List.concat_map Property.collect_refs fields
 
   let check_identifiers ~domain type_def =
     let owner = Printf.sprintf "%s.%s" domain type_def.id in
@@ -360,7 +401,7 @@ module Command = struct
   }
 
   let of_json ~domain json =
-    let name = Protocol.get_string "name" json in
+    let name = Json_field.read_string "name" json in
     let owner = Printf.sprintf "%s.%s" domain name in
     {
       name;
@@ -375,6 +416,8 @@ module Command = struct
     Identifier.check_plain ~owner command.name;
     Property.check_identifiers ~owner command.params;
     Property.check_identifiers ~owner command.returns
+
+  let collect_refs command = List.concat_map Property.collect_refs (command.params @ command.returns)
 end
 
 module Event = struct
@@ -386,7 +429,7 @@ module Event = struct
   }
 
   let of_json ~domain json =
-    let name = Protocol.get_string "name" json in
+    let name = Json_field.read_string "name" json in
     let owner = Printf.sprintf "%s.%s" domain name in
     {
       name;
@@ -399,6 +442,8 @@ module Event = struct
     let owner = Printf.sprintf "%s.%s" domain event.name in
     Identifier.check_plain ~owner event.name;
     Property.check_identifiers ~owner event.params
+
+  let collect_refs event = List.concat_map Property.collect_refs event.params
 end
 
 module Domain = struct
@@ -411,18 +456,34 @@ module Domain = struct
     flags : Flags.t;
   }
 
+  (* a domain name becomes file and module names, so a path separator or a
+     comment opener must be refused before it reaches the filesystem *)
+  let check_name name =
+    let is_plain_char ch = Naming.is_letter ch || Naming.is_digit ch in
+    let is_plain =
+      match name with
+      | "" -> false
+      | _not_empty -> Naming.is_letter name.[0] && String.for_all is_plain_char name
+    in
+    match is_plain with
+    | true -> name
+    | false ->
+      failwith (Printf.sprintf "cdp-gen: domain name %S is not a plain identifier (letters and digits only)" name)
+
   let of_json json =
-    let name = Protocol.check_domain_name (Protocol.get_string "domain" json) in
+    let name = check_name (Json_field.read_string "domain" json) in
     {
       name;
-      types = List.map (Type_def.of_json ~domain:name) (Protocol.get_list "types" json);
-      commands = List.map (Command.of_json ~domain:name) (Protocol.get_list "commands" json);
-      events = List.map (Event.of_json ~domain:name) (Protocol.get_list "events" json);
+      types = List.map (Type_def.of_json ~domain:name) (Json_field.read_list "types" json);
+      commands = List.map (Command.of_json ~domain:name) (Json_field.read_list "commands" json);
+      events = List.map (Event.of_json ~domain:name) (Json_field.read_list "events" json);
       description = description_of_json json;
       flags = Flags.of_json json;
     }
 
   let list_of_json json = Util.member "domains" json |> Util.to_list |> List.map of_json
+
+  let of_string raw = raw |> Yojson.Safe.from_string |> of_json
 
   (* a name defined twice would silently overwrite its sibling in the output,
      or, for a command, hide behind the _command fallback module name *)
@@ -463,6 +524,16 @@ module Domain = struct
       List.iter (Event.check_identifiers ~domain:domain.name) domain.events
     in
     List.iter check_domain domains
+
+  let collect_refs domain =
+    List.concat_map Type_def.collect_refs domain.types
+    @ List.concat_map Command.collect_refs domain.commands
+    @ List.concat_map Event.collect_refs domain.events
+
+  let count_sealed_aliases domains =
+    let sealed_of_domain domain = List.filter_map Type_def.sealed_primitive_of domain.types in
+    let sealed_of_all_domains = List.concat_map sealed_of_domain domains in
+    List.length sealed_of_all_domains
 end
 
 module Selection = struct
