@@ -1,6 +1,6 @@
 (* Load and check the protocol JSON.
    - domain model
-   - checks: unique names, plain identifiers, refs exist, no type cycle
+   - checks: refs exist, no type cycle
    - primitive-alias table
    - file IO *)
 
@@ -77,38 +77,6 @@ let load_domains path =
       flags = flags_of_json domain_json;
       description = description_of_json domain_json;
     })
-
-(* A name defined twice would silently overwrite its sibling in the output,
-   or, for a command, hide behind the _command fallback module name. *)
-let check_unique_names domains =
-  let check_unique ~what names =
-    let seen = Hashtbl.create 16 in
-    List.iter
-      (fun name ->
-        match Hashtbl.mem seen name with
-        | false -> Hashtbl.replace seen name ()
-        | true -> failwith (spf "cdp-gen: %s %s is defined twice" what name))
-      names
-  in
-  check_unique ~what:"domain" (List.map (fun domain -> domain.name) domains);
-  let check_unique_files domains =
-    let seen = Hashtbl.create 16 in
-    List.iter
-      (fun domain ->
-        let file = Naming.file_of_domain domain.name ^ ".ml" in
-        match Hashtbl.find_opt seen file with
-        | None -> Hashtbl.replace seen file domain.name
-        | Some earlier -> failwith (spf "cdp-gen: domains %s and %s both become %s" earlier domain.name file))
-      domains
-  in
-  check_unique_files domains;
-  List.iter
-    (fun domain ->
-      let qualify key item = spf "%s.%s" domain.name (get_string key item) in
-      check_unique ~what:"type" (List.map (qualify "id") domain.types);
-      check_unique ~what:"command" (List.map (qualify "name") domain.commands);
-      check_unique ~what:"event" (List.map (qualify "name") domain.events))
-    domains
 
 let read_file path =
   let input = open_in path in
@@ -268,84 +236,3 @@ let check_refs_exist ~all ~selected =
         (fun event -> check_fragment ~owner:(spf "%s.%s" domain.name (get_string "name" event)) event)
         domain.events)
     selected
-
-(* every name from the protocol becomes OCaml code — record fields, module
-   names, variant constructors. Reject what the sanitizers cannot turn into
-   a valid, unambiguous identifier, instead of emitting code that fails to
-   compile with an error pointing into generated files. *)
-let check_identifiers domains =
-  let plain_name name =
-    String.length name > 0
-    && is_letter name.[0]
-    && String.for_all (fun ch -> is_letter ch || is_digit ch || ch = '_') name
-  in
-  let check_name ~owner name =
-    match plain_name name with
-    | true -> ()
-    | false -> failwith (spf "cdp-gen: %s: name %S is not a plain identifier" owner name)
-  in
-  let check_enum ~owner values =
-    let seen = Hashtbl.create 8 in
-    List.iter
-      (fun value ->
-        match value with
-        | `String "" -> failwith (spf "cdp-gen: %s: an enum value is empty" owner)
-        | `String text ->
-          let constructor = Naming.constructor_of_enum_value text in
-          (match Hashtbl.find_opt seen constructor with
-          | None -> Hashtbl.replace seen constructor text
-          | Some earlier ->
-            failwith
-              (spf "cdp-gen: %s: enum values %S and %S both become the constructor %s" owner earlier text constructor))
-        | _not_a_string -> failwith (spf "cdp-gen: %s: enum values must be strings" owner))
-      values
-  in
-  let check_field_shape ~owner ~field prop =
-    let has key = has_field key prop in
-    match has "$ref", has "type", has "enum" with
-    | true, true, _ -> failwith (spf "cdp-gen: %s: field %S has both $ref and type" owner field)
-    | true, _, true -> failwith (spf "cdp-gen: %s: field %S has both $ref and enum" owner field)
-    | false, false, _ -> failwith (spf "cdp-gen: %s: field %S has neither type nor $ref" owner field)
-    | false, true, _ ->
-      (match Util.member "type" prop, has "items" with
-      | `String "array", false -> failwith (spf "cdp-gen: %s: field %S is an array without items" owner field)
-      | _typed -> ())
-    | true, false, false -> ()
-  in
-  let check_fields ~owner props =
-    let seen = Hashtbl.create 8 in
-    List.iter
-      (fun prop ->
-        match Util.member "name" prop with
-        | `String field ->
-          check_field_shape ~owner ~field prop;
-          let label = Naming.sanitize_lower field in
-          (match Hashtbl.find_opt seen label with
-          | None -> Hashtbl.replace seen label field
-          | Some earlier -> failwith (spf "cdp-gen: %s: fields %S and %S both become %s" owner earlier field label))
-        | _no_name -> ())
-      props
-  in
-  let rec walk ~owner json =
-    match json with
-    | `List items -> List.iter (walk ~owner) items
-    | `Assoc fields ->
-      List.iter
-        (fun (key, value) ->
-          match key, value with
-          | ("name" | "id"), `String text -> check_name ~owner text
-          | "enum", `List values -> check_enum ~owner values
-          | ("properties" | "parameters" | "returns"), `List props ->
-            check_fields ~owner props;
-            List.iter (walk ~owner) props
-          | _other_field -> walk ~owner value)
-        fields
-    | _scalar -> ()
-  in
-  List.iter
-    (fun domain ->
-      let owned_by key item = spf "%s.%s" domain.name (get_string key item) in
-      List.iter (fun type_def -> walk ~owner:(owned_by "id" type_def) type_def) domain.types;
-      List.iter (fun command -> walk ~owner:(owned_by "name" command) command) domain.commands;
-      List.iter (fun event -> walk ~owner:(owned_by "name" event) event) domain.events)
-    domains

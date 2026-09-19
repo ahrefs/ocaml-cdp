@@ -71,22 +71,27 @@ let load_protocol ~protocol_files ~domains_arg =
     | first :: _others -> read_revision ~protocol_file:first
     | [] -> "unknown"
   in
+  (* temporary: the files are loaded twice. The name checks read the model;
+     Emit and Roundtrip still read the JSON domains until they are moved too. *)
   let all = List.concat_map Protocol.load_domains protocol_files in
-  Protocol.check_unique_names all;
-  Protocol.check_identifiers all;
+  let model_domains =
+    List.concat_map (fun path -> Yojson.Safe.from_file path |> Model.Domain.list_of_json) protocol_files
+  in
+  Model.Domain.check_unique_names model_domains;
+  Model.Domain.check_identifiers model_domains;
   let selected =
     match domains_arg with
     | "all" -> List.map (fun (domain : Protocol.domain) -> domain.name) all
     | names -> String.split_on_char ',' names
   in
   let domains = List.filter (fun (domain : Protocol.domain) -> List.mem domain.name selected) all in
-  (match
-     List.filter
-       (fun requested -> not (List.exists (fun (domain : Protocol.domain) -> String.equal domain.name requested) all))
-       selected
-   with
+  let is_loaded_domain requested =
+    List.exists (fun (domain : Protocol.domain) -> String.equal domain.name requested) all
+  in
+  let unknown_domains = List.filter (fun requested -> not (is_loaded_domain requested)) selected in
+  (match unknown_domains with
   | [] -> ()
-  | missing -> failwith ("cdp-gen: unknown domains: " ^ String.concat "," missing));
+  | unknown -> failwith ("cdp-gen: unknown domains: " ^ String.concat "," unknown));
   Protocol.check_refs_exist ~all ~selected:domains;
   (match Dependencies.find_missing ~all ~selected:domains with
   | [] -> ()

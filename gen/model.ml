@@ -60,6 +60,44 @@ module Type_ref = struct
       }
 end
 
+(* Stops a bad protocol name, where the message can name its owner.
+   Without it the compiler would fail inside a generated file, far from the cause.
+   Example: Page.Frame: name "x y" is not a plain identifier *)
+module Identifier : sig
+  val check_plain : owner:string -> string -> unit
+  val check_enum_values : owner:string -> string list -> unit
+end = struct
+  let is_identifier_char ch = Protocol.is_letter ch || Protocol.is_digit ch || Char.equal ch '_'
+
+  let refuse_name ~owner ~name = failwith (Printf.sprintf "cdp-gen: %s: name %S is not a plain identifier" owner name)
+
+  let check_plain ~owner name =
+    match name with
+    | "" -> refuse_name ~owner ~name
+    | _not_empty ->
+    match Protocol.is_letter name.[0] && String.for_all is_identifier_char name with
+    | true -> ()
+    | false -> refuse_name ~owner ~name
+
+  (* to avoid case when two values that become one constructor would give
+  a variant with a duplicate case *)
+  let check_enum_values ~owner values =
+    let seen = Hashtbl.create 8 in
+    let check value =
+      match value with
+      | "" -> failwith (Printf.sprintf "cdp-gen: %s: an enum value is empty" owner)
+      | text ->
+        let constructor = Naming.constructor_of_enum_value text in
+        (match Hashtbl.find_opt seen constructor with
+        | None -> Hashtbl.replace seen constructor text
+        | Some earlier ->
+          failwith
+            (Printf.sprintf "cdp-gen: %s: enum values %S and %S both become the constructor %s" owner earlier text
+               constructor))
+    in
+    List.iter check values
+end
+
 module Type_expr = struct
   type t =
     | Primitive of Primitive.t
@@ -89,7 +127,10 @@ module Inline_enum = struct
     | Scalar of string list
     | Array of string list
 
-  (* an enum written on the property itself, or on the items of its array *)
+  let to_values = function
+    | Scalar values | Array values -> values
+
+  (* Enum values sit on the property or on its array items. *)
   let of_json json =
     match Util.member "enum" json with
     | `List values -> Some (Scalar (List.map Util.to_string values))
@@ -150,8 +191,29 @@ module Property = struct
       flags = Flags.of_json json;
     }
 
-  (* the "properties", "parameters" or "returns" list of the owner *)
   let list_of_json ~domain ~owner field json = List.map (of_json ~domain ~owner) (Protocol.get_list field json)
+
+  (* two fields that become one OCaml label would make the compiler reject the record *)
+  let check_unique_labels ~owner fields =
+    let seen = Hashtbl.create 8 in
+    let check field =
+      let label = Naming.sanitize_lower field.name in
+      match Hashtbl.find_opt seen label with
+      | None -> Hashtbl.replace seen label field.name
+      | Some earlier ->
+        failwith (Printf.sprintf "cdp-gen: %s: fields %S and %S both become %s" owner earlier field.name label)
+    in
+    List.iter check fields
+
+  let check_identifiers ~owner fields =
+    check_unique_labels ~owner fields;
+    let check field =
+      Identifier.check_plain ~owner field.name;
+      match field.shape with
+      | Enum inline_enum -> Identifier.check_enum_values ~owner (Inline_enum.to_values inline_enum)
+      | Typed _type_expr -> ()
+    in
+    List.iter check fields
 end
 
 module Type_def = struct
@@ -169,7 +231,8 @@ module Type_def = struct
     flags : Flags.t;
   }
 
-  (* a type that is only a primitive, with nothing else on it, is an id: RequestId, FrameId *)
+  (* An id type like RequestId is only a primitive with nothing else on it. It gets
+     a sealed module, so a FrameId can never be passed where a RequestId is expected. *)
   let sealed_primitive_of_json json =
     let has key = Protocol.has_field key json in
     match has "enum" || has "properties" || has "items" with
@@ -194,6 +257,15 @@ module Type_def = struct
       | _unexpected_shape -> failwith ("cdp-gen: unhandled named type shape: " ^ id)
     in
     { id; shape; description = description_of_json json; flags = Flags.of_json json }
+
+  let check_identifiers ~domain type_def =
+    let owner = Printf.sprintf "%s.%s" domain type_def.id in
+    Identifier.check_plain ~owner type_def.id;
+    match type_def.shape with
+    | Alias _type_expr -> ()
+    | Sealed_alias _primitive -> ()
+    | Record fields -> Property.check_identifiers ~owner fields
+    | Enum values | Enum_list values -> Identifier.check_enum_values ~owner values
 end
 
 module Command = struct
@@ -215,6 +287,12 @@ module Command = struct
       description = description_of_json json;
       flags = Flags.of_json json;
     }
+
+  let check_identifiers ~domain command =
+    let owner = Printf.sprintf "%s.%s" domain command.name in
+    Identifier.check_plain ~owner command.name;
+    Property.check_identifiers ~owner command.params;
+    Property.check_identifiers ~owner command.returns
 end
 
 module Event = struct
@@ -234,6 +312,11 @@ module Event = struct
       description = description_of_json json;
       flags = Flags.of_json json;
     }
+
+  let check_identifiers ~domain event =
+    let owner = Printf.sprintf "%s.%s" domain event.name in
+    Identifier.check_plain ~owner event.name;
+    Property.check_identifiers ~owner event.params
 end
 
 module Domain = struct
@@ -257,8 +340,47 @@ module Domain = struct
       flags = Flags.of_json json;
     }
 
-  (* the "domains" of one protocol file *)
   let list_of_json json = Util.member "domains" json |> Util.to_list |> List.map of_json
+
+  (* a name defined twice would silently overwrite its sibling in the output,
+     or, for a command, hide behind the _command fallback module name *)
+  let check_unique_names domains =
+    let check_unique ~what names =
+      let seen = Hashtbl.create 16 in
+      let check name =
+        match Hashtbl.mem seen name with
+        | false -> Hashtbl.replace seen name ()
+        | true -> failwith (Printf.sprintf "cdp-gen: %s %s is defined twice" what name)
+      in
+      List.iter check names
+    in
+    let check_unique_files domains =
+      let seen = Hashtbl.create 16 in
+      let check domain =
+        let file = Naming.file_of_domain domain.name ^ ".ml" in
+        match Hashtbl.find_opt seen file with
+        | None -> Hashtbl.replace seen file domain.name
+        | Some earlier -> failwith (Printf.sprintf "cdp-gen: domains %s and %s both become %s" earlier domain.name file)
+      in
+      List.iter check domains
+    in
+    check_unique ~what:"domain" (List.map (fun domain -> domain.name) domains);
+    check_unique_files domains;
+    let check_domain domain =
+      let qualify name = Printf.sprintf "%s.%s" domain.name name in
+      check_unique ~what:"type" (List.map (fun (type_def : Type_def.t) -> qualify type_def.id) domain.types);
+      check_unique ~what:"command" (List.map (fun (command : Command.t) -> qualify command.name) domain.commands);
+      check_unique ~what:"event" (List.map (fun (event : Event.t) -> qualify event.name) domain.events)
+    in
+    List.iter check_domain domains
+
+  let check_identifiers domains =
+    let check_domain domain =
+      List.iter (Type_def.check_identifiers ~domain:domain.name) domain.types;
+      List.iter (Command.check_identifiers ~domain:domain.name) domain.commands;
+      List.iter (Event.check_identifiers ~domain:domain.name) domain.events
+    in
+    List.iter check_domain domains
 end
 
 module Selection = struct
@@ -277,7 +399,8 @@ module Selection = struct
     | Named names -> List.mem domain_name names
 end
 
-(* every named type of the loaded protocol, found by domain and id *)
+(* One lookup for every step that follows a $ref, so a type can never be found
+   in one step and missed in another. *)
 module Type_index : sig
   type t
 
