@@ -25,6 +25,30 @@ module Flags = struct
       experimental = Protocol.get_bool "experimental" json;
       redirect = Util.member "redirect" json |> Util.to_string_option;
     }
+
+  type alert = {
+    attribute : string; (* ocaml.deprecated, alert redirected, alert experimental *)
+    message : string;
+  }
+
+  let to_alerts { deprecated; experimental; redirect } =
+    let deprecated_alert =
+      match deprecated, redirect with
+      | false, None -> []
+      | true, None -> [ { attribute = "ocaml.deprecated"; message = "deprecated in CDP" } ]
+      | true, Some domain ->
+        let message = Printf.sprintf "deprecated in CDP, redirected to the %s domain" domain in
+        [ { attribute = "ocaml.deprecated"; message } ]
+      | false, Some domain ->
+        let message = Printf.sprintf "redirected to the %s domain in CDP" domain in
+        [ { attribute = "alert redirected"; message } ]
+    in
+    let experimental_alert =
+      match experimental with
+      | false -> []
+      | true -> [ { attribute = "alert experimental"; message = "experimental in CDP, may change with Chrome" } ]
+    in
+    deprecated_alert @ experimental_alert
 end
 
 module Primitive = struct
@@ -34,6 +58,12 @@ module Primitive = struct
     | Number
     | Boolean
 
+  let to_ocaml_type = function
+    | String -> "string"
+    | Integer -> "int"
+    | Number -> "Cdp_json.number"
+    | Boolean -> "bool"
+
   let of_name name =
     match name with
     | "string" -> Some String
@@ -41,6 +71,48 @@ module Primitive = struct
     | "number" -> Some Number
     | "boolean" -> Some Boolean
     | _not_a_primitive -> None
+
+  type sealed_module = {
+    underlying_type : string; (* float for Number: the sealed type hides the alias *)
+    conversion : string; (* of_<conversion> / to_<conversion> *)
+    equal_module : string;
+    codec : string;
+    show_expression : string;
+  }
+
+  let to_sealed_module = function
+    | String ->
+      {
+        underlying_type = "string";
+        conversion = "string";
+        equal_module = "String";
+        codec = "Jsonkit.Primitives.string";
+        show_expression = "Printf.sprintf \"%S\" value";
+      }
+    | Integer ->
+      {
+        underlying_type = "int";
+        conversion = "int";
+        equal_module = "Int";
+        codec = "Jsonkit.Primitives.int";
+        show_expression = "string_of_int value";
+      }
+    | Number ->
+      {
+        underlying_type = "float";
+        conversion = "float";
+        equal_module = "Float";
+        codec = "Cdp_json.number";
+        show_expression = "string_of_float value";
+      }
+    | Boolean ->
+      {
+        underlying_type = "bool";
+        conversion = "bool";
+        equal_module = "Bool";
+        codec = "Jsonkit.Primitives.bool";
+        show_expression = "string_of_bool value";
+      }
 end
 
 module Type_ref = struct
@@ -129,6 +201,11 @@ module Inline_enum = struct
 
   let to_values = function
     | Scalar values | Array values -> values
+
+  let to_ocaml_type inline_enum ~enum_name =
+    match inline_enum with
+    | Scalar _values -> enum_name
+    | Array _values -> Printf.sprintf "%s list" enum_name
 
   (* Enum values sit on the property or on its array items. *)
   let of_json json =
@@ -257,6 +334,11 @@ module Type_def = struct
       | _unexpected_shape -> failwith ("cdp-gen: unhandled named type shape: " ^ id)
     in
     { id; shape; description = description_of_json json; flags = Flags.of_json json }
+
+  let sealed_primitive_of type_def =
+    match type_def.shape with
+    | Sealed_alias primitive -> Some primitive
+    | Enum _ | Enum_list _ | Record _ | Alias _ -> None
 
   let check_identifiers ~domain type_def =
     let owner = Printf.sprintf "%s.%s" domain type_def.id in
@@ -432,6 +514,49 @@ module Item = struct
     wire_name : string; (* Page.captureScreenshot *)
     kind : kind;
   }
+
+  let description_of item =
+    match item.kind with
+    | Command command -> command.description
+    | Event event -> event.description
+
+  let flags_of item =
+    match item.kind with
+    | Command command -> command.flags
+    | Event event -> event.flags
+
+  (* A command module sits next to the re-exported sealed alias modules, so a
+     command named like an alias type would clash: it steps aside as
+     <name>_command, an event as <name>_event. No such pair exists in r1698617. *)
+  let of_domain (domain : Domain.t) =
+    let sealed_module_name (type_def : Type_def.t) =
+      Option.map (fun _primitive -> Naming.submodule_of_name type_def.id) (Type_def.sealed_primitive_of type_def)
+    in
+    let used = ref (List.filter_map sealed_module_name domain.types) in
+    let claim ~fallback_suffix proposed =
+      let name =
+        match List.mem proposed !used with
+        | false -> proposed
+        | true -> proposed ^ fallback_suffix
+      in
+      (match List.mem name !used with
+      | false -> ()
+      | true -> failwith (Printf.sprintf "cdp-gen: module name collision in %s: %s" domain.name name));
+      used := name :: !used;
+      name
+    in
+    let wire_name name = Printf.sprintf "%s.%s" domain.name name in
+    let of_command (command : Command.t) =
+      let module_name = claim ~fallback_suffix:"_command" (Naming.submodule_of_name command.name) in
+      { module_name; wire_name = wire_name command.name; kind = Command command }
+    in
+    let of_event (event : Event.t) =
+      let module_name = claim ~fallback_suffix:"_event" (Naming.submodule_of_name event.name) in
+      { module_name; wire_name = wire_name event.name; kind = Event event }
+    in
+    let commands = List.map of_command domain.commands in
+    let events = List.map of_event domain.events in
+    commands @ events
 end
 
 module Decl = struct

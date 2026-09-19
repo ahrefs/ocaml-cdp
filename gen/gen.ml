@@ -4,6 +4,7 @@
 
    Modules:
      Naming       protocol names -> OCaml names
+     Model        the protocol as OCaml values; each type reads itself from JSON
      Protocol     load and check the JSON, alias table, file IO
      Inline_enum  an enum written on a property, hoisted to a named type
      Hoisted_name the type name such an enum gets
@@ -58,8 +59,10 @@ let read_revision ~protocol_file =
 
 type loaded = {
   revision : string;
-  selected : string list;
-  domains : Protocol.domain list;
+  selection : Model.Selection.t;
+  model_domains : Model.Domain.t list; (* the selected ones *)
+  type_index : Model.Type_index.t;
+  domains : Protocol.domain list; (* temporary: still read by Roundtrip and the ref checks *)
   alias_tbl : (string * string, string) Hashtbl.t;
 }
 
@@ -79,16 +82,19 @@ let load_protocol ~protocol_files ~domains_arg =
   in
   Model.Domain.check_unique_names model_domains;
   Model.Domain.check_identifiers model_domains;
-  let selected =
-    match domains_arg with
-    | "all" -> List.map (fun (domain : Protocol.domain) -> domain.name) all
-    | names -> String.split_on_char ',' names
+  let selection = Model.Selection.parse domains_arg in
+  let domains = List.filter (fun (domain : Protocol.domain) -> Model.Selection.contains selection domain.name) all in
+  let selected_model_domains =
+    List.filter (fun (domain : Model.Domain.t) -> Model.Selection.contains selection domain.name) model_domains
   in
-  let domains = List.filter (fun (domain : Protocol.domain) -> List.mem domain.name selected) all in
   let is_loaded_domain requested =
     List.exists (fun (domain : Protocol.domain) -> String.equal domain.name requested) all
   in
-  let unknown_domains = List.filter (fun requested -> not (is_loaded_domain requested)) selected in
+  let unknown_domains =
+    match selection with
+    | All -> []
+    | Named names -> List.filter (fun requested -> not (is_loaded_domain requested)) names
+  in
   (match unknown_domains with
   | [] -> ()
   | unknown -> failwith ("cdp-gen: unknown domains: " ^ String.concat "," unknown));
@@ -97,29 +103,32 @@ let load_protocol ~protocol_files ~domains_arg =
   | [] -> ()
   | needed ->
     let who_needs =
-      match selected with
-      | [ only ] -> only ^ " also needs"
+      match selection with
+      | Named [ only ] -> only ^ " also needs"
       | _several -> "the selected domains also need"
     in
     failwith (Printf.sprintf "cdp-gen: %s %s; add them to the domain list" who_needs (String.concat "," needed)));
   let alias_tbl = Protocol.build_alias_table domains in
   Protocol.check_types_dag domains ~alias_tbl;
-  { revision; selected; domains; alias_tbl }
+  let type_index = Model.Type_index.of_domains model_domains in
+  { revision; selection; model_domains = selected_model_domains; type_index; domains; alias_tbl }
 
 let generate ~protocol_files ~outdir ~domains_arg =
-  let { revision; selected; domains; alias_tbl } = load_protocol ~protocol_files ~domains_arg in
+  let { revision; selection; model_domains; type_index; domains = _; alias_tbl } =
+    load_protocol ~protocol_files ~domains_arg
+  in
   (* render every file before writing any: a generator error leaves outdir untouched *)
-  let base_file = Emit.emit_base_file ~revision ~alias_tbl domains in
+  let base_file = Emit.emit_base_file ~revision model_domains in
   let domain_files =
     List.map
-      (fun (domain : Protocol.domain) ->
+      (fun (domain : Model.Domain.t) ->
         let base = Filename.concat outdir (Naming.file_of_domain domain.name) in
         ( domain,
-          (base ^ "_types.ml", Emit.emit_types_file ~revision ~selected ~alias_tbl domain),
-          (base ^ ".ml", Emit.emit_domain_file ~revision ~selected ~alias_tbl domain) ))
-      domains
+          (base ^ "_types.ml", Emit.emit_types_file ~revision ~selected:selection ~type_index domain),
+          (base ^ ".ml", Emit.emit_domain_file ~revision ~selected:selection ~type_index domain) ))
+      model_domains
   in
-  let index = Emit.emit_index ~revision domains in
+  let index = Emit.emit_index ~revision model_domains in
   let fresh =
     "cdp_base.ml"
     :: "cdp.ml"
@@ -134,17 +143,19 @@ let generate ~protocol_files ~outdir ~domains_arg =
   Protocol.write_file (Filename.concat outdir "cdp_base.ml") base_file;
   Printf.printf "generated cdp_base.ml: %d sealed alias modules\n" (Hashtbl.length alias_tbl);
   List.iter
-    (fun ((domain : Protocol.domain), (types_path, types_contents), (domain_path, domain_contents)) ->
+    (fun ((domain : Model.Domain.t), (types_path, types_contents), (domain_path, domain_contents)) ->
       Protocol.write_file types_path types_contents;
       Protocol.write_file domain_path domain_contents;
       Printf.printf "generated %s(_types).ml: %d types, %d commands, %d events\n" (Naming.file_of_domain domain.name)
         (List.length domain.types) (List.length domain.commands) (List.length domain.events))
     domain_files;
   Protocol.write_file (Filename.concat outdir "cdp.ml") index;
-  Printf.printf "generated cdp.ml index (%d domains, protocol %s)\n" (List.length domains) revision
+  Printf.printf "generated cdp.ml index (%d domains, protocol %s)\n" (List.length model_domains) revision
 
 let roundtrip ~protocol_files ~outfile ~domains_arg =
-  let { revision; domains; alias_tbl; selected = _ } = load_protocol ~protocol_files ~domains_arg in
+  let { revision; domains; alias_tbl; selection = _; model_domains = _; type_index = _ } =
+    load_protocol ~protocol_files ~domains_arg
+  in
   let { Roundtrip.contents; emitted; enum_checks; skipped } = Roundtrip.emit ~revision ~domains ~alias_tbl in
   Protocol.write_file outfile contents;
   List.iter (fun (label, reason) -> Printf.eprintf "skipped %s: %s\n" label reason) skipped;

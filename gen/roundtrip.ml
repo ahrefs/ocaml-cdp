@@ -49,9 +49,41 @@ let make_record_target ~domains ~domain_name ~submodule_path ~label ~record_name
     sample = (fun () -> Sample.of_props ~domains ~visiting:[] ~domain:domain_name props);
   }
 
+(* temporary until Roundtrip reads the model: the JSON versions of what Emit now
+   takes from Model.Item.of_domain and Hoisted_name.collect_domain_type_names *)
+let collect_item_modules ~alias_tbl (domain : Protocol.domain) =
+  let sealed_module_name type_def =
+    let id = Protocol.get_string "id" type_def in
+    Option.map (fun _prim -> Naming.submodule_of_name id) (Hashtbl.find_opt alias_tbl (domain.name, id))
+  in
+  let used = ref (List.filter_map sealed_module_name domain.types) in
+  let claim ~fallback_suffix proposed =
+    let name = if List.mem proposed !used then proposed ^ fallback_suffix else proposed in
+    if List.mem name !used then failwith (Printf.sprintf "cdp-gen: module name collision in %s: %s" domain.name name);
+    used := name :: !used;
+    name
+  in
+  let commands =
+    List.map
+      (fun command ->
+        ( claim ~fallback_suffix:"_command" (Naming.submodule_of_name (Protocol.get_string "name" command)),
+          `Command command ))
+      domain.commands
+  in
+  let events =
+    List.map
+      (fun event ->
+        claim ~fallback_suffix:"_event" (Naming.submodule_of_name (Protocol.get_string "name" event)), `Event event)
+      domain.events
+  in
+  commands @ events
+
+let collect_domain_type_names (domain : Protocol.domain) =
+  List.map (fun type_def -> Naming.sanitize_lower (Protocol.get_string "id" type_def)) domain.types
+
 let collect_item_targets ~domains ~alias_tbl (domain : Protocol.domain) =
   let index_module = Naming.module_of_domain domain.name in
-  Emit.collect_item_modules ~alias_tbl domain
+  collect_item_modules ~alias_tbl domain
   |> List.concat_map (fun (module_name, item) ->
     let submodule_path = Printf.sprintf "Cdp.%s.%s" index_module module_name in
     let label = Printf.sprintf "%s.%s" domain.name module_name in
@@ -138,9 +170,9 @@ let collect_enum_targets ~alias_tbl (domain : Protocol.domain) =
           collect_hoisted_enums ~enum_path:domain_path ~owner ~hoist_name (Protocol.get_list "properties" type_def))
       domain.types
   in
-  let domain_type_names = Hoisted_name.collect_domain_type_names domain in
+  let domain_type_names = collect_domain_type_names domain in
   let enums_of_commands_and_events =
-    Emit.collect_item_modules ~alias_tbl domain
+    collect_item_modules ~alias_tbl domain
     |> List.concat_map (fun (module_name, item) ->
       let props =
         match item with
