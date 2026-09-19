@@ -47,6 +47,34 @@ module Target = struct
       equal_path = Printf.sprintf "%s.equal_%s" submodule_path record_name;
       sample = (fun () -> Sample.of_properties ~type_index ~visiting:[] fields);
     }
+
+  (* the params and result of a command, the params of an event; an empty one decodes to unit and has nothing to check *)
+  let of_item ~type_index ~domain_name (item : Model.Item.t) =
+    let submodule_path = Printf.sprintf "Cdp.%s.%s" (Naming.module_of_domain domain_name) item.module_name in
+    let label = Printf.sprintf "%s.%s" domain_name item.module_name in
+    let of_params fields =
+      of_record ~type_index ~submodule_path ~label:(label ^ ".params") ~record_name:"params" fields
+    in
+    let of_result fields =
+      of_record ~type_index ~submodule_path ~label:(label ^ ".result") ~record_name:"result" fields
+    in
+    match item.kind with
+    | Command command ->
+      let params =
+        match command.params with
+        | [] -> []
+        | fields -> [ of_params fields ]
+      in
+      let result =
+        match command.returns with
+        | [] -> []
+        | fields -> [ of_result fields ]
+      in
+      params @ result
+    | Event event ->
+    match event.params with
+    | [] -> []
+    | fields -> [ of_params fields ]
 end
 
 module Enum_target = struct
@@ -99,35 +127,7 @@ let collect_type_targets ~type_index (domain : Model.Domain.t) =
   List.map (Target.of_type_def ~type_index ~domain_name:domain.name) domain.types
 
 let collect_item_targets ~type_index (domain : Model.Domain.t) =
-  let index_module = Naming.module_of_domain domain.name in
-  let targets_of_item (item : Model.Item.t) =
-    let submodule_path = Printf.sprintf "Cdp.%s.%s" index_module item.module_name in
-    let label = Printf.sprintf "%s.%s" domain.name item.module_name in
-    let make_params_target fields =
-      Target.of_record ~type_index ~submodule_path ~label:(label ^ ".params") ~record_name:"params" fields
-    in
-    let make_result_target fields =
-      Target.of_record ~type_index ~submodule_path ~label:(label ^ ".result") ~record_name:"result" fields
-    in
-    match item.kind with
-    | Command command ->
-      let params =
-        match command.params with
-        | [] -> []
-        | fields -> [ make_params_target fields ]
-      in
-      let result =
-        match command.returns with
-        | [] -> [] (* zero-return commands decode to unit; nothing to roundtrip *)
-        | fields -> [ make_result_target fields ]
-      in
-      params @ result
-    | Event event ->
-    match event.params with
-    | [] -> []
-    | fields -> [ make_params_target fields ]
-  in
-  List.concat_map targets_of_item (Model.Item.of_domain domain)
+  List.concat_map (Target.of_item ~type_index ~domain_name:domain.name) (Model.Item.of_domain domain)
 
 let collect_enum_targets (domain : Model.Domain.t) =
   let domain_name = domain.name in

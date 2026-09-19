@@ -10,7 +10,7 @@
    renamed into place only after every step succeeded, so a failed fetch
    never damages existing files. *)
 
-open Protocol
+let spf = Printf.sprintf
 module Json = Yojson.Safe
 module Util = Yojson.Safe.Util
 
@@ -39,7 +39,7 @@ let curl ~url ~out =
 let resolve_latest_revision () =
   let tmp = Filename.temp_file "cdp_gen_registry" ".json" in
   Fun.protect
-    ~finally:(fun () -> remove_if_exists tmp)
+    ~finally:(fun () -> Output_dir.remove_if_exists tmp)
     (fun () ->
       curl ~url:"https://registry.npmjs.org/devtools-protocol/latest" ~out:tmp;
       let version = Util.member "version" (Json.from_file tmp) |> Util.to_string in
@@ -78,9 +78,9 @@ let fetch ~outdir ~rev =
   let license_tmp = Filename.concat outdir (license_file ^ ".tmp") in
   Fun.protect
     ~finally:(fun () ->
-      remove_if_exists tarball;
-      remove_if_exists license_tmp;
-      List.iter (fun (_file, tmp) -> remove_if_exists tmp) staged)
+      Output_dir.remove_if_exists tarball;
+      Output_dir.remove_if_exists license_tmp;
+      List.iter (fun (_file, tmp) -> Output_dir.remove_if_exists tmp) staged)
     (fun () ->
       curl ~url ~out:tarball;
       List.iter
@@ -94,5 +94,5 @@ let fetch ~outdir ~rev =
       (* everything succeeded: move into place (same directory, so atomic) *)
       List.iter (fun (file, tmp) -> Sys.rename tmp (Filename.concat outdir file)) staged;
       Sys.rename license_tmp (Filename.concat outdir license_file);
-      write_file (Filename.concat outdir "REVISION") (spf "r%s\n" revision));
+      Output_dir.write_file (Filename.concat outdir "REVISION") (spf "r%s\n" revision));
   Printf.printf "fetched protocol r%s into %s/\n" revision outdir
