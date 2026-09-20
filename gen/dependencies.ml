@@ -11,8 +11,8 @@ let collect_referenced_domains (domain : Model.Domain.t) =
   in
   Model.Domain.collect_refs domain |> List.filter_map pick_other_domain |> List.sort_uniq String.compare
 
-let find_missing ~(all : Model.Domain.t list) ~(selected : Model.Domain.t list) =
-  let find_domain name = List.find_opt (fun (domain : Model.Domain.t) -> String.equal domain.name name) all in
+let find_missing ~(all_domains : Model.Domain.t list) ~(selected_domains : Model.Domain.t list) =
+  let find_domain name = Model.Domain.find_by_name all_domains name in
   let rec close_selection known_domains domains_to_visit =
     match domains_to_visit with
     | [] -> known_domains
@@ -22,8 +22,8 @@ let find_missing ~(all : Model.Domain.t list) ~(selected : Model.Domain.t list) 
     | false, None -> close_selection known_domains rest
     | false, Some domain -> close_selection (name :: known_domains) (collect_referenced_domains domain @ rest)
   in
-  let selected_names = List.map (fun (domain : Model.Domain.t) -> domain.name) selected in
-  let needed_domains = close_selection selected_names (List.concat_map collect_referenced_domains selected) in
+  let selected_names = List.map (fun (domain : Model.Domain.t) -> domain.name) selected_domains in
+  let needed_domains = close_selection selected_names (List.concat_map collect_referenced_domains selected_domains) in
   needed_domains |> List.filter (fun name -> not (List.mem name selected_names)) |> List.sort String.compare
 
 (* a $ref to a type that exists nowhere would surface much later, as a compile

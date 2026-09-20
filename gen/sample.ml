@@ -41,6 +41,11 @@ and of_type_def ~type_index ~visiting (type_def : Model.Type_def.t) : Yojson.Saf
 and of_properties ~type_index ~visiting fields : Yojson.Safe.t =
   `Assoc (List.filter_map (of_property ~type_index ~visiting) fields)
 
+and of_source ~type_index (source : Model.Codec.sample_source) : Yojson.Safe.t =
+  match source with
+  | Type type_ref -> of_named ~type_index ~visiting:[] type_ref
+  | Fields fields -> of_properties ~type_index ~visiting:[] fields
+
 (* An optional field is filled too, unless that cannot end:
    - its type is being built already (recursion through the option)
    - its type has no finite sample of its own

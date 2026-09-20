@@ -12,20 +12,15 @@ let find_sealed_primitive ~type_index type_ref =
   Option.bind (Model.Type_index.find type_index type_ref) Model.Type_def.sealed_primitive_of
 
 (* the OCaml type expression for a protocol type; codecs are derived *)
-let rec render_type_expr ~selected ~type_index ~domain (type_expr : Model.Type_expr.t) =
+let rec render_type_expr ~type_index ~domain (type_expr : Model.Type_expr.t) =
   match type_expr with
   | Primitive primitive -> Model.Primitive.to_ocaml_type primitive
   | Binary -> "string" (* base64 on the wire *)
   | Any -> "Cdp_json.t"
-  | Array items -> Printf.sprintf "%s list" (render_type_expr ~selected ~type_index ~domain items)
-  | Ref type_ref -> render_type_ref ~selected ~type_index ~domain type_ref
+  | Array items -> Printf.sprintf "%s list" (render_type_expr ~type_index ~domain items)
+  | Ref type_ref -> render_type_ref ~type_index ~domain type_ref
 
-and render_type_ref ~selected ~type_index ~domain (type_ref : Model.Type_ref.t) =
-  match Model.Selection.contains selected type_ref.domain with
-  | false ->
-    failwith
-      (Printf.sprintf "cdp-gen: ref %s.%s from domain %s escapes the selected set" type_ref.domain type_ref.id domain)
-  | true ->
+and render_type_ref ~type_index ~domain (type_ref : Model.Type_ref.t) =
   match find_sealed_primitive ~type_index type_ref with
   | Some _primitive -> render_sealed_path type_ref ^ ".t" (* lives in Base, a leaf, so it never cycles *)
   | None ->
@@ -43,25 +38,44 @@ let make_enum_decl ~type_name ~attrs values : Model.Decl.t =
     body = Printf.sprintf "%s =\n%s\n%s\n[@@compact_variants]%s" type_name known_cases unknown_case attrs;
   }
 
+type hoisted_enum = {
+  decl : Model.Decl.t;
+  field_name : string;
+  values : string list;
+}
+
 type rendered_field = {
   line : string;
-  hoisted_enum : Model.Decl.t option;
+  hoisted_enum : hoisted_enum option;
 }
 
 type record_decls = {
-  hoisted : Model.Decl.t list; (* enums lifted out of the fields, printed before the record *)
+  hoisted : hoisted_enum list; (* printed before the record *)
   record : Model.Decl.t;
 }
 
-let make_record_decl ~selected ~type_index ~domain ~type_name ~attrs ~hoist_name (fields : Model.Property.t list) =
+let decls_of_hoisted hoisted = List.map (fun (enum : hoisted_enum) -> enum.decl) hoisted
+
+let codec_of_hoisted_enum ~owner ~module_path (enum : hoisted_enum) : Model.Codec.t =
+  {
+    label = Printf.sprintf "%s.%s" owner enum.field_name;
+    module_path;
+    type_name = enum.decl.name;
+    is_sealed = false;
+    sample = None;
+    enum_values = enum.values;
+  }
+
+let make_record_decl ~type_index ~domain ~type_name ~attrs ~hoist_name (fields : Model.Property.t list) =
   let render_field (property : Model.Property.t) =
     let field_type, hoisted_enum =
       match property.shape with
       | Enum inline_enum ->
         let values = Model.Inline_enum.to_values inline_enum in
         let enum = make_enum_decl ~type_name:(hoist_name property.name) ~attrs:"" values in
-        Model.Inline_enum.to_ocaml_type inline_enum ~enum_name:enum.name, Some enum
-      | Typed type_expr -> render_type_expr ~selected ~type_index ~domain type_expr, None
+        let hoisted = { decl = enum; field_name = property.name; values } in
+        Model.Inline_enum.to_ocaml_type inline_enum ~enum_name:enum.name, Some hoisted
+      | Typed type_expr -> render_type_expr ~type_index ~domain type_expr, None
     in
     let ocaml_type, wire_attrs =
       match property.optional with
@@ -86,22 +100,48 @@ let make_record_decl ~selected ~type_index ~domain ~type_name ~attrs ~hoist_name
 let make_alias_decl ~type_name ~attrs type_expr_text : Model.Decl.t =
   { name = type_name; body = Printf.sprintf "%s = %s%s" type_name type_expr_text attrs }
 
-(* sealed aliases give no declaration here: they live in cdp_base *)
-let collect_named_type_decls ~selected ~type_index ~domain (type_def : Model.Type_def.t) =
+(* declarations for the file, receipt lines for the test *)
+type printed = {
+  decls : Model.Decl.t list;
+  codecs : Model.Codec.t list;
+}
+
+(* a sealed alias gives no declaration here, it lives in cdp_base; its receipt line still says so *)
+let collect_named_type_decls ~type_index ~domain (type_def : Model.Type_def.t) =
   let type_name = Naming.sanitize_lower type_def.id in
   let attrs = Attributes.render_item ~description:type_def.description ~flags:type_def.flags in
+  let label = Printf.sprintf "%s.%s" domain type_def.id in
+  let module_path = "Cdp." ^ Naming.module_of_domain domain in
+  let type_ref = { Model.Type_ref.domain; id = type_def.id } in
+  let codec =
+    { Model.Codec.label; module_path; type_name; is_sealed = false; sample = Some (Type type_ref); enum_values = [] }
+  in
   match type_def.shape with
-  | Sealed_alias _primitive -> []
-  | Enum values -> [ make_enum_decl ~type_name ~attrs values ]
-  | Alias type_expr -> [ make_alias_decl ~type_name ~attrs (render_type_expr ~selected ~type_index ~domain type_expr) ]
+  | Sealed_alias _primitive ->
+    let sealed_module_path = "Cdp.Base." ^ Naming.module_of_domain domain in
+    let sealed_name = Naming.submodule_of_name type_def.id in
+    {
+      decls = [];
+      codecs = [ { codec with module_path = sealed_module_path; type_name = sealed_name; is_sealed = true } ];
+    }
+  | Enum values ->
+    { decls = [ make_enum_decl ~type_name ~attrs values ]; codecs = [ { codec with enum_values = values } ] }
+  | Alias type_expr ->
+    let alias_decl = make_alias_decl ~type_name ~attrs (render_type_expr ~type_index ~domain type_expr) in
+    { decls = [ alias_decl ]; codecs = [ codec ] }
   | Record fields ->
-    let hoist_name = Hoisted_name.name_for_type_field ~type_id:type_def.id in
-    let { hoisted; record } = make_record_decl ~selected ~type_index ~domain ~type_name ~attrs ~hoist_name fields in
-    hoisted @ [ record ]
+    let hoist_name = Hoisted_name.get_name_for_type_field ~type_id:type_def.id in
+    let { hoisted; record } = make_record_decl ~type_index ~domain ~type_name ~attrs ~hoist_name fields in
+    let hoisted_codecs = List.map (codec_of_hoisted_enum ~owner:label ~module_path) hoisted in
+    { decls = decls_of_hoisted hoisted @ [ record ]; codecs = codec :: hoisted_codecs }
   | Enum_list values ->
-    let item_type_name = Hoisted_name.name_for_array_item ~type_id:type_def.id in
+    let item_type_name = Hoisted_name.get_name_for_array_item ~type_id:type_def.id in
     let item_decl = make_enum_decl ~type_name:item_type_name ~attrs:"" values in
-    [ item_decl; make_alias_decl ~type_name ~attrs (Printf.sprintf "%s list" item_type_name) ]
+    let item_codec = { codec with type_name = item_type_name; sample = None; enum_values = values } in
+    {
+      decls = [ item_decl; make_alias_decl ~type_name ~attrs (Printf.sprintf "%s list" item_type_name) ];
+      codecs = [ item_codec; codec ];
+    }
 
 (* one "type a = .. and b = .." chain with ONE [@@deriving]: the types of a
    domain refer to each other in any order *)
@@ -182,7 +222,13 @@ let emit_base_file ~revision (domains : Model.Domain.t list) =
   List.iter add_domain domains;
   Buffer.contents buf
 
-let emit_types_file ~revision ~selected ~type_index (domain : Model.Domain.t) =
+(* a generated file and the receipt of what it holds *)
+type emitted = {
+  contents : string;
+  codecs : Model.Codec.t list;
+}
+
+let emit_types_file ~revision ~type_index (domain : Model.Domain.t) =
   let buf = Buffer.create 4096 in
   Buffer.add_string buf (render_header ~revision);
   Buffer.add_string buf (Attributes.render_file domain);
@@ -199,11 +245,13 @@ let emit_types_file ~revision ~selected ~type_index (domain : Model.Domain.t) =
   in
   List.iter (Buffer.add_string buf) (List.filter_map render_reexport domain.types);
   Buffer.add_string buf "\n";
-  let decls = List.concat_map (collect_named_type_decls ~selected ~type_index ~domain:domain.name) domain.types in
+  let printed_types = List.map (collect_named_type_decls ~type_index ~domain:domain.name) domain.types in
+  let decls = List.concat_map (fun (printed : printed) -> printed.decls) printed_types in
+  let codecs = List.concat_map (fun (printed : printed) -> printed.codecs) printed_types in
   let decl_names = List.map (fun (decl : Model.Decl.t) -> decl.name) decls in
   check_no_dup ~what:(Printf.sprintf "type name in %s_types" (Naming.sanitize_lower domain.name)) decl_names;
   Buffer.add_string buf (render_chain ~deriving:"json, show, eq" decls);
-  Buffer.contents buf
+  { contents = Buffer.contents buf; codecs }
 
 (* A params or result record inside a command / event module.
    - hoisted enums first, in their own group: `make` cannot derive on variants
@@ -211,16 +259,30 @@ let emit_types_file ~revision ~selected ~type_index (domain : Model.Domain.t) =
 type block = {
   text : string;
   type_names : string list; (* for the duplicate check across params and result *)
+  block_codecs : Model.Codec.t list;
 }
 
-let render_record_block ~selected ~type_index ~domain ~hoist_name ~type_name ~make fields =
-  let { hoisted; record } = make_record_decl ~selected ~type_index ~domain ~type_name ~attrs:"" ~hoist_name fields in
+let render_record_block ~type_index ~domain ~hoist_name ~item_label ~item_path ~type_name ~make fields =
+  let { hoisted; record } = make_record_decl ~type_index ~domain ~type_name ~attrs:"" ~hoist_name fields in
   let record_deriving = if make then "json, show, eq, make" else "json, show, eq" in
-  let hoisted_text = render_chain ~deriving:"json, show, eq" hoisted in
+  let hoisted_decls = decls_of_hoisted hoisted in
+  let hoisted_text = render_chain ~deriving:"json, show, eq" hoisted_decls in
   let record_text = render_chain ~deriving:record_deriving [ record ] in
+  let record_codec =
+    {
+      Model.Codec.label = Printf.sprintf "%s.%s" item_label type_name;
+      module_path = item_path;
+      type_name;
+      is_sealed = false;
+      sample = Some (Fields fields);
+      enum_values = [];
+    }
+  in
+  let hoisted_codecs = List.map (codec_of_hoisted_enum ~owner:item_label ~module_path:item_path) hoisted in
   {
     text = Printf.sprintf "%s\n%s\n" hoisted_text record_text;
-    type_names = List.map (fun (decl : Model.Decl.t) -> decl.name) (hoisted @ [ record ]);
+    type_names = List.map (fun (decl : Model.Decl.t) -> decl.name) (hoisted_decls @ [ record ]);
+    block_codecs = record_codec :: hoisted_codecs;
   }
 
 (* Unit payload with a hand-written decoder.
@@ -233,27 +295,34 @@ let render_unit_block type_name =
         "type %s = unit [@@deriving show, eq]\n\nlet %s_of_json (_ignored_payload : Cdp_json.t) : %s = ()\n\n" type_name
         type_name type_name;
     type_names = [ type_name ];
+    block_codecs = [];
   }
 
-let render_params_block ~selected ~type_index ~domain ~hoist_name (item : Model.Item.t) =
+let render_params_block ~type_index ~domain ~hoist_name ~item_label ~item_path (item : Model.Item.t) =
   match item.kind with
   | Event { Model.Event.params = []; _ } -> render_unit_block "params"
-  | Command { Model.Command.params = []; _ } -> { text = ""; type_names = [] }
+  | Command { Model.Command.params = []; _ } -> { text = ""; type_names = []; block_codecs = [] }
   | Event { Model.Event.params; _ } | Command { Model.Command.params; _ } ->
-    render_record_block ~selected ~type_index ~domain ~hoist_name ~type_name:"params" ~make:true params
+    render_record_block ~type_index ~domain ~hoist_name ~item_label ~item_path ~type_name:"params" ~make:true params
 
 (* The typed seam a transport uses.
    - event: the value it subscribes with
    - command: a value when there are no params, a function of the params record otherwise *)
-let render_returns_block ~selected ~type_index ~domain ~hoist_name (item : Model.Item.t) =
+let render_returns_block ~type_index ~domain ~hoist_name ~item_label ~item_path (item : Model.Item.t) =
   match item.kind with
   | Event _event ->
-    { text = "let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }\n\n"; type_names = [] }
+    {
+      text = "let event : params Cdp_event.t = { Cdp_event.name; parse = params_of_json }\n\n";
+      type_names = [];
+      block_codecs = [];
+    }
   | Command command ->
     let result =
       match command.returns with
       | [] -> render_unit_block "result"
-      | fields -> render_record_block ~selected ~type_index ~domain ~hoist_name ~type_name:"result" ~make:false fields
+      | fields ->
+        render_record_block ~type_index ~domain ~hoist_name ~item_label ~item_path ~type_name:"result" ~make:false
+          fields
     in
     let command_text =
       match command.params with
@@ -262,37 +331,61 @@ let render_returns_block ~selected ~type_index ~domain ~hoist_name (item : Model
         "let command params : result Cdp_command.t =\n\
         \  { Cdp_command.name; params = Some (params_to_json params); parse = result_of_json }\n\n"
     in
-    { text = result.text ^ command_text; type_names = result.type_names }
+    { text = result.text ^ command_text; type_names = result.type_names; block_codecs = result.block_codecs }
 
-let emit_item_module ~selected ~type_index ~domain ~hoist_name (item : Model.Item.t) =
-  let params = render_params_block ~selected ~type_index ~domain ~hoist_name item in
-  let returns = render_returns_block ~selected ~type_index ~domain ~hoist_name item in
+let emit_item_module ~type_index ~domain ~hoist_name (item : Model.Item.t) =
+  let item_label = Printf.sprintf "%s.%s" domain item.module_name in
+  let item_path = Printf.sprintf "Cdp.%s.%s" (Naming.module_of_domain domain) item.module_name in
+  let params = render_params_block ~type_index ~domain ~hoist_name ~item_label ~item_path item in
+  let returns = render_returns_block ~type_index ~domain ~hoist_name ~item_label ~item_path item in
   check_no_dup
     ~what:(Printf.sprintf "type name in %s.%s" domain item.module_name)
     (params.type_names @ returns.type_names);
   let attrs = Attributes.render_item ~description:(Model.Item.description_of item) ~flags:(Model.Item.flags_of item) in
-  String.concat ""
-    [
-      Printf.sprintf "module %s = struct\n" item.module_name;
-      Printf.sprintf "let name = %S\n\n" item.wire_name;
-      params.text;
-      returns.text;
-      Printf.sprintf "end%s\n\n" attrs;
-    ]
+  let contents =
+    String.concat ""
+      [
+        Printf.sprintf "module %s = struct\n" item.module_name;
+        Printf.sprintf "let name = %S\n\n" item.wire_name;
+        params.text;
+        returns.text;
+        Printf.sprintf "end%s\n\n" attrs;
+      ]
+  in
+  { contents; codecs = params.block_codecs @ returns.block_codecs }
 
-let emit_domain_file ~revision ~selected ~type_index (domain : Model.Domain.t) =
+let emit_domain_file ~revision ~type_index (domain : Model.Domain.t) =
   let buf = Buffer.create 4096 in
   Buffer.add_string buf (render_header ~revision);
   Buffer.add_string buf (Attributes.render_file domain);
   Buffer.add_string buf (Printf.sprintf "include %s\n" (Naming.types_module_of_domain domain.name));
   Buffer.add_string buf "open Jsonkit.Primitives\n\n";
   let domain_type_names = Hoisted_name.collect_domain_type_names domain in
-  let add_item (item : Model.Item.t) =
-    let hoist_name = Hoisted_name.name_for_item_field ~domain_type_names ~item_name:item.module_name in
-    Buffer.add_string buf (emit_item_module ~selected ~type_index ~domain:domain.name ~hoist_name item)
+  let emit_item (item : Model.Item.t) =
+    let hoist_name = Hoisted_name.get_name_for_item_field ~domain_type_names ~item_name:item.module_name in
+    let emitted = emit_item_module ~type_index ~domain:domain.name ~hoist_name item in
+    Buffer.add_string buf emitted.contents;
+    emitted.codecs
   in
-  List.iter add_item (Model.Item.of_domain domain);
-  Buffer.contents buf
+  let codecs = List.concat_map emit_item (Model.Item.of_domain domain) in
+  { contents = Buffer.contents buf; codecs }
+
+(* everything one domain turns into; generate keeps the files, roundtrip keeps the receipt *)
+type domain_output = {
+  types_file : Model.Output_file.t; (* cdp_page_types.ml *)
+  domain_file : Model.Output_file.t; (* cdp_page.ml *)
+  codecs : Model.Codec.t list; (* the receipt for both files *)
+}
+
+let emit_domain ~revision ~type_index (domain : Model.Domain.t) =
+  let base_name = Naming.file_of_domain domain.name in
+  let types = emit_types_file ~revision ~type_index domain in
+  let items = emit_domain_file ~revision ~type_index domain in
+  {
+    types_file = { Model.Output_file.name = base_name ^ "_types.ml"; contents = types.contents };
+    domain_file = { Model.Output_file.name = base_name ^ ".ml"; contents = items.contents };
+    codecs = types.codecs @ items.codecs;
+  }
 
 (* cdp.ml: the module users open. Cdp.Network -> Cdp_network etc. *)
 let emit_index ~revision (domains : Model.Domain.t list) =

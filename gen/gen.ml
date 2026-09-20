@@ -14,7 +14,6 @@
      Sample       one JSON sample per protocol type
      Roundtrip    print the roundtrip test
      Fetch        download a protocol snapshot
-   This file is only the CLI.
 
    Output layout:
      cdp_base.ml            -- sealed modules for every primitive alias type
@@ -37,104 +36,107 @@
 
 open Cdp_gen
 
-(* The revision is stamped into every generated header comment.
-   - read from the REVISION file next to the protocol JSON
-   - anything that could not be a revision id is refused *)
-let read_revision ~protocol_file =
-  let revision_file = Filename.concat (Filename.dirname protocol_file) "REVISION" in
-  match Output_dir.read_file revision_file with
-  | exception Sys_error _no_revision_file -> "unknown"
-  | contents ->
-    let plain =
-      String.length contents > 0
-      && String.for_all
-           (fun ch -> Naming.is_letter ch || Naming.is_digit ch || ch = '.' || ch = '_' || ch = '-')
-           contents
-    in
-    if plain then contents
-    else
+module Protocol = struct
+  type t = {
+    revision : string; (* r1698617, stamped into every generated header *)
+    selected_domains : Model.Domain.t list; (* only the selected ones get files *)
+    type_index : Model.Type_index.t; (* over all loaded domains: a field may point into an unselected one *)
+  }
+
+  let revision_filename = "REVISION"
+
+  let read_revision ~next_to =
+    let revision_file = Filename.concat (Filename.dirname next_to) revision_filename in
+    let refuse contents =
       failwith
-        (Printf.sprintf "cdp-gen: REVISION next to the protocol JSON holds %S, which is not a revision id" contents)
-
-type loaded = {
-  revision : string;
-  selection : Model.Selection.t;
-  domains : Model.Domain.t list; (* the selected ones *)
-  type_index : Model.Type_index.t; (* over every loaded domain *)
-}
-
-(* shared front half of generate and roundtrip:
-   read REVISION, load and select domains, build the type index, verify the refs *)
-let load_protocol ~protocol_files ~domains_arg =
-  let revision =
-    match protocol_files with
-    | first :: _others -> read_revision ~protocol_file:first
-    | [] -> "unknown"
-  in
-  let all = List.concat_map (fun path -> Yojson.Safe.from_file path |> Model.Domain.list_of_json) protocol_files in
-  Model.Domain.check_unique_names all;
-  Model.Domain.check_identifiers all;
-  let selection = Model.Selection.parse domains_arg in
-  let domains = List.filter (fun (domain : Model.Domain.t) -> Model.Selection.contains selection domain.name) all in
-  let is_loaded_domain requested =
-    List.exists (fun (domain : Model.Domain.t) -> String.equal domain.name requested) all
-  in
-  let unknown_domains =
-    match selection with
-    | All -> []
-    | Named names -> List.filter (fun requested -> not (is_loaded_domain requested)) names
-  in
-  (match unknown_domains with
-  | [] -> ()
-  | unknown -> failwith ("cdp-gen: unknown domains: " ^ String.concat "," unknown));
-  let type_index = Model.Type_index.of_domains all in
-  Dependencies.check_refs_exist ~type_index domains;
-  (match Dependencies.find_missing ~all ~selected:domains with
-  | [] -> ()
-  | needed ->
-    let who_needs =
-      match selection with
-      | Named [ only ] -> only ^ " also needs"
-      | _several -> "the selected domains also need"
+        (Printf.sprintf "cdp-gen: %s next to the protocol JSON holds %S, which is not a revision id" revision_filename
+           contents)
     in
-    failwith (Printf.sprintf "cdp-gen: %s %s; add them to the domain list" who_needs (String.concat "," needed)));
-  Dependencies.check_no_type_loop ~type_index domains;
-  { revision; selection; domains; type_index }
+    match Output_dir.read_file revision_file with
+    | exception Sys_error _no_revision_file -> "unknown"
+    | "" -> refuse ""
+    | contents ->
+      let is_revision_char ch =
+        Naming.is_letter ch || Naming.is_digit ch || Char.equal ch '.' || Char.equal ch '_' || Char.equal ch '-'
+      in
+      (match String.for_all is_revision_char contents with
+      | true -> contents
+      | false -> refuse contents)
+
+  let read_domains ~protocol_files =
+    List.concat_map (fun path -> Yojson.Safe.from_file path |> Model.Domain.list_of_json) protocol_files
+
+  (* keep domains the user asked for *)
+  let keep_selected_domains ~selection all_domains =
+    match Model.Domain_selection.find_unknown selection ~all_domains with
+    | [] ->
+      List.filter (fun (domain : Model.Domain.t) -> Model.Domain_selection.contains selection domain.name) all_domains
+    | unknown -> failwith ("cdp-gen: unknown domains: " ^ String.concat "," unknown)
+
+  (* every $ref resolves, the selection needs no other domain, no loop between type files.
+     All named at once, so the user fixes the domain list in one try. *)
+  let check_refs ~type_index ~selection ~all_domains ~selected_domains =
+    Dependencies.check_refs_exist ~type_index selected_domains;
+    (match Dependencies.find_missing ~all_domains ~selected_domains with
+    | [] -> ()
+    | needed ->
+      let who_needs =
+        match selection with
+        | Model.Domain_selection.Named [ only ] -> only ^ " also needs"
+        | _several -> "the selected domains also need"
+      in
+      failwith (Printf.sprintf "cdp-gen: %s %s; add them to the domain list" who_needs (String.concat "," needed)));
+    Dependencies.check_no_type_loop ~type_index selected_domains
+
+  let of_files ~protocol_files ~domains_arg =
+    let revision =
+      match protocol_files with
+      | [] -> "unknown"
+      | first_protocol_file :: _others -> read_revision ~next_to:first_protocol_file
+    in
+    let all_domains = read_domains ~protocol_files in
+    Model.Domain.check_unique_names all_domains;
+    Model.Domain.check_identifiers all_domains;
+    let domain_selection = Model.Domain_selection.parse domains_arg in
+    let selected_domains = keep_selected_domains ~selection:domain_selection all_domains in
+    let type_index = Model.Type_index.of_domains all_domains in
+    check_refs ~type_index ~selection:domain_selection ~all_domains ~selected_domains;
+    { revision; selected_domains; type_index }
+end
 
 let generate ~protocol_files ~outdir ~domains_arg =
-  let { revision; selection; domains; type_index } = load_protocol ~protocol_files ~domains_arg in
+  let { Protocol.revision; selected_domains; type_index } = Protocol.of_files ~protocol_files ~domains_arg in
   (* render every file before writing any: a generator error leaves outdir untouched *)
-  let base_file = { Model.Output_file.name = "cdp_base.ml"; contents = Emit.emit_base_file ~revision domains } in
-  let files_of_domain (domain : Model.Domain.t) =
-    let base_name = Naming.file_of_domain domain.name in
-    let types_contents = Emit.emit_types_file ~revision ~selected:selection ~type_index domain in
-    let domain_contents = Emit.emit_domain_file ~revision ~selected:selection ~type_index domain in
-    [
-      { Model.Output_file.name = base_name ^ "_types.ml"; contents = types_contents };
-      { Model.Output_file.name = base_name ^ ".ml"; contents = domain_contents };
-    ]
+  let base_file =
+    { Model.Output_file.name = "cdp_base.ml"; contents = Emit.emit_base_file ~revision selected_domains }
   in
-  let domain_files = List.concat_map files_of_domain domains in
-  let index_file = { Model.Output_file.name = "cdp.ml"; contents = Emit.emit_index ~revision domains } in
+  let outputs = List.map (Emit.emit_domain ~revision ~type_index) selected_domains in
+  let domain_files =
+    List.concat_map (fun (output : Emit.domain_output) -> [ output.types_file; output.domain_file ]) outputs
+  in
+  let index_file = { Model.Output_file.name = "cdp.ml"; contents = Emit.emit_index ~revision selected_domains } in
   let fresh = (base_file :: domain_files) @ [ index_file ] in
   Output_dir.remove_stale ~outdir ~fresh;
   List.iter (Output_dir.write ~outdir) Glue.files;
   let glue_names = List.map (fun (file : Model.Output_file.t) -> file.name) Glue.files in
   Printf.printf "wrote glue: %s\n" (String.concat ", " glue_names);
   Output_dir.write ~outdir base_file;
-  Printf.printf "generated cdp_base.ml: %d sealed alias modules\n" (Model.Domain.count_sealed_aliases domains);
+  Printf.printf "generated cdp_base.ml: %d sealed alias modules\n" (Model.Domain.count_sealed_aliases selected_domains);
   List.iter (Output_dir.write ~outdir) domain_files;
   let report_domain (domain : Model.Domain.t) =
     Printf.printf "generated %s(_types).ml: %d types, %d commands, %d events\n" (Naming.file_of_domain domain.name)
       (List.length domain.types) (List.length domain.commands) (List.length domain.events)
   in
-  List.iter report_domain domains;
+  List.iter report_domain selected_domains;
   Output_dir.write ~outdir index_file;
-  Printf.printf "generated cdp.ml index (%d domains, protocol %s)\n" (List.length domains) revision
+  Printf.printf "generated cdp.ml index (%d domains, protocol %s)\n" (List.length selected_domains) revision
 
 let roundtrip ~protocol_files ~outfile ~domains_arg =
-  let { revision; domains; type_index; selection = _ } = load_protocol ~protocol_files ~domains_arg in
-  let { Roundtrip.contents; emitted; enum_checks; skipped } = Roundtrip.emit ~revision ~domains ~type_index in
+  let { Protocol.revision; selected_domains; type_index } = Protocol.of_files ~protocol_files ~domains_arg in
+  (* the same printing run as generate; only the receipt is kept, the files are not written *)
+  let outputs = List.map (Emit.emit_domain ~revision ~type_index) selected_domains in
+  let codecs = List.concat_map (fun (output : Emit.domain_output) -> output.codecs) outputs in
+  let { Roundtrip.contents; emitted; enum_checks; skipped } = Roundtrip.emit ~revision ~type_index ~codecs in
   Output_dir.write_file outfile contents;
   List.iter (fun (label, reason) -> Printf.eprintf "skipped %s: %s\n" label reason) skipped;
   Printf.printf "generated %s: %d roundtrip checks, %d enum checks, %d skipped\n" outfile emitted enum_checks

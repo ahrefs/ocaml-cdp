@@ -104,8 +104,8 @@ let () =
   | _parsed -> failwith "a type without id must not parse"
 
 let () =
-  let picked = Cdp_gen.Model.Selection.parse "Page,Network" in
-  assert (Cdp_gen.Model.Selection.contains picked "Page");
-  assert (not (Cdp_gen.Model.Selection.contains picked "DOM"));
-  assert (Cdp_gen.Model.Selection.contains (Cdp_gen.Model.Selection.parse "all") "DOM");
-  pass "Selection"
+  let picked = Cdp_gen.Model.Domain_selection.parse "Page,Network" in
+  assert (Cdp_gen.Model.Domain_selection.contains picked "Page");
+  assert (not (Cdp_gen.Model.Domain_selection.contains picked "DOM"));
+  assert (Cdp_gen.Model.Domain_selection.contains (Cdp_gen.Model.Domain_selection.parse "all") "DOM");
+  pass "Domain_selection"

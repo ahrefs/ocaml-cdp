@@ -8,8 +8,7 @@ let expect_failure ~name run =
   | exception Failure _message -> pass name
   | _unexpected_success -> failwith ("expected a failure, got a result: " ^ name)
 
-(* setup: two selected domains; one sealed alias in each *)
-let selected = Cdp_gen.Model.Selection.parse "Demo,Other"
+(* setup: two domains; one sealed alias in each *)
 
 let type_index =
   Cdp_gen.Model.Type_index.of_domains
@@ -20,7 +19,7 @@ let type_index =
 
 let render raw =
   let type_expr = Cdp_gen.Model.Type_expr.of_json ~domain:"Demo" (Yojson.Safe.from_string raw) in
-  Cdp_gen.Emit.render_type_expr ~selected ~type_index ~domain:"Demo" type_expr
+  Cdp_gen.Emit.render_type_expr ~type_index ~domain:"Demo" type_expr
 
 let () =
   assert (String.equal (render {|{"type":"string"}|}) "string");
@@ -52,8 +51,6 @@ let () =
   assert (String.equal (render {|{"$ref":"Other.AliasId"}|}) "Cdp_base.Other.Alias_id.t");
   pass "sealed aliases route through Cdp_base"
 
-let () =
-  expect_failure ~name:"ref outside the selected set fails" (fun () -> render {|{"$ref":"Unknown.Thing"}|});
-  expect_failure ~name:"unknown primitive fails" (fun () -> render {|{"type":"weird"}|})
+let () = expect_failure ~name:"unknown primitive fails" (fun () -> render {|{"type":"weird"}|})
 
 let () = print_endline "all emit tests passed"

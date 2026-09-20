@@ -534,9 +534,12 @@ module Domain = struct
     let sealed_of_domain domain = List.filter_map Type_def.sealed_primitive_of domain.types in
     let sealed_of_all_domains = List.concat_map sealed_of_domain domains in
     List.length sealed_of_all_domains
+
+  let find_by_name domains name = List.find_opt (fun domain -> String.equal domain.name name) domains
 end
 
-module Selection = struct
+(* the domains the user asked for on the command line: all, or a list like Page,Network *)
+module Domain_selection = struct
   type t =
     | All
     | Named of string list
@@ -550,6 +553,13 @@ module Selection = struct
     match selection with
     | All -> true
     | Named names -> List.mem domain_name names
+
+  (* the names the user typed that no loaded protocol file defines *)
+  let find_unknown selection ~all_domains =
+    let is_unknown name = Option.is_none (Domain.find_by_name all_domains name) in
+    match selection with
+    | All -> []
+    | Named names -> List.filter is_unknown names
 end
 
 (* One lookup for every step that follows a $ref, so a type can never be found
@@ -635,6 +645,39 @@ module Decl = struct
     name : string;
     body : string;
   }
+end
+
+(* One line of Emit's receipt: a type it printed and where the type's codecs live.
+   The roundtrip test pastes these names instead of working them out a second time,
+   so the printer and the test can never disagree on a name. *)
+module Codec = struct
+  type sample_source =
+    | Type of Type_ref.t (* a named type: the sample is built from the type *)
+    | Fields of Property.t list (* a params or result record: from its fields *)
+
+  type t = {
+    label : string; (* Demo.Cookie, for the FAIL message *)
+    module_path : string; (* Cdp.Demo, or Cdp.Page.Capture_screenshot *)
+    type_name : string; (* cookie, params, format; Request_id when sealed *)
+    is_sealed : bool; (* Cdp.Base.Demo.Request_id.of_json, not request_id_of_json *)
+    sample : sample_source option; (* None for an enum hoisted out of a field: only its values are checked *)
+    enum_values : string list; (* [] when not an enum *)
+  }
+
+  let of_json_path codec =
+    match codec.is_sealed with
+    | true -> Printf.sprintf "%s.%s.of_json" codec.module_path codec.type_name
+    | false -> Printf.sprintf "%s.%s_of_json" codec.module_path codec.type_name
+
+  let to_json_path codec =
+    match codec.is_sealed with
+    | true -> Printf.sprintf "%s.%s.to_json" codec.module_path codec.type_name
+    | false -> Printf.sprintf "%s.%s_to_json" codec.module_path codec.type_name
+
+  let equal_path codec =
+    match codec.is_sealed with
+    | true -> Printf.sprintf "%s.%s.equal" codec.module_path codec.type_name
+    | false -> Printf.sprintf "%s.equal_%s" codec.module_path codec.type_name
 end
 
 module Output_file = struct
