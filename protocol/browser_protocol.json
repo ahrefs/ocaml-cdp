@@ -1210,7 +1210,6 @@
                         "ExcludeSameSiteLax",
                         "ExcludeSameSiteStrict",
                         "ExcludeDomainNonASCII",
-                        "ExcludeThirdPartyCookieBlockedInFirstPartySet",
                         "ExcludeThirdPartyPhaseout",
                         "ExcludePortMismatch",
                         "ExcludeSchemeMismatch"
@@ -11604,6 +11603,17 @@
                                 "enable",
                                 "default"
                             ]
+                        },
+                        {
+                            "name": "textLayoutMode",
+                            "description": "Text layout mode. Default: `default`. Note: if `mobile` is `true`,\nmobile text layout mode (text autosizing) is always enabled.",
+                            "experimental": true,
+                            "optional": true,
+                            "type": "string",
+                            "enum": [
+                                "mobile",
+                                "default"
+                            ]
                         }
                     ]
                 },
@@ -17029,7 +17039,6 @@
                         "SameSiteNoneInsecure",
                         "UserPreferences",
                         "ThirdPartyPhaseout",
-                        "ThirdPartyBlockedInFirstPartySet",
                         "SyntaxError",
                         "SchemeNotSupported",
                         "OverwriteSecure",
@@ -17059,7 +17068,6 @@
                         "SameSiteNoneInsecure",
                         "UserPreferences",
                         "ThirdPartyPhaseout",
-                        "ThirdPartyBlockedInFirstPartySet",
                         "UnknownError",
                         "SchemefulSameSiteStrict",
                         "SchemefulSameSiteLax",
@@ -22574,6 +22582,12 @@
                             "description": "Frame swap timestamp.",
                             "optional": true,
                             "$ref": "Network.TimeSinceEpoch"
+                        },
+                        {
+                            "name": "monotonicTimestamp",
+                            "description": "Frame swap timestamp as monotonic time.",
+                            "optional": true,
+                            "$ref": "Network.MonotonicTime"
                         }
                     ]
                 },
@@ -26203,6 +26217,12 @@
                             "$ref": "PreloadingStatus"
                         },
                         {
+                            "name": "effectiveAction",
+                            "description": "The action currently performed by this attempt. This differs from\n`key.action` after a prerender-until-script attempt is upgraded in place\nto a full prerender.",
+                            "optional": true,
+                            "$ref": "SpeculationAction"
+                        },
+                        {
                             "name": "prerenderStatus",
                             "optional": true,
                             "$ref": "PrerenderFinalStatus"
@@ -27819,6 +27839,27 @@
                     ]
                 },
                 {
+                    "id": "PrivateVerificationTokensIssuerConfig",
+                    "description": "Configuration for a Private Verification Tokens issuer.",
+                    "experimental": true,
+                    "type": "object",
+                    "properties": [
+                        {
+                            "name": "issuerOrigin",
+                            "description": "Origin of the token issuer.",
+                            "type": "string"
+                        },
+                        {
+                            "name": "redeemerOrigins",
+                            "description": "Origins authorized to redeem tokens from this issuer.",
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    ]
+                },
+                {
                     "id": "StorageBucketsDurability",
                     "type": "string",
                     "enum": [
@@ -27870,38 +27911,6 @@
                         {
                             "name": "durability",
                             "$ref": "StorageBucketsDurability"
-                        }
-                    ]
-                },
-                {
-                    "id": "RelatedWebsiteSet",
-                    "description": "A single Related Website Set object.",
-                    "experimental": true,
-                    "type": "object",
-                    "properties": [
-                        {
-                            "name": "primarySites",
-                            "description": "The primary site of this set, along with the ccTLDs if there is any.",
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
-                        },
-                        {
-                            "name": "associatedSites",
-                            "description": "The associated sites of this set, along with the ccTLDs if there is any.",
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
-                        },
-                        {
-                            "name": "serviceSites",
-                            "description": "The service sites of this set, along with the ccTLDs if there is any.",
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
                         }
                     ]
                 }
@@ -28217,6 +28226,20 @@
                     ]
                 },
                 {
+                    "name": "getPrivateVerificationTokensIssuerConfigs",
+                    "description": "Returns the configured Private Verification Tokens issuers and their redeemer\norigins.",
+                    "experimental": true,
+                    "returns": [
+                        {
+                            "name": "configs",
+                            "type": "array",
+                            "items": {
+                                "$ref": "PrivateVerificationTokensIssuerConfig"
+                            }
+                        }
+                    ]
+                },
+                {
                     "name": "clearPrivateVerificationTokens",
                     "description": "Removes all Private Verification Tokens issued by the provided issuerOrigin.",
                     "experimental": true,
@@ -28285,20 +28308,6 @@
                             "type": "array",
                             "items": {
                                 "type": "string"
-                            }
-                        }
-                    ]
-                },
-                {
-                    "name": "getRelatedWebsiteSets",
-                    "description": "Returns the effective Related Website Sets in use by this profile for the browser\nsession. The effective Related Website Sets will not change during a browser session.",
-                    "experimental": true,
-                    "returns": [
-                        {
-                            "name": "sets",
-                            "type": "array",
-                            "items": {
-                                "$ref": "RelatedWebsiteSet"
                             }
                         }
                     ]
