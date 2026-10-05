@@ -5991,6 +5991,23 @@
                     ]
                 },
                 {
+                    "name": "forcePositionTryOption",
+                    "description": "Forces a position-try option for the given node.",
+                    "parameters": [
+                        {
+                            "name": "nodeId",
+                            "description": "The element id for which to force the position-try option.",
+                            "$ref": "DOM.NodeId"
+                        },
+                        {
+                            "name": "index",
+                            "description": "The 1-based index of the position-try fallback option, 0 for base position (no fallback),\nor omitted to clear the forced state.",
+                            "optional": true,
+                            "type": "integer"
+                        }
+                    ]
+                },
+                {
                     "name": "getBackgroundColors",
                     "parameters": [
                         {
@@ -13358,6 +13375,35 @@
                             "$ref": "Directory"
                         }
                     ]
+                }
+            ]
+        },
+        {
+            "domain": "FindInPage",
+            "description": "This domain provides commands to trigger the \"Find in page\" feature.",
+            "experimental": true,
+            "commands": [
+                {
+                    "name": "findFirst",
+                    "description": "Forwards `query` to the find-in-page facility, starting a new find session.\nWhere exactly the search starts from is implementation-specific.",
+                    "parameters": [
+                        {
+                            "name": "query",
+                            "type": "string"
+                        }
+                    ]
+                },
+                {
+                    "name": "findNext",
+                    "description": "Moves to the next match for the query passed to the most recent\nfindFirst() call."
+                },
+                {
+                    "name": "findPrev",
+                    "description": "Moves to the previous match for the query passed to the most recent\nfindFirst() call."
+                },
+                {
+                    "name": "stop",
+                    "description": "Ends the current find session, if any, and clears its highlighting."
                 }
             ]
         },
@@ -22086,6 +22132,7 @@
                         "private-state-token-redemption",
                         "publickey-credentials-create",
                         "publickey-credentials-get",
+                        "publickey-credentials-remote-client-data-json",
                         "rewriter",
                         "screen-wake-lock",
                         "serial",
