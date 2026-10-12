@@ -1876,7 +1876,8 @@
                         "FormModelContextMissingToolName",
                         "FormModelContextMissingToolDescription",
                         "FormModelContextRequiredParameterMissingName",
-                        "FormModelContextParameterMissingName"
+                        "FormModelContextParameterMissingName",
+                        "GeolocationPromptWithoutUserGesture"
                     ]
                 },
                 {
@@ -5987,6 +5988,23 @@
                             "name": "forced",
                             "description": "Boolean indicating if this is on or off.",
                             "type": "boolean"
+                        }
+                    ]
+                },
+                {
+                    "name": "forcePositionTryOption",
+                    "description": "Forces a position-try option for the given node.",
+                    "parameters": [
+                        {
+                            "name": "nodeId",
+                            "description": "The element id for which to force the position-try option.",
+                            "$ref": "DOM.NodeId"
+                        },
+                        {
+                            "name": "index",
+                            "description": "The 1-based index of the position-try fallback option, 0 for base position (no fallback),\nor omitted to clear the forced state.",
+                            "optional": true,
+                            "type": "integer"
                         }
                     ]
                 },
@@ -13362,6 +13380,35 @@
             ]
         },
         {
+            "domain": "FindInPage",
+            "description": "This domain provides commands to trigger the \"Find in page\" feature.",
+            "experimental": true,
+            "commands": [
+                {
+                    "name": "findFirst",
+                    "description": "Forwards `query` to the find-in-page facility, starting a new find session.\nWhere exactly the search starts from is implementation-specific.",
+                    "parameters": [
+                        {
+                            "name": "query",
+                            "type": "string"
+                        }
+                    ]
+                },
+                {
+                    "name": "findNext",
+                    "description": "Moves to the next match for the query passed to the most recent\nfindFirst() call."
+                },
+                {
+                    "name": "findPrev",
+                    "description": "Moves to the previous match for the query passed to the most recent\nfindFirst() call."
+                },
+                {
+                    "name": "stop",
+                    "description": "Ends the current find session, if any, and clears its highlighting."
+                }
+            ]
+        },
+        {
             "domain": "HeadlessExperimental",
             "description": "This domain provides experimental commands only supported in headless mode.",
             "experimental": true,
@@ -19409,6 +19456,13 @@
                             "name": "encodedDataLength",
                             "description": "Total number of bytes received for this request.",
                             "type": "number"
+                        },
+                        {
+                            "name": "encodedBodyLength",
+                            "description": "Size of the response body before removing content encodings.\nIncludes cached bodies, but excludes headers and transfer framing.",
+                            "experimental": true,
+                            "optional": true,
+                            "type": "number"
                         }
                     ]
                 },
@@ -22086,11 +22140,10 @@
                         "private-state-token-redemption",
                         "publickey-credentials-create",
                         "publickey-credentials-get",
+                        "publickey-credentials-remote-client-data-json",
                         "rewriter",
                         "screen-wake-lock",
                         "serial",
-                        "shared-storage",
-                        "shared-storage-select-url",
                         "smart-card",
                         "speaker-selection",
                         "storage-access",
@@ -23970,6 +24023,26 @@
                             "description": "The ancestry chain of ad script identifiers leading to this frame's\ncreation, along with the root script's filterlist rule. The ancestry\nchain is ordered from the most immediate script (in the frame creation\nstack) to more distant ancestors (that created the immediately preceding\nscript). Only sent if frame is labelled as an ad and ids are available.",
                             "optional": true,
                             "$ref": "Network.AdAncestry"
+                        }
+                    ]
+                },
+                {
+                    "name": "getSpellCheckCustomDictionary",
+                    "description": "Returns the words that the frame's document added to its spell check custom\ndictionary with `document.spellCheckCustomDictionary.addWords()`, sorted.\nPage script cannot read the dictionary back; this lets developers inspect\nit.",
+                    "experimental": true,
+                    "parameters": [
+                        {
+                            "name": "frameId",
+                            "$ref": "FrameId"
+                        }
+                    ],
+                    "returns": [
+                        {
+                            "name": "words",
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
                         }
                     ]
                 },
