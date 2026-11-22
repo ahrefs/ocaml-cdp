@@ -117,8 +117,8 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           echo "PKG_CONFIG_PATH=$HOME/.local/curl/lib/pkgconfig" >> "$GITHUB_ENV"
-          echo "LD_LIBRARY_PATH=$HOME/.local/curl/lib" >> "$GITHUB_ENV"
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          sudo apt-get update
 
       - name: Use Homebrew's libcurl (macOS)
         if: runner.os == 'macOS'
@@ -133,8 +133,9 @@ jobs:
       - name: Install dependencies
         run: opam install . --deps-only --with-test
 
+      # only these two steps use the built libcurl: set for every step, it broke /usr/bin/curl, which opam downloads with
       - name: Build and test the full stack
-        run: opam exec -- make build test
+        run: LD_LIBRARY_PATH=$HOME/.local/curl/lib opam exec -- make build test
 
       - name: Browser smoke tests
-        run: opam exec -- make test-browser
+        run: LD_LIBRARY_PATH=$HOME/.local/curl/lib opam exec -- make test-browser
