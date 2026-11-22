@@ -104,32 +104,78 @@ module Protocol = struct
     { revision; selected_domains; type_index }
 end
 
+(* every file is rendered before any is written: a generator error leaves outdir untouched *)
+module Library = struct
+  type t = {
+    revision : string;
+    selected_domains : Model.Domain.t list; (* the report counts their types, commands and events *)
+    glue_files : Model.Output_file.t list; (* cdp_json.ml and three more, copied from gen/glue/ *)
+    base_file : Model.Output_file.t;
+    domain_files : Model.Output_file.t list; (* cdp_page_types.ml and cdp_page.ml for each domain *)
+    index_file : Model.Output_file.t; (* cdp.ml: lets users write Cdp.Network instead of Cdp_network *)
+  }
+
+  let base_filename = "cdp_base.ml"
+  let index_filename = "cdp.ml"
+
+  let render_base_file ~revision selected_domains =
+    let contents = Emit.emit_base_file ~revision selected_domains in
+    Model.Output_file.make ~name:base_filename ~contents
+
+  let render_domain_files ~revision ~type_index selected_domains =
+    let render_domain domain =
+      let output : Emit.domain_output = Emit.emit_domain ~revision ~type_index domain in
+      [ output.types_file; output.domain_file ]
+    in
+    List.concat_map render_domain selected_domains
+
+  let render_index_file ~revision selected_domains =
+    let contents = Emit.emit_index ~revision selected_domains in
+    Model.Output_file.make ~name:index_filename ~contents
+
+  let list_files library = library.glue_files @ [ library.base_file ] @ library.domain_files @ [ library.index_file ]
+
+  let remove_stale_files ~outdir library =
+    let fresh_files = list_files library in
+    Output_dir.remove_stale ~outdir ~fresh:fresh_files
+
+  let write_files ~outdir library =
+    let files = list_files library in
+    List.iter (Output_dir.write ~outdir) files
+
+  let print_report ~removed_files library =
+    let print_removed_file name = Printf.printf "removed stale %s\n" name in
+    List.iter print_removed_file removed_files;
+    let glue_names = List.map (fun (file : Model.Output_file.t) -> file.name) library.glue_files in
+    let joined_glue_names = String.concat ", " glue_names in
+    Printf.printf "wrote glue: %s\n" joined_glue_names;
+    let sealed_alias_count = Model.Domain.count_sealed_aliases library.selected_domains in
+    Printf.printf "generated %s: %d sealed alias modules\n" library.base_file.name sealed_alias_count;
+    let print_domain (domain : Model.Domain.t) =
+      Printf.printf "generated %s(_types).ml: %d types, %d commands, %d events\n" (Naming.file_of_domain domain.name)
+        (List.length domain.types) (List.length domain.commands) (List.length domain.events)
+    in
+    List.iter print_domain library.selected_domains;
+    let domain_count = List.length library.selected_domains in
+    Printf.printf "generated %s index (%d domains, protocol %s)\n" library.index_file.name domain_count library.revision
+
+  let of_protocol { Protocol.revision; selected_domains; type_index } =
+    {
+      revision;
+      selected_domains;
+      glue_files = Glue.files;
+      base_file = render_base_file ~revision selected_domains;
+      domain_files = render_domain_files ~revision ~type_index selected_domains;
+      index_file = render_index_file ~revision selected_domains;
+    }
+end
+
 let generate ~protocol_files ~outdir ~domains_arg =
-  let { Protocol.revision; selected_domains; type_index } = Protocol.of_files ~protocol_files ~domains_arg in
-  (* render every file before writing any: a generator error leaves outdir untouched *)
-  let base_file =
-    { Model.Output_file.name = "cdp_base.ml"; contents = Emit.emit_base_file ~revision selected_domains }
-  in
-  let outputs = List.map (Emit.emit_domain ~revision ~type_index) selected_domains in
-  let domain_files =
-    List.concat_map (fun (output : Emit.domain_output) -> [ output.types_file; output.domain_file ]) outputs
-  in
-  let index_file = { Model.Output_file.name = "cdp.ml"; contents = Emit.emit_index ~revision selected_domains } in
-  let fresh = (base_file :: domain_files) @ [ index_file ] in
-  Output_dir.remove_stale ~outdir ~fresh;
-  List.iter (Output_dir.write ~outdir) Glue.files;
-  let glue_names = List.map (fun (file : Model.Output_file.t) -> file.name) Glue.files in
-  Printf.printf "wrote glue: %s\n" (String.concat ", " glue_names);
-  Output_dir.write ~outdir base_file;
-  Printf.printf "generated cdp_base.ml: %d sealed alias modules\n" (Model.Domain.count_sealed_aliases selected_domains);
-  List.iter (Output_dir.write ~outdir) domain_files;
-  let report_domain (domain : Model.Domain.t) =
-    Printf.printf "generated %s(_types).ml: %d types, %d commands, %d events\n" (Naming.file_of_domain domain.name)
-      (List.length domain.types) (List.length domain.commands) (List.length domain.events)
-  in
-  List.iter report_domain selected_domains;
-  Output_dir.write ~outdir index_file;
-  Printf.printf "generated cdp.ml index (%d domains, protocol %s)\n" (List.length selected_domains) revision
+  let protocol = Protocol.of_files ~protocol_files ~domains_arg in
+  let library = Library.of_protocol protocol in
+  let removed_files = Library.remove_stale_files ~outdir library in
+  Library.write_files ~outdir library;
+  Library.print_report ~removed_files library
 
 let roundtrip ~protocol_files ~outfile ~domains_arg =
   let { Protocol.revision; selected_domains; type_index } = Protocol.of_files ~protocol_files ~domains_arg in

@@ -381,9 +381,11 @@ let emit_domain ~revision ~type_index (domain : Model.Domain.t) =
   let base_name = Naming.file_of_domain domain.name in
   let types = emit_types_file ~revision ~type_index domain in
   let items = emit_domain_file ~revision ~type_index domain in
+  let types_filename = base_name ^ "_types.ml" in
+  let domain_filename = base_name ^ ".ml" in
   {
-    types_file = { Model.Output_file.name = base_name ^ "_types.ml"; contents = types.contents };
-    domain_file = { Model.Output_file.name = base_name ^ ".ml"; contents = items.contents };
+    types_file = Model.Output_file.make ~name:types_filename ~contents:types.contents;
+    domain_file = Model.Output_file.make ~name:domain_filename ~contents:items.contents;
     codecs = types.codecs @ items.codecs;
   }
 

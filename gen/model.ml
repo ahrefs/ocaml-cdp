@@ -685,4 +685,6 @@ module Output_file = struct
     name : string;
     contents : string;
   }
+
+  let make ~name ~contents = { name; contents }
 end

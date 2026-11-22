@@ -43,8 +43,9 @@ let is_generated_file path =
     close_in input;
     String.starts_with ~prefix:generated_header_prefix first_line
 
-(* files of a domain dropped from the selection would stay behind and break
-   the next build; remove every generated cdp_*.ml this run does not produce *)
+(* files of a domain dropped from the selection would stay behind and break the next build
+   - removes every generated cdp_*.ml this run does not produce
+   - returns their names: the caller prints them only after every write succeeded *)
 let remove_stale ~outdir ~(fresh : Model.Output_file.t list) =
   let fresh_names = List.map (fun (file : Model.Output_file.t) -> file.name) fresh in
   let is_stale name =
@@ -53,8 +54,6 @@ let remove_stale ~outdir ~(fresh : Model.Output_file.t list) =
     && (not (List.mem name fresh_names))
     && is_generated_file (Filename.concat outdir name)
   in
-  let remove name =
-    Sys.remove (Filename.concat outdir name);
-    Printf.printf "removed stale %s\n" name
-  in
-  Sys.readdir outdir |> Array.to_list |> List.filter is_stale |> List.sort String.compare |> List.iter remove
+  let stale_names = Sys.readdir outdir |> Array.to_list |> List.filter is_stale |> List.sort String.compare in
+  List.iter (fun name -> Sys.remove (Filename.concat outdir name)) stale_names;
+  stale_names
