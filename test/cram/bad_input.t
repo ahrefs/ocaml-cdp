@@ -9,7 +9,9 @@ uncaught exception.
   [1]
 
 A missing file is a command-line error: checked before any work, exit 124.
+cmdliner prints the file name in bold on a color terminal and in quotes otherwise.
 
+  $ export NO_COLOR=1
   $ cdp-gen generate does_not_exist.json js.json out all
   Usage: cdp-gen generate [--help] [OPTION]… PROTOCOL… OUTDIR DOMAINS
   cdp-gen: PROTOCOL… arguments: no 'does_not_exist.json' file
