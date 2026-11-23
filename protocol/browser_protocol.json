@@ -2215,12 +2215,15 @@
                         "NonPhrasingContentOptionChild",
                         "InteractiveContentOptionChild",
                         "InteractiveContentLegendChild",
-                        "InteractiveContentSummaryDescendant"
+                        "InteractiveContentSummaryDescendant",
+                        "AnchorMenuDescendant",
+                        "InteractiveContentMenuDescendant",
+                        "TextMenuDescendant"
                     ]
                 },
                 {
                     "id": "ElementAccessibilityIssueDetails",
-                    "description": "This issue warns about errors in the select or summary element content model.",
+                    "description": "This issue warns about errors in the select, summary, or menu element content model.",
                     "type": "object",
                     "properties": [
                         {
@@ -15967,6 +15970,7 @@
                         "CSPViolationReport",
                         "Preflight",
                         "FedCM",
+                        "EmailVerification",
                         "Other"
                     ]
                 },
@@ -16933,6 +16937,7 @@
                                 "SignedExchange",
                                 "preflight",
                                 "FedCM",
+                                "EmailVerification",
                                 "other"
                             ]
                         },
@@ -18350,7 +18355,8 @@
                         "PreProvisionedKeyNotFound",
                         "AttestationCertificationError",
                         "AttestationSigningError",
-                        "FederatedRegistrationRedirected"
+                        "FederatedRegistrationRedirected",
+                        "CrossSiteRefreshSessionConfig"
                     ]
                 },
                 {
@@ -24420,6 +24426,13 @@
                             "experimental": true,
                             "optional": true,
                             "$ref": "Network.LoaderId"
+                        },
+                        {
+                            "name": "checkForRepost",
+                            "description": "If true and the page has POST data, the browser shows the form\nresubmission dialog before the reload. The command returns after the\nuser responds to the dialog. If the user cancels the dialog, the\ncommand returns an error. The default value is false.",
+                            "experimental": true,
+                            "optional": true,
+                            "type": "boolean"
                         }
                     ]
                 },
@@ -26146,7 +26159,8 @@
                         "PrerenderHostReused",
                         "FormSubmitWhenPrerendering",
                         "CrossDocumentRestart",
-                        "PrefetchFailedCrossOriginSubframe"
+                        "PrefetchFailedCrossOriginSubframe",
+                        "UnexpectedMainFrameNavigation"
                     ]
                 },
                 {
@@ -28906,7 +28920,7 @@
                         },
                         {
                             "name": "subtype",
-                            "description": "Provides additional details for specific target types. For example, for\nthe type of \"page\", this may be set to \"prerender\".",
+                            "description": "Provides additional details for specific target types. For example, for\nthe type of \"page\", this may be set to \"prerender\", and for \"tab\", this\nmay be set to \"unloaded\". An unloaded tab has a history entry, but no\ndocument for it: for example, after the tab was discarded, after\nsession restore without load, or after the renderer crashed. The tab\nstays unloaded until a new document commits. A new tab that has not\nnavigated is not unloaded. Target.targetInfoChanged reports changes of\nthis value for tabs.",
                             "experimental": true,
                             "optional": true,
                             "type": "string"
