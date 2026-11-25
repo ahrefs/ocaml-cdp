@@ -36,9 +36,9 @@ let render_check (codec : Model.Codec.t) sample =
   Printf.sprintf "let () = check %S %s %s %s %S\n" codec.label of_json to_json equal raw
 
 let emit ~revision ~type_index ~(codecs : Model.Codec.t list) =
-  let buf = Buffer.create 65536 in
-  Buffer.add_string buf (Emit.render_header ~revision);
-  Buffer.add_string buf
+  let buffer = Buffer.create 65536 in
+  Buffer.add_string buffer (Emit.render_header ~revision);
+  Buffer.add_string buffer
     "(* Roundtrip tests over every generated type: decode a sample synthesized\n\
     \   from the protocol schema, encode it back, decode again, and compare.\n\
     \   The encoded JSON must also equal the input, keys sorted. *)\n\n\
@@ -87,7 +87,7 @@ let emit ~revision ~type_index ~(codecs : Model.Codec.t list) =
     | [] -> ()
     | _values ->
       incr enum_checks;
-      Buffer.add_string buf (render_enum_check codec)
+      Buffer.add_string buffer (render_enum_check codec)
   in
   let add_check (codec : Model.Codec.t) =
     match codec.sample with
@@ -96,16 +96,16 @@ let emit ~revision ~type_index ~(codecs : Model.Codec.t list) =
     match Sample.of_source ~type_index source with
     | sample ->
       incr emitted;
-      Buffer.add_string buf (render_check codec sample)
+      Buffer.add_string buffer (render_check codec sample)
     | exception Failure reason -> skipped := { label = codec.label; reason } :: !skipped
   in
   (* all enum checks first, then all roundtrip checks *)
   List.iter add_enum_check codecs;
   List.iter add_check codecs;
-  Buffer.add_string buf
+  Buffer.add_string buffer
     "\n\
      let () =\n\
     \  match !failures with\n\
     \  | 0 -> print_endline \"all roundtrip tests passed\"\n\
     \  | count -> failwith (Printf.sprintf \"%d roundtrip failures\" count)\n";
-  { contents = Buffer.contents buf; emitted = !emitted; enum_checks = !enum_checks; skipped = List.rev !skipped }
+  { contents = Buffer.contents buffer; emitted = !emitted; enum_checks = !enum_checks; skipped = List.rev !skipped }

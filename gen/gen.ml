@@ -56,8 +56,12 @@ module Protocol = struct
     | exception Sys_error _no_revision_file -> "unknown"
     | "" -> refuse ""
     | contents ->
-      let is_revision_char ch =
-        Naming.is_letter ch || Naming.is_digit ch || Char.equal ch '.' || Char.equal ch '_' || Char.equal ch '-'
+      let is_revision_char character =
+        Naming.is_letter character
+        || Naming.is_digit character
+        || Char.equal character '.'
+        || Char.equal character '_'
+        || Char.equal character '-'
       in
       (match String.for_all is_revision_char contents with
       | true -> contents

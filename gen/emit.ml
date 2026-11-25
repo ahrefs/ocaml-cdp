@@ -210,25 +210,25 @@ let render_sealed_alias (type_def : Model.Type_def.t) =
   Option.map render (Model.Type_def.sealed_primitive_of type_def)
 
 let emit_base_file ~revision (domains : Model.Domain.t list) =
-  let buf = Buffer.create 4096 in
-  Buffer.add_string buf (render_header ~revision);
-  Buffer.add_string buf
+  let buffer = Buffer.create 4096 in
+  Buffer.add_string buffer (render_header ~revision);
+  Buffer.add_string buffer
     "(* Sealed modules for every primitive alias type. This file depends on\n\
     \   nothing, so alias references can never create a module cycle. *)\n\n";
   let add_domain (domain : Model.Domain.t) =
     match List.filter_map render_sealed_alias domain.types with
     | [] -> ()
     | sealed_modules ->
-      Buffer.add_string buf (Printf.sprintf "module %s = struct\n" (Naming.module_of_domain domain.name));
+      Buffer.add_string buffer (Printf.sprintf "module %s = struct\n" (Naming.module_of_domain domain.name));
       List.iter
         (fun sealed_module ->
-          Buffer.add_string buf sealed_module;
-          Buffer.add_string buf "\n")
+          Buffer.add_string buffer sealed_module;
+          Buffer.add_string buffer "\n")
         sealed_modules;
-      Buffer.add_string buf "end\n\n"
+      Buffer.add_string buffer "end\n\n"
   in
   List.iter add_domain domains;
-  Buffer.contents buf
+  Buffer.contents buffer
 
 (* a generated file and the receipt of what it holds *)
 type emitted = {
@@ -237,10 +237,10 @@ type emitted = {
 }
 
 let emit_types_file ~revision ~type_index (domain : Model.Domain.t) =
-  let buf = Buffer.create 4096 in
-  Buffer.add_string buf (render_header ~revision);
-  Buffer.add_string buf (Attributes.render_file domain);
-  Buffer.add_string buf "open Jsonkit.Primitives\n\n";
+  let buffer = Buffer.create 4096 in
+  Buffer.add_string buffer (render_header ~revision);
+  Buffer.add_string buffer (Attributes.render_file domain);
+  Buffer.add_string buffer "open Jsonkit.Primitives\n\n";
   (* re-export sealed aliases so users write Cdp.Network.Request_id.t *)
   let render_reexport (type_def : Model.Type_def.t) =
     let render _primitive =
@@ -251,15 +251,15 @@ let emit_types_file ~revision ~type_index (domain : Model.Domain.t) =
     in
     Option.map render (Model.Type_def.sealed_primitive_of type_def)
   in
-  List.iter (Buffer.add_string buf) (List.filter_map render_reexport domain.types);
-  Buffer.add_string buf "\n";
+  List.iter (Buffer.add_string buffer) (List.filter_map render_reexport domain.types);
+  Buffer.add_string buffer "\n";
   let printed_types = List.map (collect_named_type_decls ~type_index ~domain:domain.name) domain.types in
   let decls = List.concat_map (fun (printed : printed) -> printed.decls) printed_types in
   let codecs = List.concat_map (fun (printed : printed) -> printed.codecs) printed_types in
   let decl_names = List.map (fun (decl : Decl.t) -> decl.name) decls in
   check_unique_type_names ~place:(Printf.sprintf "%s_types" (Naming.sanitize_lower domain.name)) decl_names;
-  Buffer.add_string buf (render_chain ~deriving:"json, show, eq" decls);
-  { contents = Buffer.contents buf; codecs }
+  Buffer.add_string buffer (render_chain ~deriving:"json, show, eq" decls);
+  { contents = Buffer.contents buffer; codecs }
 
 (* A params or result record inside a command / event module.
    - hoisted enums first, in their own group: `make` cannot derive on variants
@@ -363,20 +363,20 @@ let emit_item_module ~type_index ~domain ~hoist_name (item : Model.Item.t) =
   { contents; codecs = params.block_codecs @ returns.block_codecs }
 
 let emit_domain_file ~revision ~type_index (domain : Model.Domain.t) =
-  let buf = Buffer.create 4096 in
-  Buffer.add_string buf (render_header ~revision);
-  Buffer.add_string buf (Attributes.render_file domain);
-  Buffer.add_string buf (Printf.sprintf "include %s\n" (Naming.types_module_of_domain domain.name));
-  Buffer.add_string buf "open Jsonkit.Primitives\n\n";
+  let buffer = Buffer.create 4096 in
+  Buffer.add_string buffer (render_header ~revision);
+  Buffer.add_string buffer (Attributes.render_file domain);
+  Buffer.add_string buffer (Printf.sprintf "include %s\n" (Naming.types_module_of_domain domain.name));
+  Buffer.add_string buffer "open Jsonkit.Primitives\n\n";
   let domain_type_names = Hoisted_name.collect_domain_type_names domain in
   let emit_item (item : Model.Item.t) =
     let hoist_name = Hoisted_name.get_name_for_item_field ~domain_type_names ~item_name:item.module_name in
     let emitted = emit_item_module ~type_index ~domain:domain.name ~hoist_name item in
-    Buffer.add_string buf emitted.contents;
+    Buffer.add_string buffer emitted.contents;
     emitted.codecs
   in
   let codecs = List.concat_map emit_item (Model.Item.of_domain domain) in
-  { contents = Buffer.contents buf; codecs }
+  { contents = Buffer.contents buffer; codecs }
 
 (* everything one domain turns into; generate keeps the files, roundtrip keeps the receipt *)
 type domain_output = {
@@ -399,10 +399,10 @@ let emit_domain ~revision ~type_index (domain : Model.Domain.t) =
 
 (* cdp.ml: the module users open. Cdp.Network -> Cdp_network etc. *)
 let emit_index ~revision (domains : Model.Domain.t list) =
-  let buf = Buffer.create 512 in
-  Buffer.add_string buf (render_header ~revision);
-  Buffer.add_string buf "(* Index: users write Cdp.Network, Cdp.Page, ... *)\n\n";
-  Buffer.add_string buf
+  let buffer = Buffer.create 512 in
+  Buffer.add_string buffer (render_header ~revision);
+  Buffer.add_string buffer "(* Index: users write Cdp.Network, Cdp.Page, ... *)\n\n";
+  Buffer.add_string buffer
     "module Json = Cdp_json\n\
      module Command = Cdp_command\n\
      module Event = Cdp_event\n\
@@ -415,8 +415,8 @@ let emit_index ~revision (domains : Model.Domain.t list) =
     let types_module = Naming.types_module_of_domain domain.name in
     let domain_line = Printf.sprintf "module %s = %s%s\n" index_module domain_module attrs in
     let types_line = Printf.sprintf "module %s_types = %s%s\n" index_module types_module attrs in
-    Buffer.add_string buf domain_line;
-    Buffer.add_string buf types_line
+    Buffer.add_string buffer domain_line;
+    Buffer.add_string buffer types_line
   in
   List.iter add_domain domains;
-  Buffer.contents buf
+  Buffer.contents buffer

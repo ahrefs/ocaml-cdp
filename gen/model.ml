@@ -163,7 +163,7 @@ module Identifier : sig
   val check_plain : owner:string -> string -> unit
   val check_enum_values : owner:string -> string list -> unit
 end = struct
-  let is_identifier_char ch = Naming.is_letter ch || Naming.is_digit ch || Char.equal ch '_'
+  let is_identifier_char character = Naming.is_letter character || Naming.is_digit character || Char.equal character '_'
 
   let refuse_name ~owner ~name = failwith (Printf.sprintf "cdp-gen: %s: name %S is not a plain identifier" owner name)
 
@@ -459,7 +459,7 @@ module Domain = struct
   (* a domain name becomes file and module names, so a path separator or a
      comment opener must be refused before it reaches the filesystem *)
   let check_name name =
-    let is_plain_char ch = Naming.is_letter ch || Naming.is_digit ch in
+    let is_plain_char character = Naming.is_letter character || Naming.is_digit character in
     let is_plain =
       match name with
       | "" -> false

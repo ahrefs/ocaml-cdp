@@ -15,9 +15,9 @@ let render_flags ~marker ~separator flags =
 
 (* odoc reads { } [ ] @ as markup, so a description escapes them *)
 let escape_odoc text =
-  let escape ch =
-    match ch with
-    | '{' | '}' | '[' | ']' | '@' | '\\' -> Printf.sprintf "\\%c" ch
+  let escape character =
+    match character with
+    | '{' | '}' | '[' | ']' | '@' | '\\' -> Printf.sprintf "\\%c" character
     | plain -> String.make 1 plain
   in
   String.concat "" (List.map escape (List.of_seq (String.to_seq text)))
