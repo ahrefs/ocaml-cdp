@@ -71,21 +71,26 @@ let is_letter character = is_upper character || is_lower character
    FrameId -> frame_id, DOMSnapshot -> dom_snapshot, HTTP2Settings -> http2_settings *)
 let camel_to_snake name =
   let buffer = Buffer.create (String.length name * 2) in
-  String.iteri
-    (fun position character ->
-      if is_upper character then begin
-        let after_word_end = position > 0 && (is_lower name.[position - 1] || is_digit name.[position - 1]) in
-        let before_lowercase = position < String.length name - 1 && is_lower name.[position + 1] in
-        if position > 0 && (after_word_end || before_lowercase) then Buffer.add_char buffer '_';
-        Buffer.add_char buffer (Char.lowercase_ascii character)
-      end
-      else Buffer.add_char buffer character)
-    name;
+  let add_character position character =
+    match is_upper character with
+    | false -> Buffer.add_char buffer character
+    | true ->
+      let after_word_end = position > 0 && (is_lower name.[position - 1] || is_digit name.[position - 1]) in
+      let before_lowercase = position < String.length name - 1 && is_lower name.[position + 1] in
+      let starts_word = position > 0 && (after_word_end || before_lowercase) in
+      (match starts_word with
+      | false -> ()
+      | true -> Buffer.add_char buffer '_');
+      Buffer.add_char buffer (Char.lowercase_ascii character)
+  in
+  String.iteri add_character name;
   Buffer.contents buffer
 
 let sanitize_lower name =
   let snake = camel_to_snake name in
-  if List.mem snake keywords then snake ^ "_" else snake
+  match List.mem snake keywords with
+  | false -> snake
+  | true -> snake ^ "_"
 
 let module_of_domain domain = String.capitalize_ascii (sanitize_lower domain)
 
@@ -107,11 +112,18 @@ let constructor_of_enum_value value =
     | false -> value
     | true -> "Minus_" ^ String.sub value 1 (String.length value - 1)
   in
-  let identifier_char character =
-    if is_lower character || is_upper character || is_digit character || character = '_' then character else '_'
+  let to_identifier_char character =
+    match is_letter character || is_digit character || Char.equal character '_' with
+    | true -> character
+    | false -> '_'
   in
-  let name = String.map identifier_char value in
-  let name = if String.length name > 0 && is_digit name.[0] then "V" ^ name else name in
+  let name = String.map to_identifier_char value in
+  let starts_with_digit = String.length name > 0 && is_digit name.[0] in
+  let name =
+    match starts_with_digit with
+    | false -> name
+    | true -> "V" ^ name
+  in
   let name = String.capitalize_ascii name in
   match name with
   | "None" | "Some" | "Ok" | "Error" | "Other" -> name ^ "_"
