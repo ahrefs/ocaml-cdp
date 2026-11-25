@@ -48,3 +48,35 @@ second one silently replacing the first.
   cdp-gen: domains Demo and DEMO both become cdp_demo.ml
   [1]
   $ ls out
+
+Two different protocol names can still become one OCaml type name. Both
+would land in one "type .. and .." chain, which does not compile; the
+generator refuses before writing anything.
+
+In a command module: the params and the result both have an enum field
+"format", and both enums are moved out as type format.
+
+  $ cat > two_formats.json << 'EOF'
+  > {"domains":[{"domain":"Demo","commands":[{"name":"shoot",
+  >   "parameters":[{"name":"format","type":"string","enum":["png","jpeg"]}],
+  >   "returns":[{"name":"format","type":"string","enum":["png","jpeg"]}]
+  > }]}]}
+  > EOF
+  $ cdp-gen generate two_formats.json empty.json out all
+  cdp-gen: duplicate type name in Demo.Shoot: format
+  [1]
+  $ ls out
+
+In a types file: the enum field "format" of type Shot is moved out as
+shot_format, the same name the type ShotFormat gets.
+
+  $ cat > shot_format.json << 'EOF'
+  > {"domains":[{"domain":"Demo","types":[
+  >   {"id":"Shot","type":"object","properties":[{"name":"format","type":"string","enum":["png","jpeg"]}]},
+  >   {"id":"ShotFormat","type":"string","enum":["png","jpeg"]}
+  > ]}]}
+  > EOF
+  $ cdp-gen generate shot_format.json empty.json out all
+  cdp-gen: duplicate type name in demo_types: shot_format
+  [1]
+  $ ls out
