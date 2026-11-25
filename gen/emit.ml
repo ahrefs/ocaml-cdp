@@ -160,15 +160,17 @@ let render_chain ~deriving (decls : Decl.t list) =
     let bodies = String.concat "\n\nand " (List.map (fun (decl : Decl.t) -> decl.body) decls) in
     Printf.sprintf "type %s\n[@@deriving %s]\n" bodies deriving
 
-let check_no_dup ~what names =
-  let rec walk = function
+(* two types with one name in one file or module would not compile, e.g.
+   "cdp-gen: duplicate type name in Page.Capture_screenshot: format" *)
+let check_unique_type_names ~place names =
+  let rec check_neighbours = function
     | first :: second :: _ when String.equal first second ->
-      failwith (Printf.sprintf "cdp-gen: duplicate %s: %s" what first)
-    | _ :: rest -> walk rest
+      failwith (Printf.sprintf "cdp-gen: duplicate type name in %s: %s" place first)
+    | _ :: rest -> check_neighbours rest
     | [] -> ()
   in
   let sorted_names = List.sort String.compare names in
-  walk sorted_names
+  check_neighbours sorted_names
 
 let render_sealed_module ~module_name ~primitive ~attrs =
   let { Model.Primitive.underlying_type; conversion; equal_module; codec; show_expression } =
@@ -255,7 +257,7 @@ let emit_types_file ~revision ~type_index (domain : Model.Domain.t) =
   let decls = List.concat_map (fun (printed : printed) -> printed.decls) printed_types in
   let codecs = List.concat_map (fun (printed : printed) -> printed.codecs) printed_types in
   let decl_names = List.map (fun (decl : Decl.t) -> decl.name) decls in
-  check_no_dup ~what:(Printf.sprintf "type name in %s_types" (Naming.sanitize_lower domain.name)) decl_names;
+  check_unique_type_names ~place:(Printf.sprintf "%s_types" (Naming.sanitize_lower domain.name)) decl_names;
   Buffer.add_string buf (render_chain ~deriving:"json, show, eq" decls);
   { contents = Buffer.contents buf; codecs }
 
@@ -344,8 +346,8 @@ let emit_item_module ~type_index ~domain ~hoist_name (item : Model.Item.t) =
   let item_path = Printf.sprintf "Cdp.%s.%s" (Naming.module_of_domain domain) item.module_name in
   let params = render_params_block ~type_index ~domain ~hoist_name ~item_label ~item_path item in
   let returns = render_returns_block ~type_index ~domain ~hoist_name ~item_label ~item_path item in
-  check_no_dup
-    ~what:(Printf.sprintf "type name in %s.%s" domain item.module_name)
+  check_unique_type_names
+    ~place:(Printf.sprintf "%s.%s" domain item.module_name)
     (params.type_names @ returns.type_names);
   let attrs = Attributes.render_item ~description:(Model.Item.description_of item) ~flags:(Model.Item.flags_of item) in
   let contents =
