@@ -184,7 +184,10 @@ let roundtrip ~protocol_files ~outfile ~domains_arg =
   let codecs = List.concat_map (fun (output : Emit.domain_output) -> output.codecs) outputs in
   let { Roundtrip.contents; emitted; enum_checks; skipped } = Roundtrip.emit ~revision ~type_index ~codecs in
   Output_dir.write_file outfile contents;
-  List.iter (fun (label, reason) -> Printf.eprintf "skipped %s: %s\n" label reason) skipped;
+  let print_skipped_check ({ label; reason } : Roundtrip.skipped_check) =
+    Printf.eprintf "skipped %s: %s\n" label reason
+  in
+  List.iter print_skipped_check skipped;
   Printf.printf "generated %s: %d roundtrip checks, %d enum checks, %d skipped\n" outfile emitted enum_checks
     (List.length skipped)
 

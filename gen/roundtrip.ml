@@ -4,11 +4,17 @@
    - a type whose sample cannot be built (required-field cycle) is skipped and reported
    The names come from Emit's receipt, so this file never works a name out itself. *)
 
+(* Demo.Chain: "cdp-gen: required-field cycle through Demo.Chain" *)
+type skipped_check = {
+  label : string;
+  reason : string;
+}
+
 type output = {
   contents : string;
   emitted : int;
   enum_checks : int;
-  skipped : (string * string) list; (* label, reason *)
+  skipped : skipped_check list;
 }
 
 let render_enum_check (codec : Model.Codec.t) =
@@ -91,7 +97,7 @@ let emit ~revision ~type_index ~(codecs : Model.Codec.t list) =
     | sample ->
       incr emitted;
       Buffer.add_string buf (render_check codec sample)
-    | exception Failure reason -> skipped := (codec.label, reason) :: !skipped
+    | exception Failure reason -> skipped := { label = codec.label; reason } :: !skipped
   in
   (* all enum checks first, then all roundtrip checks *)
   List.iter add_enum_check codecs;
