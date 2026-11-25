@@ -98,7 +98,8 @@ let () =
     parse_types {|{"id":"When","type":"date"}|});
   expect_failure ~name:"a domain name with a slash"
     ~message:{|cdp-gen: domain name "De/mo" is not a plain identifier (letters and digits only)|} (fun () ->
-    Cdp_gen.Model.Domain.of_string {|{"domain":"De/mo"}|});
+    let domain = Cdp_gen.Model.Domain.of_string {|{"domain":"De/mo"}|} in
+    Cdp_gen.Model.Domain.check_identifiers [ domain ]);
   match parse_types {|{"type":"string"}|} with
   | exception Yojson.Safe.Util.Type_error (_message, _fragment) -> pass "a type without id is a shape error"
   | _parsed -> failwith "a type without id must not parse"

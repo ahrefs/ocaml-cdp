@@ -2,7 +2,8 @@
    - a wrong field name fails to compile instead of failing at run time
    - what kind of type something is gets decided once
    - each type reads itself from JSON, so a new field is added in one place
-   - a shape the generator cannot print stops in of_json, with the owner's name *)
+   - of_json refuses only what its type cannot hold, like an unknown shape, with the owner's name
+   - a name the type can hold but OCaml cannot use is refused after reading, by check_identifiers *)
 
 module Json = Yojson.Safe
 module Util = Yojson.Safe.Util
@@ -466,12 +467,12 @@ module Domain = struct
       | _not_empty -> Naming.is_letter name.[0] && String.for_all is_plain_char name
     in
     match is_plain with
-    | true -> name
+    | true -> ()
     | false ->
       failwith (Printf.sprintf "cdp-gen: domain name %S is not a plain identifier (letters and digits only)" name)
 
   let of_json json =
-    let name = check_name (Json_field.read_string "domain" json) in
+    let name = Json_field.read_string "domain" json in
     {
       name;
       types = List.map (Type_def.of_json ~domain:name) (Json_field.read_list "types" json);
@@ -519,6 +520,7 @@ module Domain = struct
 
   let check_identifiers domains =
     let check_domain domain =
+      check_name domain.name;
       List.iter (Type_def.check_identifiers ~domain:domain.name) domain.types;
       List.iter (Command.check_identifiers ~domain:domain.name) domain.commands;
       List.iter (Event.check_identifiers ~domain:domain.name) domain.events
