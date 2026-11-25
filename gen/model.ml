@@ -640,13 +640,6 @@ module Item = struct
     commands @ events
 end
 
-module Decl = struct
-  type t = {
-    name : string;
-    body : string;
-  }
-end
-
 (* One line of Emit's receipt: a type it printed and where the type's codecs live.
    The roundtrip test pastes these names instead of working them out a second time,
    so the printer and the test can never disagree on a name. *)
