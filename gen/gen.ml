@@ -113,6 +113,7 @@ module Library = struct
     base_file : Model.Output_file.t;
     domain_files : Model.Output_file.t list; (* cdp_page_types.ml and cdp_page.ml for each domain *)
     index_file : Model.Output_file.t; (* cdp.ml: lets users write Cdp.Network instead of Cdp_network *)
+    codecs : Model.Codec.t list; (* one per type in domain_files: the roundtrip test checks each *)
   }
 
   let base_filename = "cdp_base.ml"
@@ -122,12 +123,15 @@ module Library = struct
     let contents = Emit.emit_base_file ~revision selected_domains in
     Model.Output_file.make ~name:base_filename ~contents
 
-  let render_domain_files ~revision ~type_index selected_domains =
-    let render_domain domain =
-      let output : Emit.domain_output = Emit.emit_domain ~revision ~type_index domain in
-      [ output.types_file; output.domain_file ]
-    in
-    List.concat_map render_domain selected_domains
+  let render_domains ~revision ~type_index selected_domains =
+    List.map (Emit.emit_domain ~revision ~type_index) selected_domains
+
+  let collect_domain_files domain_outputs =
+    let list_domain_files (output : Emit.domain_output) = [ output.types_file; output.domain_file ] in
+    List.concat_map list_domain_files domain_outputs
+
+  let collect_codecs domain_outputs =
+    List.concat_map (fun (output : Emit.domain_output) -> output.codecs) domain_outputs
 
   let render_index_file ~revision selected_domains =
     let contents = Emit.emit_index ~revision selected_domains in
@@ -160,13 +164,15 @@ module Library = struct
     Printf.printf "generated %s index (%d domains, protocol %s)\n" library.index_file.name domain_count library.revision
 
   let of_protocol { Protocol.revision; selected_domains; type_index } =
+    let domain_outputs = render_domains ~revision ~type_index selected_domains in
     {
       revision;
       selected_domains;
       glue_files = Glue.files;
       base_file = render_base_file ~revision selected_domains;
-      domain_files = render_domain_files ~revision ~type_index selected_domains;
+      domain_files = collect_domain_files domain_outputs;
       index_file = render_index_file ~revision selected_domains;
+      codecs = collect_codecs domain_outputs;
     }
 end
 
@@ -177,19 +183,23 @@ let generate ~protocol_files ~outdir ~domains_arg =
   Library.write_files ~outdir library;
   Library.print_report ~removed_files library
 
-let roundtrip ~protocol_files ~outfile ~domains_arg =
-  let { Protocol.revision; selected_domains; type_index } = Protocol.of_files ~protocol_files ~domains_arg in
-  (* the same printing run as generate; only the receipt is kept, the files are not written *)
-  let outputs = List.map (Emit.emit_domain ~revision ~type_index) selected_domains in
-  let codecs = List.concat_map (fun (output : Emit.domain_output) -> output.codecs) outputs in
-  let { Roundtrip.contents; emitted; enum_checks; skipped } = Roundtrip.emit ~revision ~type_index ~codecs in
-  Output_dir.write_file outfile contents;
+let print_roundtrip_report ~outfile ({ emitted; enum_checks; skipped; _ } : Roundtrip.output) =
   let print_skipped_check ({ label; reason } : Roundtrip.skipped_check) =
     Printf.eprintf "skipped %s: %s\n" label reason
   in
   List.iter print_skipped_check skipped;
   Printf.printf "generated %s: %d roundtrip checks, %d enum checks, %d skipped\n" outfile emitted enum_checks
     (List.length skipped)
+
+(* tests the same Library that generate writes to lib/ *)
+let roundtrip ~protocol_files ~outfile ~domains_arg =
+  let protocol = Protocol.of_files ~protocol_files ~domains_arg in
+  let library = Library.of_protocol protocol in
+  let roundtrip_test =
+    Roundtrip.emit ~revision:protocol.revision ~type_index:protocol.type_index ~codecs:library.codecs
+  in
+  Output_dir.write_file outfile roundtrip_test.contents;
+  print_roundtrip_report ~outfile roundtrip_test
 
 let run action =
   try action () with
