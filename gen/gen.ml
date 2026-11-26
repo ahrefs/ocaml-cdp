@@ -37,11 +37,19 @@
 
 open Cdp_gen
 
-module Protocol = struct
-  type t = {
+module Protocol : sig
+  type t = private {
     revision : string; (* r1698617, stamped into every generated header *)
     selected_domains : Model.Domain.t list; (* only the selected ones get files *)
     type_index : Model.Type_index.t; (* over all loaded domains: a field may point into an unselected one *)
+  }
+
+  val of_files : protocol_files:string list -> domains_arg:string -> t
+end = struct
+  type t = {
+    revision : string;
+    selected_domains : Model.Domain.t list;
+    type_index : Model.Type_index.t;
   }
 
   let revision_filename = "REVISION"
