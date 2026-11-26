@@ -112,8 +112,14 @@ let () =
       let%lwt () = capped_chrome.kill () in
       (* shape 7: a binary that exits without announcing must fail with a
          clear message and clean up its profile directory *)
-      (* count only this library's naming scheme (8 hex chars): the shared
-         temp dir also holds old PID-named profiles from other processes *)
+      (* launches below get a private temp dir: the crash reporter of a Chrome
+         killed above can still write a profile into the shared one and change the count *)
+      let shared_temp_dir = Filename.get_temp_dir_name () in
+      let private_temp_dir = Filename.concat shared_temp_dir (Printf.sprintf "cdp-test-temp-%d" (Unix.getpid ())) in
+      Unix.mkdir private_temp_dir 0o700;
+      Filename.set_temp_dir_name private_temp_dir;
+      (* count only this library's naming scheme (8 hex chars): the quiet
+         binary below is written into the same temp dir *)
       let profile_dirs () =
         let prefix = "cdp-chrome-" in
         let is_hex ch = (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') in
@@ -173,6 +179,8 @@ let () =
       in
       assert (profile_dirs () = dirs_before);
       pass "with_launch kills chrome and removes the profile when the callback raises";
+      Filename.set_temp_dir_name shared_temp_dir;
+      (try Sys.rmdir private_temp_dir with Sys_error _not_empty -> ());
       (* shape 8: a page that logs ~600KB to Chrome's stderr during ONE call.
          A pipe holds ~64KB; without the drain loops Chrome blocks on its own
          logging mid-call, the response never arrives, and this times out *)
