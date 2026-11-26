@@ -15,7 +15,7 @@ needs a generator change.
   > EOF
   $ echo '{"domains":[]}' > js.json
   $ mkdir out && cdp-gen generate browser.json js.json out Alpha,Beta
-  cdp-gen: type-level cycle between domains: Alpha -> Beta -> Alpha. Sealed-alias routing through Base cannot break it; the domains in the cycle must be merged into one compilation unit.
+  cdp-gen: the types of Alpha -> Beta -> Alpha point at each other in a loop. OCaml cannot compile files that need each other, so cdp-gen cannot generate these domains yet
   [1]
   $ ls out
 

@@ -81,8 +81,8 @@ let check_no_type_loop ~type_index (domains : Model.Domain.t list) =
       let cycle = String.concat " -> " (List.rev (node :: path)) in
       failwith
         (Printf.sprintf
-           "cdp-gen: type-level cycle between domains: %s. Sealed-alias routing through Base cannot break it; the \
-            domains in the cycle must be merged into one compilation unit."
+           "cdp-gen: the types of %s point at each other in a loop. OCaml cannot compile files that need each other, \
+            so cdp-gen cannot generate these domains yet"
            cycle)
     | false, false ->
       Hashtbl.replace visiting node ();
