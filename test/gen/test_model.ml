@@ -61,7 +61,10 @@ let () =
      (parse_only_type {|{"id":"Point","type":"object","properties":[{"name":"x","type":"integer","optional":true}]}|})
        .shape
    with
-  | Record [ { name = "x"; shape = Typed (Primitive Integer); optional = true; _ } ] -> ()
+  | Record fields ->
+    (match Cdp_gen.Non_empty_list.to_list fields with
+    | [ { name = "x"; shape = Typed (Primitive Integer); optional = true; _ } ] -> ()
+    | _other -> failwith "a record field")
   | _other -> failwith "a record field");
   pass "type-def kinds on hand-written shapes"
 

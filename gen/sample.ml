@@ -35,7 +35,7 @@ and of_type_def ~type_index ~visiting (type_def : Model.Type_def.t) : Yojson.Saf
   | Sealed_alias primitive -> of_type_expr ~type_index ~visiting (Primitive primitive)
   | Enum values -> of_enum_values values
   | Enum_list values -> `List [ of_enum_values values ]
-  | Record fields -> of_properties ~type_index ~visiting fields
+  | Record fields -> of_properties ~type_index ~visiting (Non_empty_list.to_list fields)
   | Alias type_expr -> of_type_expr ~type_index ~visiting type_expr
 
 and of_properties ~type_index ~visiting fields : Yojson.Safe.t =

@@ -139,7 +139,8 @@ let collect_named_type_decls ~type_index ~domain (type_def : Model.Type_def.t) =
     { decls = [ alias_decl ]; codecs = [ codec ] }
   | Record fields ->
     let hoist_name = Hoisted_name.get_name_for_type_field ~type_id:type_def.id in
-    let { hoisted; record } = make_record_decl ~type_index ~domain ~type_name ~attrs ~hoist_name fields in
+    let field_list = Non_empty_list.to_list fields in
+    let { hoisted; record } = make_record_decl ~type_index ~domain ~type_name ~attrs ~hoist_name field_list in
     let hoisted_codecs = List.map (codec_of_hoisted_enum ~owner:label ~module_path) hoisted in
     { decls = decls_of_hoisted hoisted @ [ record ]; codecs = codec :: hoisted_codecs }
   | Enum_list values ->

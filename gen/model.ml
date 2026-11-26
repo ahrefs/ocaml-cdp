@@ -334,7 +334,7 @@ module Type_def = struct
     | Sealed_alias of Primitive.t (* an id like RequestId: sealed in Cdp_base *)
     | Enum of string list
     | Enum_list of string list (* an array whose items carry the enum *)
-    | Record of Property.t list (* never empty: [] is read as Alias Any *)
+    | Record of Property.t Non_empty_list.t (* "properties": [] is read as Alias Any *)
     | Alias of Type_expr.t
 
   type t = {
@@ -361,7 +361,10 @@ module Type_def = struct
     let shape =
       match Util.member "enum" json, Util.member "properties" json with
       | `List values, _any_properties -> Enum (List.map Util.to_string values)
-      | `Null, `List (_ :: _) -> Record (Property.list_of_json ~domain ~owner "properties" json)
+      | `Null, `List (first_json :: other_json) ->
+        let first = Property.of_json ~domain ~owner first_json in
+        let others = List.map (Property.of_json ~domain ~owner) other_json in
+        Record (Non_empty_list.make ~first ~others)
       | `Null, _no_fields ->
         (match Inline_enum.of_json json, sealed_primitive_of_json json with
         | Some (Array values), _ -> Enum_list values
@@ -380,7 +383,7 @@ module Type_def = struct
     match type_def.shape with
     | Sealed_alias _ | Enum _ | Enum_list _ -> []
     | Alias type_expr -> Type_expr.collect_refs type_expr
-    | Record fields -> List.concat_map Property.collect_refs fields
+    | Record fields -> List.concat_map Property.collect_refs (Non_empty_list.to_list fields)
 
   let check_identifiers ~domain type_def =
     let owner = Printf.sprintf "%s.%s" domain type_def.id in
@@ -388,7 +391,7 @@ module Type_def = struct
     match type_def.shape with
     | Alias _type_expr -> ()
     | Sealed_alias _primitive -> ()
-    | Record fields -> Property.check_identifiers ~owner fields
+    | Record fields -> Property.check_identifiers ~owner (Non_empty_list.to_list fields)
     | Enum values | Enum_list values -> Identifier.check_enum_values ~owner values
 end
 

@@ -3,6 +3,7 @@
    plus wire attributes); equal/show/make come from ppx_deriving.
 
    Modules:
+     Non_empty_list a list with at least one item
      Naming       protocol names -> OCaml names
      Model        the protocol as OCaml values; each type reads itself from JSON
      Output_dir   file IO: write next to the target, remove stale files
