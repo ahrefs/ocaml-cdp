@@ -17,6 +17,29 @@ let protocol_files = [ "browser_protocol.json"; "js_protocol.json" ]
    refreshes it together with the JSONs *)
 let license_file = "LICENSE"
 
+module Staged_file : sig
+  type t = private {
+    filename : string; (* "browser_protocol.json" *)
+    path_in_tarball : string; (* "package/json/browser_protocol.json" *)
+    temporary_path : string; (* "protocol/browser_protocol.json.tmp" *)
+  }
+
+  val make : outdir:string -> directory_in_tarball:string -> string -> t
+end = struct
+  type t = {
+    filename : string;
+    path_in_tarball : string;
+    temporary_path : string;
+  }
+
+  let make ~outdir ~directory_in_tarball filename =
+    {
+      filename;
+      path_in_tarball = Filename.concat directory_in_tarball filename;
+      temporary_path = Filename.concat outdir (filename ^ ".tmp");
+    }
+end
+
 let check_tool name =
   match Sys.command (Printf.sprintf "command -v %s > /dev/null 2>&1" name) with
   | 0 -> ()
@@ -74,33 +97,33 @@ let fetch ~outdir ~requested_revision =
   in
   let url = Printf.sprintf "https://registry.npmjs.org/devtools-protocol/-/devtools-protocol-0.0.%s.tgz" revision in
   let tarball = Filename.temp_file "cdp_gen_protocol" ".tgz" in
-  (* pair each protocol file with the temporary path it is downloaded to *)
-  let staged = List.map (fun file -> file, Filename.concat outdir (file ^ ".tmp")) protocol_files in
-  let license_temporary_path = Filename.concat outdir (license_file ^ ".tmp") in
+  let staged_protocol_files = List.map (Staged_file.make ~outdir ~directory_in_tarball:"package/json") protocol_files in
+  let staged_license = Staged_file.make ~outdir ~directory_in_tarball:"package" license_file in
+  let staged_files = staged_license :: staged_protocol_files in
   Fun.protect
     ~finally:(fun () ->
       Output_dir.remove_if_exists tarball;
-      Output_dir.remove_if_exists license_temporary_path;
-      List.iter (fun (_file, temporary_path) -> Output_dir.remove_if_exists temporary_path) staged)
+      List.iter
+        (fun (staged_file : Staged_file.t) -> Output_dir.remove_if_exists staged_file.temporary_path)
+        staged_files)
     (fun () ->
       download ~url ~destination:tarball;
       List.iter
-        (fun (file, temporary_path) ->
-          run_command ~context:(Printf.sprintf "extracting %s" file)
-            (Printf.sprintf "tar -xzOf %s package/json/%s > %s" (Filename.quote tarball) file
-               (Filename.quote temporary_path));
-          check_protocol_json ~file temporary_path)
-        staged;
-      run_command
-        ~context:(Printf.sprintf "extracting %s" license_file)
-        (Printf.sprintf "tar -xzOf %s package/%s > %s" (Filename.quote tarball) license_file
-           (Filename.quote license_temporary_path));
+        (fun ({ filename; path_in_tarball; temporary_path } : Staged_file.t) ->
+          run_command
+            ~context:(Printf.sprintf "extracting %s" filename)
+            (Printf.sprintf "tar -xzOf %s %s > %s" (Filename.quote tarball) (Filename.quote path_in_tarball)
+               (Filename.quote temporary_path)))
+        staged_files;
+      List.iter
+        (fun ({ filename; path_in_tarball = _; temporary_path } : Staged_file.t) ->
+          check_protocol_json ~file:filename temporary_path)
+        staged_protocol_files;
       (* everything succeeded: move into place (same directory, so atomic) *)
       List.iter
-        (fun (file, temporary_path) ->
-          let final_path = Filename.concat outdir file in
+        (fun ({ filename; path_in_tarball = _; temporary_path } : Staged_file.t) ->
+          let final_path = Filename.concat outdir filename in
           Sys.rename temporary_path final_path)
-        staged;
-      Sys.rename license_temporary_path (Filename.concat outdir license_file);
+        staged_files;
       Output_dir.write_file (Filename.concat outdir "REVISION") (Printf.sprintf "r%s\n" revision));
   Printf.printf "fetched protocol r%s into %s/\n" revision outdir
