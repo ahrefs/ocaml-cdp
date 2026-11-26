@@ -52,14 +52,12 @@ end = struct
     type_index : Model.Type_index.t;
   }
 
-  let revision_filename = "REVISION"
-
   let read_revision ~next_to =
-    let revision_file = Filename.concat (Filename.dirname next_to) revision_filename in
+    let revision_file = Filename.concat (Filename.dirname next_to) Fetch.revision_filename in
     let refuse contents =
       failwith
-        (Printf.sprintf "cdp-gen: %s next to the protocol JSON holds %S, which is not a revision id" revision_filename
-           contents)
+        (Printf.sprintf "cdp-gen: %s next to the protocol JSON holds %S, which is not a revision id"
+           Fetch.revision_filename contents)
     in
     match Output_dir.read_file revision_file with
     | exception Sys_error _no_revision_file -> "unknown"

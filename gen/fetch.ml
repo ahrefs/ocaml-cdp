@@ -17,6 +17,9 @@ let protocol_files = [ "browser_protocol.json"; "js_protocol.json" ]
    refreshes it together with the JSONs *)
 let license_file = "LICENSE"
 
+(* written by fetch, read by generate to stamp the revision into every header *)
+let revision_filename = "REVISION"
+
 let check_tool name =
   match Sys.command (Printf.sprintf "command -v %s > /dev/null 2>&1" name) with
   | 0 -> ()
@@ -134,7 +137,8 @@ let choose_revision ~requested_revision =
   | Some given -> Revision.of_string given
 
 let write_revision ~outdir revision =
-  Output_dir.write_file (Filename.concat outdir "REVISION") (Printf.sprintf "r%s\n" (Revision.to_string revision))
+  let revision_file = Filename.concat outdir revision_filename in
+  Output_dir.write_file revision_file (Printf.sprintf "r%s\n" (Revision.to_string revision))
 
 let fetch ~outdir ~requested_revision =
   check_tool "curl";
