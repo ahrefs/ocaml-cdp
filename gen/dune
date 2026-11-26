@@ -38,6 +38,7 @@
  (name cdp_gen)
  (modules
   non_empty_list
+  collision
   naming
   model
   output_dir

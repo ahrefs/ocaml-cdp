@@ -176,20 +176,14 @@ end = struct
   (* to avoid case when two values that become one constructor would give
   a variant with a duplicate case *)
   let check_enum_values ~owner values =
-    let seen = Hashtbl.create 8 in
-    let check value =
-      match value with
-      | "" -> failwith (Printf.sprintf "cdp-gen: %s: an enum value is empty" owner)
-      | text ->
-        let constructor = Naming.constructor_of_enum_value text in
-        (match Hashtbl.find_opt seen constructor with
-        | None -> Hashtbl.replace seen constructor text
-        | Some earlier ->
-          failwith
-            (Printf.sprintf "cdp-gen: %s: enum values %S and %S both become the constructor %s" owner earlier text
-               constructor))
-    in
-    List.iter check values
+    match List.exists (String.equal "") values with
+    | true -> failwith (Printf.sprintf "cdp-gen: %s: an enum value is empty" owner)
+    | false ->
+    match Collision.find ~key:Naming.constructor_of_enum_value values with
+    | None -> ()
+    | Some { Collision.earlier; later; key } ->
+      failwith
+        (Printf.sprintf "cdp-gen: %s: enum values %S and %S both become the constructor %s" owner earlier later key)
 end
 
 module Type_expr = struct
@@ -307,15 +301,10 @@ module Property = struct
 
   (* two fields that become one OCaml label would make the compiler reject the record *)
   let check_unique_labels ~owner fields =
-    let seen = Hashtbl.create 8 in
-    let check field =
-      let label = Naming.sanitize_lower field.name in
-      match Hashtbl.find_opt seen label with
-      | None -> Hashtbl.replace seen label field.name
-      | Some earlier ->
-        failwith (Printf.sprintf "cdp-gen: %s: fields %S and %S both become %s" owner earlier field.name label)
-    in
-    List.iter check fields
+    match Collision.find ~key:(fun field -> Naming.sanitize_lower field.name) fields with
+    | None -> ()
+    | Some { Collision.earlier; later; key } ->
+      failwith (Printf.sprintf "cdp-gen: %s: fields %S and %S both become %s" owner earlier.name later.name key)
 
   let check_identifiers ~owner fields =
     check_unique_labels ~owner fields;
@@ -492,23 +481,17 @@ module Domain = struct
      or, for a command, hide behind the _command fallback module name *)
   let check_unique_names domains =
     let check_unique ~what names =
-      let seen = Hashtbl.create 16 in
-      let check name =
-        match Hashtbl.mem seen name with
-        | false -> Hashtbl.replace seen name ()
-        | true -> failwith (Printf.sprintf "cdp-gen: %s %s is defined twice" what name)
-      in
-      List.iter check names
+      match Collision.find ~key:Fun.id names with
+      | None -> ()
+      | Some { Collision.earlier = _; later = _; key } ->
+        failwith (Printf.sprintf "cdp-gen: %s %s is defined twice" what key)
     in
     let check_unique_files domains =
-      let seen = Hashtbl.create 16 in
-      let check domain =
-        let file = Naming.file_of_domain domain.name ^ ".ml" in
-        match Hashtbl.find_opt seen file with
-        | None -> Hashtbl.replace seen file domain.name
-        | Some earlier -> failwith (Printf.sprintf "cdp-gen: domains %s and %s both become %s" earlier domain.name file)
-      in
-      List.iter check domains
+      let file_of_domain domain = Naming.file_of_domain domain.name ^ ".ml" in
+      match Collision.find ~key:file_of_domain domains with
+      | None -> ()
+      | Some { Collision.earlier; later; key } ->
+        failwith (Printf.sprintf "cdp-gen: domains %s and %s both become %s" earlier.name later.name key)
     in
     check_unique ~what:"domain" (List.map (fun domain -> domain.name) domains);
     check_unique_files domains;

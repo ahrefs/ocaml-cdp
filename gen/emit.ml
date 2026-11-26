@@ -164,14 +164,10 @@ let render_chain ~deriving (decls : Decl.t list) =
 (* two types with one name in one file or module would not compile, e.g.
    "cdp-gen: duplicate type name in Page.Capture_screenshot: format" *)
 let check_unique_type_names ~place names =
-  let rec check_neighbours = function
-    | first :: second :: _ when String.equal first second ->
-      failwith (Printf.sprintf "cdp-gen: duplicate type name in %s: %s" place first)
-    | _ :: rest -> check_neighbours rest
-    | [] -> ()
-  in
-  let sorted_names = List.sort String.compare names in
-  check_neighbours sorted_names
+  match Collision.find ~key:Fun.id names with
+  | None -> ()
+  | Some { Collision.earlier = _; later = _; key } ->
+    failwith (Printf.sprintf "cdp-gen: duplicate type name in %s: %s" place key)
 
 let render_sealed_module ~module_name ~primitive ~attrs =
   let { Model.Primitive.underlying_type; conversion; equal_module; codec; show_expression } =
