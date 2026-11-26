@@ -5,32 +5,29 @@
    - of_json refuses only what its type cannot hold, like an unknown shape, with the owner's name
    - a name the type can hold but OCaml cannot use is refused after reading, by check_identifiers *)
 
-module Json = Yojson.Safe
-module Util = Yojson.Safe.Util
-
 module Json_field = struct
-  let read_string field json = Util.member field json |> Util.to_string
+  let read_string field json = Yojson.Safe.Util.member field json |> Yojson.Safe.Util.to_string
 
   let read_list field json =
-    match Util.member field json with
+    match Yojson.Safe.Util.member field json with
     | `Null -> []
-    | value -> Util.to_list value
+    | value -> Yojson.Safe.Util.to_list value
 
   let has field json =
-    match Util.member field json with
+    match Yojson.Safe.Util.member field json with
     | `Null -> false
     | _present -> true
 
   (* a missing flag means false; a non-boolean would silently flip a field to required *)
   let read_bool field json =
-    match Util.member field json with
+    match Yojson.Safe.Util.member field json with
     | `Null -> false
     | `Bool value -> value
     | wrong_type ->
-      failwith (Printf.sprintf "cdp-gen: field %S must be a boolean, got %s" field (Json.to_string wrong_type))
+      failwith (Printf.sprintf "cdp-gen: field %S must be a boolean, got %s" field (Yojson.Safe.to_string wrong_type))
 end
 
-let description_of_json json = Util.member "description" json |> Util.to_string_option
+let description_of_json json = Yojson.Safe.Util.member "description" json |> Yojson.Safe.Util.to_string_option
 
 module Flags = struct
   type t = {
@@ -46,7 +43,7 @@ module Flags = struct
     {
       deprecated = Json_field.read_bool "deprecated" json;
       experimental = Json_field.read_bool "experimental" json;
-      redirect = Util.member "redirect" json |> Util.to_string_option;
+      redirect = Yojson.Safe.Util.member "redirect" json |> Yojson.Safe.Util.to_string_option;
     }
 
   type alert = {
@@ -204,19 +201,21 @@ module Type_expr = struct
     | Array of t
 
   let rec of_json ~domain json =
-    match Util.member "$ref" json with
+    match Yojson.Safe.Util.member "$ref" json with
     | `String ref_string -> Ref (Type_ref.parse ~current_domain:domain ref_string)
     | `Null ->
-      (match Util.member "type" json with
+      (match Yojson.Safe.Util.member "type" json with
       | `String "binary" -> Binary
       | `String ("any" | "object") -> Any
-      | `String "array" -> Array (of_json ~domain (Util.member "items" json))
+      | `String "array" -> Array (of_json ~domain (Yojson.Safe.Util.member "items" json))
       | `String name as unexpected ->
         (match Primitive.of_name name with
         | Some primitive -> Primitive primitive
-        | None -> failwith (Printf.sprintf "cdp-gen: unhandled type in %s: %s" domain (Json.to_string unexpected)))
-      | unexpected -> failwith (Printf.sprintf "cdp-gen: unhandled type in %s: %s" domain (Json.to_string unexpected)))
-    | unexpected -> failwith (Printf.sprintf "cdp-gen: bad $ref: %s" (Json.to_string unexpected))
+        | None ->
+          failwith (Printf.sprintf "cdp-gen: unhandled type in %s: %s" domain (Yojson.Safe.to_string unexpected)))
+      | unexpected ->
+        failwith (Printf.sprintf "cdp-gen: unhandled type in %s: %s" domain (Yojson.Safe.to_string unexpected)))
+    | unexpected -> failwith (Printf.sprintf "cdp-gen: bad $ref: %s" (Yojson.Safe.to_string unexpected))
 
   let rec collect_refs type_expr =
     match type_expr with
@@ -240,13 +239,13 @@ module Inline_enum = struct
 
   (* Enum values sit on the property or on its array items. *)
   let of_json json =
-    match Util.member "enum" json with
-    | `List values -> Some (Scalar (List.map Util.to_string values))
+    match Yojson.Safe.Util.member "enum" json with
+    | `List values -> Some (Scalar (List.map Yojson.Safe.Util.to_string values))
     | _no_scalar_enum ->
-    match Util.member "type" json, Util.member "items" json with
+    match Yojson.Safe.Util.member "type" json, Yojson.Safe.Util.member "items" json with
     | `String "array", (`Assoc _ as items) ->
-      (match Util.member "enum" items with
-      | `List values -> Some (Array (List.map Util.to_string values))
+      (match Yojson.Safe.Util.member "enum" items with
+      | `List values -> Some (Array (List.map Yojson.Safe.Util.to_string values))
       | _no_item_enum -> None)
     | _not_an_array -> None
 end
@@ -279,7 +278,7 @@ module Property = struct
     match has "type" with
     | false -> refuse "has neither type nor $ref"
     | true ->
-    match Util.member "type" json, has "items" with
+    match Yojson.Safe.Util.member "type" json, has "items" with
     | `String "array", false -> refuse "is an array without items"
     | _typed -> ()
 
@@ -351,7 +350,7 @@ module Type_def = struct
     match has "enum" || has "properties" || has "items" with
     | true -> None
     | false ->
-    match Util.member "type" json with
+    match Yojson.Safe.Util.member "type" json with
     | `String name -> Primitive.of_name name
     | _not_a_primitive -> None
 
@@ -359,8 +358,8 @@ module Type_def = struct
     let id = Json_field.read_string "id" json in
     let owner = Printf.sprintf "%s.%s" domain id in
     let shape =
-      match Util.member "enum" json, Util.member "properties" json with
-      | `List values, _any_properties -> Enum (List.map Util.to_string values)
+      match Yojson.Safe.Util.member "enum" json, Yojson.Safe.Util.member "properties" json with
+      | `List values, _any_properties -> Enum (List.map Yojson.Safe.Util.to_string values)
       | `Null, `List (first_json :: other_json) ->
         let first = Property.of_json ~domain ~owner first_json in
         let others = List.map (Property.of_json ~domain ~owner) other_json in
@@ -485,7 +484,7 @@ module Domain = struct
       flags = Flags.of_json json;
     }
 
-  let list_of_json json = Util.member "domains" json |> Util.to_list |> List.map of_json
+  let list_of_json json = Yojson.Safe.Util.member "domains" json |> Yojson.Safe.Util.to_list |> List.map of_json
 
   let of_string raw = raw |> Yojson.Safe.from_string |> of_json
 
