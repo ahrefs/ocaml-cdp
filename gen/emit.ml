@@ -309,9 +309,11 @@ let render_unit_block type_name =
 
 let render_params_block ~type_index ~domain ~hoist_name ~item_label ~item_path (item : Model.Item.t) =
   match item.kind with
-  | Event { Model.Event.params = []; _ } -> render_unit_block "params"
-  | Command { Model.Command.params = []; _ } -> { text = ""; type_names = []; block_codecs = [] }
-  | Event { Model.Event.params; _ } | Command { Model.Command.params; _ } ->
+  | Event { Model.Event.name = _; params = []; description = _; flags = _ } -> render_unit_block "params"
+  | Command { Model.Command.name = _; params = []; returns = _; description = _; flags = _ } ->
+    { text = ""; type_names = []; block_codecs = [] }
+  | Event { Model.Event.name = _; params; description = _; flags = _ }
+  | Command { Model.Command.name = _; params; returns = _; description = _; flags = _ } ->
     render_record_block ~type_index ~domain ~hoist_name ~item_label ~item_path ~type_name:"params" ~make:true params
 
 (* The typed seam a transport uses.

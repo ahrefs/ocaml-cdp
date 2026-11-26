@@ -196,7 +196,7 @@ let generate ~protocol_files ~outdir ~domains_arg =
   Library.write_files ~outdir library;
   Library.print_report ~removed_files library
 
-let print_roundtrip_report ~outfile ({ emitted; enum_checks; skipped; _ } : Roundtrip.output) =
+let print_roundtrip_report ~outfile ({ contents = _; emitted; enum_checks; skipped } : Roundtrip.output) =
   let print_skipped_check ({ label; reason } : Roundtrip.skipped_check) =
     Printf.eprintf "skipped %s: %s\n" label reason
   in
