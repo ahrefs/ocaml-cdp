@@ -24,22 +24,25 @@ let check_tool name =
     failwith
       (Printf.sprintf "cdp-gen: `%s` is required by fetch but was not found on this machine; please install it" name)
 
-let run_cmd ~context cmd =
-  match Sys.command cmd with
+let run_command ~context command =
+  match Sys.command command with
   | 0 -> ()
-  | exit_code -> failwith (Printf.sprintf "cdp-gen: %s failed (exit %d): %s" context exit_code cmd)
+  | exit_code -> failwith (Printf.sprintf "cdp-gen: %s failed (exit %d): %s" context exit_code command)
 
 let curl ~url ~out =
-  run_cmd ~context:(Printf.sprintf "downloading %s" url)
+  run_command ~context:(Printf.sprintf "downloading %s" url)
     (Printf.sprintf "curl -sfL --connect-timeout 15 --max-time 300 %s -o %s" (Filename.quote url) (Filename.quote out))
 
 let resolve_latest_revision () =
-  let tmp = Filename.temp_file "cdp_gen_registry" ".json" in
+  let registry_response = Filename.temp_file "cdp_gen_registry" ".json" in
   Fun.protect
-    ~finally:(fun () -> Output_dir.remove_if_exists tmp)
+    ~finally:(fun () -> Output_dir.remove_if_exists registry_response)
     (fun () ->
-      curl ~url:"https://registry.npmjs.org/devtools-protocol/latest" ~out:tmp;
-      let version = Yojson.Safe.Util.member "version" (Yojson.Safe.from_file tmp) |> Yojson.Safe.Util.to_string in
+      let latest_version_url = "https://registry.npmjs.org/devtools-protocol/latest" in
+      curl ~url:latest_version_url ~out:registry_response;
+      let version =
+        Yojson.Safe.Util.member "version" (Yojson.Safe.from_file registry_response) |> Yojson.Safe.Util.to_string
+      in
       match String.split_on_char '.' version with
       | [ "0"; "0"; revision ] -> revision
       | _unexpected_format -> failwith ("cdp-gen: unexpected npm version: " ^ version))
@@ -57,11 +60,11 @@ let validate_protocol_json ~file path =
   | `List (_ :: _) -> ()
   | _no_domains -> failwith (Printf.sprintf "cdp-gen: downloaded %s does not look like a protocol definition" file)
 
-let fetch ~outdir ~rev =
+let fetch ~outdir ~requested_revision =
   check_tool "curl";
   check_tool "tar";
   let revision =
-    match rev with
+    match requested_revision with
     | None -> resolve_latest_revision ()
     | Some given ->
     match is_all_digits given with
@@ -72,26 +75,31 @@ let fetch ~outdir ~rev =
   let tarball = Filename.temp_file "cdp_gen_protocol" ".tgz" in
   (* pair each protocol file with the temporary path it is downloaded to *)
   let staged = List.map (fun file -> file, Filename.concat outdir (file ^ ".tmp")) protocol_files in
-  let license_tmp = Filename.concat outdir (license_file ^ ".tmp") in
+  let license_temporary_path = Filename.concat outdir (license_file ^ ".tmp") in
   Fun.protect
     ~finally:(fun () ->
       Output_dir.remove_if_exists tarball;
-      Output_dir.remove_if_exists license_tmp;
-      List.iter (fun (_file, tmp) -> Output_dir.remove_if_exists tmp) staged)
+      Output_dir.remove_if_exists license_temporary_path;
+      List.iter (fun (_file, temporary_path) -> Output_dir.remove_if_exists temporary_path) staged)
     (fun () ->
       curl ~url ~out:tarball;
       List.iter
-        (fun (file, tmp) ->
-          run_cmd ~context:(Printf.sprintf "extracting %s" file)
-            (Printf.sprintf "tar -xzOf %s package/json/%s > %s" (Filename.quote tarball) file (Filename.quote tmp));
-          validate_protocol_json ~file tmp)
+        (fun (file, temporary_path) ->
+          run_command ~context:(Printf.sprintf "extracting %s" file)
+            (Printf.sprintf "tar -xzOf %s package/json/%s > %s" (Filename.quote tarball) file
+               (Filename.quote temporary_path));
+          validate_protocol_json ~file temporary_path)
         staged;
-      run_cmd
+      run_command
         ~context:(Printf.sprintf "extracting %s" license_file)
         (Printf.sprintf "tar -xzOf %s package/%s > %s" (Filename.quote tarball) license_file
-           (Filename.quote license_tmp));
+           (Filename.quote license_temporary_path));
       (* everything succeeded: move into place (same directory, so atomic) *)
-      List.iter (fun (file, tmp) -> Sys.rename tmp (Filename.concat outdir file)) staged;
-      Sys.rename license_tmp (Filename.concat outdir license_file);
+      List.iter
+        (fun (file, temporary_path) ->
+          let final_path = Filename.concat outdir file in
+          Sys.rename temporary_path final_path)
+        staged;
+      Sys.rename license_temporary_path (Filename.concat outdir license_file);
       Output_dir.write_file (Filename.concat outdir "REVISION") (Printf.sprintf "r%s\n" revision));
   Printf.printf "fetched protocol r%s into %s/\n" revision outdir

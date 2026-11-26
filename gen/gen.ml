@@ -267,7 +267,7 @@ let fetch_command =
     let doc = "A devtools-protocol revision such as 1680125; the latest when absent." in
     Cmdliner.Arg.(value & pos 1 (some string) None & info [] ~docv:"REVISION" ~doc)
   in
-  let action outdir rev = run (fun () -> Fetch.fetch ~outdir ~rev) in
+  let action outdir requested_revision = run (fun () -> Fetch.fetch ~outdir ~requested_revision) in
   Cmdliner.Cmd.v (Cmdliner.Cmd.info "fetch" ~doc) Cmdliner.Term.(const action $ outdir_argument $ revision_argument)
 
 let () =
