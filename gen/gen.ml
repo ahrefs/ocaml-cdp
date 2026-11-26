@@ -52,14 +52,12 @@ end = struct
     type_index : Model.Type_index.t;
   }
 
-  let revision_filename = "REVISION"
-
   let read_revision ~next_to =
-    let revision_file = Filename.concat (Filename.dirname next_to) revision_filename in
+    let revision_file = Filename.concat (Filename.dirname next_to) Fetch.revision_filename in
     let refuse contents =
       failwith
-        (Printf.sprintf "cdp-gen: %s next to the protocol JSON holds %S, which is not a revision id" revision_filename
-           contents)
+        (Printf.sprintf "cdp-gen: %s next to the protocol JSON holds %S, which is not a revision id"
+           Fetch.revision_filename contents)
     in
     match Output_dir.read_file revision_file with
     | exception Sys_error _no_revision_file -> "unknown"
@@ -196,7 +194,7 @@ let generate ~protocol_files ~outdir ~domains_arg =
   Library.write_files ~outdir library;
   Library.print_report ~removed_files library
 
-let print_roundtrip_report ~outfile ({ emitted; enum_checks; skipped; _ } : Roundtrip.output) =
+let print_roundtrip_report ~outfile ({ contents = _; emitted; enum_checks; skipped } : Roundtrip.output) =
   let print_skipped_check ({ label; reason } : Roundtrip.skipped_check) =
     Printf.eprintf "skipped %s: %s\n" label reason
   in
@@ -267,7 +265,7 @@ let fetch_command =
     let doc = "A devtools-protocol revision such as 1680125; the latest when absent." in
     Cmdliner.Arg.(value & pos 1 (some string) None & info [] ~docv:"REVISION" ~doc)
   in
-  let action outdir rev = run (fun () -> Fetch.fetch ~outdir ~rev) in
+  let action outdir requested_revision = run (fun () -> Fetch.fetch ~outdir ~requested_revision) in
   Cmdliner.Cmd.v (Cmdliner.Cmd.info "fetch" ~doc) Cmdliner.Term.(const action $ outdir_argument $ revision_argument)
 
 let () =
