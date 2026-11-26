@@ -17,6 +17,28 @@ let protocol_files = [ "browser_protocol.json"; "js_protocol.json" ]
    refreshes it together with the JSONs *)
 let license_file = "LICENSE"
 
+module Revision : sig
+  (* always digits like "1680125" *)
+  type t = private string
+
+  val of_string : string -> t
+  val to_string : t -> string
+end = struct
+  type t = string
+
+  let of_string text =
+    let is_all_digits =
+      match text with
+      | "" -> false
+      | _not_empty -> String.for_all Naming.is_digit text
+    in
+    match is_all_digits with
+    | true -> text
+    | false -> failwith (Printf.sprintf "cdp-gen: revision must be a number (like 1680125), got %S" text)
+
+  let to_string revision = revision
+end
+
 module Staged_file : sig
   type t = private {
     filename : string; (* "browser_protocol.json" *)
@@ -68,18 +90,16 @@ let request_latest_revision () =
         Yojson.Safe.Util.member "version" (Yojson.Safe.from_file registry_response) |> Yojson.Safe.Util.to_string
       in
       match String.split_on_char '.' version with
-      | [ "0"; "0"; revision ] -> revision
+      | [ "0"; "0"; revision ] -> Revision.of_string revision
       | _unexpected_format -> failwith ("cdp-gen: unexpected npm version: " ^ version))
-
-let is_all_digits text = String.length text > 0 && String.for_all Naming.is_digit text
 
 (* the extracted file must be a real protocol definition, not a truncated
    download or an error page *)
 let check_protocol_json ~file path =
-  let json =
-    try Yojson.Safe.from_file path
-    with Yojson.Json_error _parse_error -> failwith (Printf.sprintf "cdp-gen: downloaded %s is not valid JSON" file)
-  in
+  match Yojson.Safe.from_file path with
+  | exception Yojson.Json_error _parse_error ->
+    failwith (Printf.sprintf "cdp-gen: downloaded %s is not valid JSON" file)
+  | json ->
   match Yojson.Safe.Util.member "domains" json with
   | `List (_ :: _) -> ()
   | _no_domains -> failwith (Printf.sprintf "cdp-gen: downloaded %s does not look like a protocol definition" file)
@@ -90,12 +110,12 @@ let fetch ~outdir ~requested_revision =
   let revision =
     match requested_revision with
     | None -> request_latest_revision ()
-    | Some given ->
-    match is_all_digits given with
-    | true -> given
-    | false -> failwith (Printf.sprintf "cdp-gen: revision must be a number (like 1680125), got %S" given)
+    | Some given -> Revision.of_string given
   in
-  let url = Printf.sprintf "https://registry.npmjs.org/devtools-protocol/-/devtools-protocol-0.0.%s.tgz" revision in
+  let url =
+    Printf.sprintf "https://registry.npmjs.org/devtools-protocol/-/devtools-protocol-0.0.%s.tgz"
+      (Revision.to_string revision)
+  in
   let tarball = Filename.temp_file "cdp_gen_protocol" ".tgz" in
   let staged_protocol_files = List.map (Staged_file.make ~outdir ~directory_in_tarball:"package/json") protocol_files in
   let staged_license = Staged_file.make ~outdir ~directory_in_tarball:"package" license_file in
@@ -125,5 +145,5 @@ let fetch ~outdir ~requested_revision =
           let final_path = Filename.concat outdir filename in
           Sys.rename temporary_path final_path)
         staged_files;
-      Output_dir.write_file (Filename.concat outdir "REVISION") (Printf.sprintf "r%s\n" revision));
-  Printf.printf "fetched protocol r%s into %s/\n" revision outdir
+      Output_dir.write_file (Filename.concat outdir "REVISION") (Printf.sprintf "r%s\n" (Revision.to_string revision)));
+  Printf.printf "fetched protocol r%s into %s/\n" (Revision.to_string revision) outdir
