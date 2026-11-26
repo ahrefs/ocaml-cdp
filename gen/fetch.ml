@@ -1,20 +1,8 @@
-(* Downloading a protocol snapshot. Google publishes every snapshot to npm
-   as devtools-protocol@0.0.<rev>, so an exact revision is one tarball away.
-   Without a revision we resolve "latest" through the npm registry first,
-   so REVISION is always exact.
-
-   We shell out to curl and tar rather than depend on an OCaml HTTP + TLS
-   stack: fetch is a developer-time command, and the opam precedent (opam
-   downloads through system curl/wget) means every working OCaml setup has
-   them. Downloads are staged as <file>.tmp inside the output directory and
-   renamed into place only after every step succeeded, so a failed fetch
-   never damages existing files. *)
+(* downloads a protocol snapshot with curl and tar, which every OCaml setup has: opam itself downloads through them *)
 
 let protocol_files = [ "browser_protocol.json"; "js_protocol.json" ]
 
-(* the protocol JSONs are BSD-3-Clause (Chromium Authors); redistributing them
-   requires shipping the upstream license text alongside, so every fetch
-   refreshes it together with the JSONs *)
+(* the JSONs are BSD-3-Clause: shipping them means shipping this license next to them *)
 let license_file = "LICENSE"
 
 (* written by fetch, read by generate to stamp the revision into every header *)
