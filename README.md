@@ -28,9 +28,8 @@ The protocol library and the generator are on opam:
 opam install cdp cdp-gen
 ```
 
-`cdp-lwt` is not on opam yet: it uses libcurl's WebSocket API, which ocurl
-has not released yet (latest release: 0.10.0). Until then, build the full
-stack from a clone:
+`cdp-lwt` is not on opam yet; it will be released together with the next
+`cdp`. Until then, build the full stack from a clone:
 
 ```sh
 git clone https://github.com/ahrefs/ocaml-cdp.git
@@ -43,9 +42,7 @@ make build test
 
 The `opam pin` line gives all three packages the same `dev` version — without
 it, opam picks the released `0.1.0` for `cdp` but `dev` for `cdp-lwt`, and
-`cdp-lwt`'s exact-version dependency on `cdp` cannot be solved. The pin also
-brings in ocurl master via `cdp-lwt.opam`'s `pin-depends`, and `opam install`
-picks everything up by itself.
+`cdp-lwt`'s exact-version dependency on `cdp` cannot be solved.
 
 Your system libcurl must be 7.86 or newer (check with
 `curl-config --version`) and built with WebSocket support. Chrome-launching code and examples need a Chrome:

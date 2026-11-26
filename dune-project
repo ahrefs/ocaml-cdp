@@ -76,8 +76,10 @@
    (>= "4.14"))
   (cdp
    (= :version))
-  curl
-  curl_lwt
+  (curl
+   (>= "0.10.1"))
+  (curl_lwt
+   (>= "0.10.1"))
   (lwt
    (>= "5.10"))
   (lwt_ppx

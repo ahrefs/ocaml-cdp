@@ -1,5 +1,8 @@
 # Unreleased
 
+- `cdp-lwt`: depends on the released ocurl 0.10.1 (`curl`, `curl_lwt`)
+  instead of a git pin, so it can be published to opam.
+
 - `cdp-gen`: `--version`.
 
 - `cdp-gen`: `generate` also writes the four glue modules the generated files
