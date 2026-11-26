@@ -29,17 +29,18 @@ let run_command ~context command =
   | 0 -> ()
   | exit_code -> failwith (Printf.sprintf "cdp-gen: %s failed (exit %d): %s" context exit_code command)
 
-let curl ~url ~out =
+let download ~url ~destination =
   run_command ~context:(Printf.sprintf "downloading %s" url)
-    (Printf.sprintf "curl -sfL --connect-timeout 15 --max-time 300 %s -o %s" (Filename.quote url) (Filename.quote out))
+    (Printf.sprintf "curl -sfL --connect-timeout 15 --max-time 300 %s -o %s" (Filename.quote url)
+       (Filename.quote destination))
 
-let resolve_latest_revision () =
+let request_latest_revision () =
   let registry_response = Filename.temp_file "cdp_gen_registry" ".json" in
   Fun.protect
     ~finally:(fun () -> Output_dir.remove_if_exists registry_response)
     (fun () ->
       let latest_version_url = "https://registry.npmjs.org/devtools-protocol/latest" in
-      curl ~url:latest_version_url ~out:registry_response;
+      download ~url:latest_version_url ~destination:registry_response;
       let version =
         Yojson.Safe.Util.member "version" (Yojson.Safe.from_file registry_response) |> Yojson.Safe.Util.to_string
       in
@@ -51,7 +52,7 @@ let is_all_digits text = String.length text > 0 && String.for_all Naming.is_digi
 
 (* the extracted file must be a real protocol definition, not a truncated
    download or an error page *)
-let validate_protocol_json ~file path =
+let check_protocol_json ~file path =
   let json =
     try Yojson.Safe.from_file path
     with Yojson.Json_error _parse_error -> failwith (Printf.sprintf "cdp-gen: downloaded %s is not valid JSON" file)
@@ -65,7 +66,7 @@ let fetch ~outdir ~requested_revision =
   check_tool "tar";
   let revision =
     match requested_revision with
-    | None -> resolve_latest_revision ()
+    | None -> request_latest_revision ()
     | Some given ->
     match is_all_digits given with
     | true -> given
@@ -82,13 +83,13 @@ let fetch ~outdir ~requested_revision =
       Output_dir.remove_if_exists license_temporary_path;
       List.iter (fun (_file, temporary_path) -> Output_dir.remove_if_exists temporary_path) staged)
     (fun () ->
-      curl ~url ~out:tarball;
+      download ~url ~destination:tarball;
       List.iter
         (fun (file, temporary_path) ->
           run_command ~context:(Printf.sprintf "extracting %s" file)
             (Printf.sprintf "tar -xzOf %s package/json/%s > %s" (Filename.quote tarball) file
                (Filename.quote temporary_path));
-          validate_protocol_json ~file temporary_path)
+          check_protocol_json ~file temporary_path)
         staged;
       run_command
         ~context:(Printf.sprintf "extracting %s" license_file)
