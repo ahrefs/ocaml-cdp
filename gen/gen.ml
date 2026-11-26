@@ -88,7 +88,7 @@ end = struct
      All named at once, so the user fixes the domain list in one try. *)
   let check_refs ~type_index ~selection ~all_domains ~selected_domains =
     Dependencies.check_refs_exist ~type_index selected_domains;
-    (match Dependencies.find_missing ~all_domains ~selected_domains with
+    (match Dependencies.find_missing_domains ~all_domains ~selected_domains with
     | [] -> ()
     | needed ->
       let who_needs =

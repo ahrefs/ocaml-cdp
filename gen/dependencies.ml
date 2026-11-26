@@ -15,20 +15,22 @@ let collect_other_domains ~(domain : Model.Domain.t) type_refs =
 let collect_referenced_domains (domain : Model.Domain.t) =
   Model.Domain.collect_refs domain |> collect_other_domains ~domain
 
-let find_missing ~(all_domains : Model.Domain.t list) ~(selected_domains : Model.Domain.t list) =
+let find_missing_domains ~(all_domains : Model.Domain.t list) ~(selected_domains : Model.Domain.t list) =
   let find_domain name = Model.Domain.find_by_name all_domains name in
-  let rec close_selection known_domains domains_to_visit =
-    match domains_to_visit with
-    | [] -> known_domains
+  let rec close_selection known_names names_to_visit =
+    match names_to_visit with
+    | [] -> known_names
     | name :: rest ->
-    match List.mem name known_domains, find_domain name with
-    | true, _known_already -> close_selection known_domains rest
-    | false, None -> close_selection known_domains rest
-    | false, Some domain -> close_selection (name :: known_domains) (collect_referenced_domains domain @ rest)
+    match List.exists (String.equal name) known_names, find_domain name with
+    | true, _known_already -> close_selection known_names rest
+    | false, None -> close_selection known_names rest
+    | false, Some domain -> close_selection (name :: known_names) (collect_referenced_domains domain @ rest)
   in
   let selected_names = List.map (fun (domain : Model.Domain.t) -> domain.name) selected_domains in
-  let needed_domains = close_selection selected_names (List.concat_map collect_referenced_domains selected_domains) in
-  needed_domains |> List.filter (fun name -> not (List.mem name selected_names)) |> List.sort String.compare
+  let needed_names = close_selection selected_names (List.concat_map collect_referenced_domains selected_domains) in
+  needed_names
+  |> List.filter (fun name -> not (List.exists (String.equal name) selected_names))
+  |> List.sort String.compare
 
 (* a $ref to a type that exists nowhere would surface much later, as a compile
    error inside generated code. refused with the referrer's name instead *)
@@ -74,7 +76,7 @@ let check_no_type_loop ~type_index (domains : Model.Domain.t list) =
   let finished = Hashtbl.create 16 in
   let rec visit path node =
     match Hashtbl.mem finished node, Hashtbl.mem visiting node with
-    | true, _finished_first -> ()
+    | true, _is_visiting -> ()
     | false, true ->
       let cycle = String.concat " -> " (List.rev (node :: path)) in
       failwith
