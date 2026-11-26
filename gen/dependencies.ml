@@ -70,12 +70,14 @@ let check_refs_exist ~type_index (domains : Model.Domain.t list) =
    - refs to sealed aliases do not count: they go through Cdp_base, a leaf
    - commands and events never count: they live in the domain file, which only points at type files *)
 let check_no_type_loop ~type_index (domains : Model.Domain.t list) =
-  let is_sealed type_ref =
-    Option.is_some (Option.bind (Model.Type_index.find type_index type_ref) Model.Type_def.sealed_primitive_of)
+  let is_ref_to_sealed_alias type_ref =
+    match Model.Type_index.find type_index type_ref with
+    | None -> false
+    | Some type_def -> Option.is_some (Model.Type_def.sealed_primitive_of type_def)
   in
   let edges_of_domain (domain : Model.Domain.t) =
     List.concat_map Model.Type_def.collect_refs domain.types
-    |> List.filter (fun type_ref -> not (is_sealed type_ref))
+    |> List.filter (fun type_ref -> not (is_ref_to_sealed_alias type_ref))
     |> collect_other_domains ~domain
   in
   let edges = Hashtbl.create 16 in
