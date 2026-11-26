@@ -32,31 +32,39 @@ let find_missing_domains ~(all_domains : Model.Domain.t list) ~(selected_domains
   |> List.filter (fun name -> not (List.exists (String.equal name) selected_names))
   |> List.sort String.compare
 
-(* a $ref to a type that exists nowhere would surface much later, as a compile
-   error inside generated code. refused with the referrer's name instead *)
+type referrer = {
+  owner : string; (* "Demo.Thing" *)
+  type_refs : Model.Type_ref.t list; (* the refs its fields hold *)
+}
+
+let collect_referrers (domain : Model.Domain.t) =
+  let make_referrer name type_refs = { owner = Printf.sprintf "%s.%s" domain.name name; type_refs } in
+  let type_referrers =
+    List.map
+      (fun (type_def : Model.Type_def.t) -> make_referrer type_def.id (Model.Type_def.collect_refs type_def))
+      domain.types
+  in
+  let command_referrers =
+    List.map
+      (fun (command : Model.Command.t) -> make_referrer command.name (Model.Command.collect_refs command))
+      domain.commands
+  in
+  let event_referrers =
+    List.map (fun (event : Model.Event.t) -> make_referrer event.name (Model.Event.collect_refs event)) domain.events
+  in
+  type_referrers @ command_referrers @ event_referrers
+
+let check_referrer ~type_index { owner; type_refs } =
+  let check_ref (type_ref : Model.Type_ref.t) =
+    match Model.Type_index.find type_index type_ref with
+    | Some _found -> ()
+    | None ->
+      failwith (Printf.sprintf "cdp-gen: %s references %s.%s, which does not exist" owner type_ref.domain type_ref.id)
+  in
+  List.iter check_ref type_refs
+
 let check_refs_exist ~type_index (domains : Model.Domain.t list) =
-  let check ~owner type_refs =
-    let check_ref (type_ref : Model.Type_ref.t) =
-      match Model.Type_index.find type_index type_ref with
-      | Some _found -> ()
-      | None ->
-        failwith (Printf.sprintf "cdp-gen: %s references %s.%s, which does not exist" owner type_ref.domain type_ref.id)
-    in
-    List.iter check_ref type_refs
-  in
-  let check_domain (domain : Model.Domain.t) =
-    let owner name = Printf.sprintf "%s.%s" domain.name name in
-    List.iter
-      (fun (type_def : Model.Type_def.t) -> check ~owner:(owner type_def.id) (Model.Type_def.collect_refs type_def))
-      domain.types;
-    List.iter
-      (fun (command : Model.Command.t) -> check ~owner:(owner command.name) (Model.Command.collect_refs command))
-      domain.commands;
-    List.iter
-      (fun (event : Model.Event.t) -> check ~owner:(owner event.name) (Model.Event.collect_refs event))
-      domain.events
-  in
-  List.iter check_domain domains
+  domains |> List.concat_map collect_referrers |> List.iter (check_referrer ~type_index)
 
 (* Type files of two domains must not need each other: OCaml modules cannot form a loop.
    - refs to sealed aliases do not count: they go through Cdp_base, a leaf
